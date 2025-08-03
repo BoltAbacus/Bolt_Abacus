@@ -1,0 +1,71 @@
+import { FC, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import SeoComponent from '@components/atoms/SeoComponent';
+import ErrorBox from '@components/organisms/ErrorBox';
+import LoadingBox from '@components/organisms/LoadingBox';
+
+import { useAuthStore } from '@store/authStore';
+import { ERRORS, MESSAGES } from '@constants/app';
+import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
+import PvPSection from '@components/sections/student/practice/PvPSection';
+
+export interface StudentPvPPageProps {}
+
+const StudentPvPPage: FC<StudentPvPPageProps> = () => {
+  const authToken = useAuthStore((state) => state.authToken);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
+  const [fallBackAction, setFallBackAction] = useState<string>(
+    MESSAGES.TRY_AGAIN
+  );
+
+  useEffect(() => {
+    const getPvPData = async () => {
+      if (isAuthenticated) {
+        setLoading(false);
+      } else {
+        setLoading(false);
+        setApiError(ERRORS.AUTHENTICATION_ERROR);
+        setFallBackLink(LOGIN_PAGE);
+        setFallBackAction(MESSAGES.GO_LOGIN);
+      }
+    };
+    getPvPData();
+  }, [authToken, isAuthenticated]);
+
+  return (
+    <div className="flex flex-1">
+      {loading ? (
+        <>
+          <SeoComponent title="Loading PvP Mode" />
+          <LoadingBox />
+        </>
+      ) : (
+        <div className="flex flex-1">
+          {apiError ? (
+            <>
+              <SeoComponent title="Error" />
+              <ErrorBox
+                errorMessage={apiError}
+                link={fallBackLink}
+                buttonText={fallBackAction}
+              />
+            </>
+          ) : (
+            <div className="flex-1 pt-4">
+              <SeoComponent title="Player vs Player Mode" />
+              <PvPSection />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StudentPvPPage; 

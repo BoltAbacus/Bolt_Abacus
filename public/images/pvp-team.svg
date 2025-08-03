@@ -1,0 +1,27 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="url(#gradient1)"/>
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Team 1 -->
+  <circle cx="35" cy="40" r="12" fill="white" opacity="0.9"/>
+  <circle cx="25" cy="60" r="10" fill="white" opacity="0.9"/>
+  <circle cx="45" cy="60" r="10" fill="white" opacity="0.9"/>
+  <!-- Team 2 -->
+  <circle cx="85" cy="40" r="12" fill="white" opacity="0.9"/>
+  <circle cx="75" cy="60" r="10" fill="white" opacity="0.9"/>
+  <circle cx="95" cy="60" r="10" fill="white" opacity="0.9"/>
+  <!-- VS line -->
+  <rect x="58" y="30" width="4" height="40" rx="2" fill="white" opacity="0.8"/>
+  <!-- Connection lines -->
+  <path d="M35 40 L25 60" stroke="white" stroke-width="2" opacity="0.7"/>
+  <path d="M35 40 L45 60" stroke="white" stroke-width="2" opacity="0.7"/>
+  <path d="M85 40 L75 60" stroke="white" stroke-width="2" opacity="0.7"/>
+  <path d="M85 40 L95 60" stroke="white" stroke-width="2" opacity="0.7"/>
+  <!-- Battle lines -->
+  <path d="M50 50 L70 50" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M50 55 L70 55" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+</svg> 
