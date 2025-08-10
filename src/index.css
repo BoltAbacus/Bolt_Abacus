@@ -12,6 +12,36 @@
   }
 }
 
+@layer components {
+  .premium-gradient {
+    background: linear-gradient(135deg, #ffba08 0%, #faa307 50%, #e67700 100%);
+  }
+  
+  .premium-glow {
+    box-shadow: 0 0 20px rgba(255, 186, 8, 0.4);
+  }
+  
+  .premium-glow-hover:hover {
+    box-shadow: 0 0 30px rgba(255, 186, 8, 0.6);
+  }
+  
+  .card-gradient {
+    background: linear-gradient(180deg, #080808 0%, #0a0a0a 100%);
+  }
+  
+  .gold-text-shadow {
+    text-shadow: 0 0 10px rgba(255, 186, 8, 0.3);
+  }
+  
+  .premium-border {
+    border: 1px solid rgba(255, 186, 8, 0.3);
+  }
+  
+  .premium-border-hover:hover {
+    border-color: rgba(255, 186, 8, 0.6);
+  }
+}
+
 @font-face {
   font-family: 'Gilroy';
   src: url('./assets/fonts/Gilroy-Regular.ttf') format('ttf');

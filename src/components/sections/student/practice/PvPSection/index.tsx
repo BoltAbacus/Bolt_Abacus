@@ -1,30 +1,22 @@
 import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  AiOutlineUser, 
   AiOutlineTrophy, 
   AiOutlineClockCircle,
   AiOutlineFire,
   AiOutlineTeam,
   AiOutlinePlayCircle,
-  AiOutlineSearch,
   AiOutlineCrown
 } from 'react-icons/ai';
 
-import PracticeCard from '@components/molecules/PracticeCard';
 import { useAuthStore } from '@store/authStore';
 
-import {
-  STUDENT_FLASHCARDS,
-  STUDENT_SET,
-  STUDENT_TIMED,
-  STUDENT_UNTIMED,
-} from '@constants/routes';
+import { STUDENT_SET } from '@constants/routes';
 
 export interface PvPSectionProps {}
 
 const PvPSection: FC<PvPSectionProps> = () => {
-  const user = useAuthStore((state) => state.user);
+  useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<'challenge' | 'leaderboard' | 'history'>('challenge');
 
   const pvpModes = [
@@ -153,7 +145,6 @@ const PvPSection: FC<PvPSectionProps> = () => {
           
           <div className="grid grid-cols-4 gap-4 w-full">
             {pvpModes.map((mode, index) => {
-              const Icon = mode.icon;
               return (
                                  <div key={index} className="group relative">
                    <div className="bg-gradient-to-br from-purple-600/40 via-pink-600/40 to-orange-600/40 backdrop-blur-xl rounded-3xl p-8 border-2 border-yellow-400/50 hover:border-yellow-300/80 transition-all duration-700 hover:transform hover:scale-110 hover:shadow-2xl hover:shadow-yellow-400/30 relative overflow-hidden">

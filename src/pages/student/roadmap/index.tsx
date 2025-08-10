@@ -5,6 +5,7 @@ import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import RoadmapSection from '@components/sections/student/dashboard/RoadMapSection';
+import QuickActionsSection from '@components/sections/student/roadmap/QuickActionsSection';
 
 import { dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
@@ -100,7 +101,11 @@ const StudentRoadmapPage: FC<StudentRoadmapPageProps> = () => {
           ) : (
             <>
               <SeoComponent title="Roadmap" />
-              <div className="space-y-8">
+              <div>
+                <QuickActionsSection
+                  currentLevel={currentLevel!}
+                  currentClass={currentClass!}
+                />
                 <RoadmapSection
                   currentLevel={currentLevel!}
                   currentClass={currentClass!}

@@ -23,6 +23,12 @@ export interface SetPracticeFormProps {
   setPersistNumberOfDigits: Dispatch<SetStateAction<boolean>>;
   includeDecimals: boolean;
   setIncludeDecimals: Dispatch<SetStateAction<boolean>>;
+  audioMode: boolean;
+  setAudioMode: Dispatch<SetStateAction<boolean>>;
+  audioPace: string;
+  setAudioPace: Dispatch<SetStateAction<string>>;
+  showQuestion: boolean;
+  setShowQuestion: Dispatch<SetStateAction<boolean>>;
   handleStartQuiz: () => void;
 }
 
@@ -37,6 +43,9 @@ const SetPracticeForm: FC<SetPracticeFormProps> = ({
   includeSubtraction,
   persistNumberOfDigits,
   includeDecimals,
+  audioMode,
+  audioPace,
+  showQuestion,
   setTimeLimit,
   setNumberOfDigitsLeft,
   setNumberOfDigitsRight,
@@ -46,6 +55,9 @@ const SetPracticeForm: FC<SetPracticeFormProps> = ({
   setIncludeSubtraction,
   setPersistNumberOfDigits,
   setIncludeDecimals,
+  setAudioMode,
+  setAudioPace,
+  setShowQuestion,
   handleStartQuiz,
 }) => {
   const verifyAndStartQuiz = () => {
@@ -258,6 +270,60 @@ const SetPracticeForm: FC<SetPracticeFormProps> = ({
             />
           </div>
         )}
+
+        {/* Audio Mode Settings */}
+        <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+          <div className="text-left">
+            <p className="text-md text-gold font-bold">🔊 Audio Mode</p>
+            <p className="text-xs text-white/60">Questions read aloud, you type answers</p>
+          </div>
+          <div className="flex justify-end">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={audioMode}
+                onChange={(e) => setAudioMode(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-6 bg-grey peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+            </label>
+          </div>
+        </div>
+        {audioMode && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">🎵 Speech Pace: </p>
+            <select
+              value={audioPace}
+              onChange={(e) => setAudioPace(e.target.value)}
+              className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+            >
+              <option value="slow">🐌 SLOW - Easy to Follow</option>
+              <option value="normal">👤 NORMAL - Natural Speed</option>
+              <option value="fast">⚡ FAST - Quick Challenge</option>
+              <option value="ultra">🚀 ULTRA - Lightning Speed</option>
+            </select>
+          </div>
+        )}
+        {audioMode && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <div className="text-left">
+              <p className="text-md text-gold font-bold">👁️ Question Visibility</p>
+              <p className="text-xs text-white/60">Toggle with 👁️ button during practice</p>
+            </div>
+            <div className="flex justify-end">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showQuestion}
+                  onChange={(e) => setShowQuestion(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-12 h-6 bg-grey peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+              </label>
+            </div>
+          </div>
+        )}
+
         <div className="tablet:gap-4 items-center gap-2 grid grid-cols-1 w-full">
           <div
             className="text-center"

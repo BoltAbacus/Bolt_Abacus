@@ -53,6 +53,9 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
   const [includeSubtraction, setIncludeSubtraction] = useState(false);
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
   const [speed, setSpeed] = useState<number>(2500);
+  const [audioMode, setAudioMode] = useState(false);
+  const [audioPace, setAudioPace] = useState('normal');
+  const [showQuestion, setShowQuestion] = useState(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState('');
@@ -189,6 +192,12 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
           setIncludeSubtraction={setIncludeSubtraction}
           persistNumberOfDigits={persistNumberOfDigits}
           setPersistNumberOfDigits={setPersistNumberOfDigits}
+          audioMode={audioMode}
+          setAudioMode={setAudioMode}
+          audioPace={audioPace}
+          setAudioPace={setAudioPace}
+          showQuestion={showQuestion}
+          setShowQuestion={setShowQuestion}
           handleStartQuiz={handleStartQuiz}
         />
       ) : (
@@ -234,6 +243,10 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
                   setAnswer={setCurrentAnswer}
                   setDisabled={setIsNextDisabled}
                   submitAnswer={answerQuestion}
+                  audioMode={audioMode}
+                  audioPace={audioPace}
+                  showQuestion={showQuestion}
+                  setShowQuestion={setShowQuestion}
                 />
               </div>
               <div className="tablet:gap-12 flex justify-center items-center gap-4 pt-4">

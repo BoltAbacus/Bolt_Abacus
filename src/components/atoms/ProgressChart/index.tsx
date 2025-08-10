@@ -8,7 +8,7 @@ export interface ProgressChartProps {
 
 const ProgressChart: FC<ProgressChartProps> = ({ progress, className = '' }) => {
   // Calculate progress data for chart
-  const chartData = progress.map((level, index) => {
+  const chartData = progress.map((level) => {
     const isCompleted = level.FinalTest > 0 && level.OralTest > 0;
     const averageScore = isCompleted ? (level.FinalTest + level.OralTest) / 2 : 0;
     
@@ -20,7 +20,6 @@ const ProgressChart: FC<ProgressChartProps> = ({ progress, className = '' }) => 
     };
   });
 
-  const maxLevel = Math.max(...chartData.map(d => d.level));
   const completedLevels = chartData.filter(d => d.completed).length;
 
   return (

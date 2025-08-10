@@ -14,6 +14,8 @@ import {
   ACCOUNT_DEACTIVATION_ENDPOINT,
   STUDENT_LEVEL_V2_ENDPOINT,
   STUDENT_PRACTICE_SUBMIT_ENDPOINT,
+  STUDENT_PRACTICE_PROGRESS_UPDATE_ENDPOINT,
+  STUDENT_PRACTICE_PROGRESS_GET_ENDPOINT,
 } from '@constants/routes';
 
 import { QuizAnswer } from '@interfaces/apis/student';
@@ -251,6 +253,62 @@ export const bulkAddStudentRequest = async (
     {
       headers: { 'AUTH-TOKEN': token },
       timeout: 600000,
+    }
+  );
+};
+
+export const updatePracticeProgressRequest = async (
+  practiceType: string,
+  operation: string,
+  currentQuestion: number,
+  totalQuestions: number,
+  correctAnswers: number,
+  incorrectAnswers: number,
+  timeElapsed: number,
+  isCompleted: boolean,
+  numberOfDigits: number,
+  numberOfRows: number,
+  zigZag: boolean,
+  includeSubtraction: boolean,
+  persistNumberOfDigits: boolean,
+  token: string
+) => {
+  return axios.post(
+    STUDENT_PRACTICE_PROGRESS_UPDATE_ENDPOINT,
+    {
+      practiceType,
+      operation,
+      currentQuestion,
+      totalQuestions,
+      correctAnswers,
+      incorrectAnswers,
+      timeElapsed,
+      isCompleted,
+      numberOfDigits,
+      numberOfRows,
+      zigZag,
+      includeSubtraction,
+      persistNumberOfDigits,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+};
+
+export const getPracticeProgressRequest = async (
+  practiceType: string,
+  operation: string,
+  token: string
+) => {
+  return axios.post(
+    STUDENT_PRACTICE_PROGRESS_GET_ENDPOINT,
+    {
+      practiceType,
+      operation,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
     }
   );
 };

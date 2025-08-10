@@ -1,7 +1,11 @@
-import { Dispatch, FC, SetStateAction } from 'react';
+import { Dispatch, FC, SetStateAction, useState } from 'react';
 import swal from 'sweetalert';
 
 import Button from '@components/atoms/Button';
+import PracticeProgressTracker from '@components/organisms/PracticeProgressTracker';
+import FlashCardPractice from '@components/organisms/FlashCardPractice';
+import { PracticeProvider } from '../../../contexts/PracticeContext';
+import { PracticeProgress } from '../../../hooks/usePracticeProgress';
 
 export interface FlashCardsFormProps {
   operation: 'addition' | 'multiplication' | 'division';
@@ -19,6 +23,12 @@ export interface FlashCardsFormProps {
   setIncludeSubtraction: Dispatch<SetStateAction<boolean>>;
   persistNumberOfDigits: boolean;
   setPersistNumberOfDigits: Dispatch<SetStateAction<boolean>>;
+  audioMode: boolean;
+  setAudioMode: Dispatch<SetStateAction<boolean>>;
+  audioPace: string;
+  setAudioPace: Dispatch<SetStateAction<string>>;
+  showQuestion: boolean;
+  setShowQuestion: Dispatch<SetStateAction<boolean>>;
   handleStartQuiz: () => void;
 }
 
@@ -31,6 +41,9 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
   numberOfRows,
   includeSubtraction,
   persistNumberOfDigits,
+  audioMode,
+  audioPace,
+  showQuestion,
   setNumberOfQuestions,
   setNumberOfDigits,
   setIsZigzag,
@@ -38,8 +51,14 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
   setNumberOfRows,
   setIncludeSubtraction,
   setPersistNumberOfDigits,
+  setAudioMode,
+  setAudioPace,
+  setShowQuestion,
   handleStartQuiz,
 }) => {
+  const [showProgressTracker, setShowProgressTracker] = useState(false);
+  const [showPractice, setShowPractice] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState<PracticeProgress | null>(null);
   const verifyAndStartQuiz = () => {
     if (
       !numberOfQuestions ||
@@ -81,6 +100,12 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
       return;
     }
     handleStartQuiz();
+    setShowProgressTracker(true);
+    setShowPractice(true);
+  };
+
+  const handleProgressUpdate = (progress: PracticeProgress) => {
+    setCurrentProgress(progress);
   };
 
   return (
@@ -182,6 +207,64 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Audio Mode Settings */}
+        <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+          <div className="text-left">
+            <p className="text-md text-gold font-bold">🔊 Audio Mode</p>
+            <p className="text-xs text-white/60">Questions read aloud, you type answers</p>
+          </div>
+          <div className="flex justify-end">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={audioMode}
+                onChange={(e) => setAudioMode(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-6 bg-grey peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+            </label>
+          </div>
+        </div>
+        {audioMode && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">🎵 Speech Pace: </p>
+            <select
+              value={audioPace}
+              onChange={(e) => setAudioPace(e.target.value)}
+              className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+            >
+              <option value="slow">🐌 SLOW - Easy to Follow</option>
+              <option value="normal">👤 NORMAL - Natural Speed</option>
+              <option value="fast">⚡ FAST - Quick Challenge</option>
+              <option value="ultra">🚀 ULTRA - Lightning Speed</option>
+            </select>
+          </div>
+        )}
+        {audioMode && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <div className="text-left">
+              <p className="text-md text-gold font-bold">👁️ Question Visibility</p>
+              <p className="text-xs text-white/60">Toggle with 👁️ button during practice</p>
+            </div>
+            <div className="flex justify-end">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showQuestion}
+                  onChange={(e) => setShowQuestion(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-12 h-6 bg-grey peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+              </label>
+            </div>
+          </div>
+        )}
+        {audioMode && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-1 py-2 w-full">
+          </div>
+        )}
+
         <div className="tablet:gap-4 items-center gap-2 grid grid-cols-1 w-full">
           <div
             className="text-center"
@@ -194,6 +277,80 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Real-Time Progress Tracker and Practice */}
+      {showProgressTracker && (
+        <div className="mt-6">
+          <PracticeProvider
+            operation={operation}
+            numberOfQuestions={numberOfQuestions}
+            numberOfDigits={numberOfDigits}
+            numberOfRows={numberOfRows}
+            isZigzag={isZigzag}
+            includeSubtraction={includeSubtraction}
+            persistNumberOfDigits={persistNumberOfDigits}
+            audioMode={audioMode}
+            audioPace={audioPace}
+            showQuestion={showQuestion}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PracticeProgressTracker
+                operation={operation}
+                numberOfQuestions={numberOfQuestions}
+                numberOfDigits={numberOfDigits}
+                numberOfRows={numberOfRows}
+                isZigzag={isZigzag}
+                includeSubtraction={includeSubtraction}
+                persistNumberOfDigits={persistNumberOfDigits}
+                audioMode={audioMode}
+                audioPace={audioPace}
+                showQuestion={showQuestion}
+                onProgressUpdate={handleProgressUpdate}
+              />
+              
+              {showPractice && (
+                <FlashCardPractice
+                  operation={operation}
+                  numberOfQuestions={numberOfQuestions}
+                  numberOfDigits={numberOfDigits}
+                  speed={speed}
+                />
+              )}
+            </div>
+          </PracticeProvider>
+        </div>
+      )}
+
+      {/* Progress Summary */}
+      {currentProgress && currentProgress.isCompleted && (
+        <div className="mt-6 bg-gradient-to-r from-green/20 to-blue/20 backdrop-blur-xl p-6 rounded-2xl border border-green/50">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-green mb-4">🎉 Practice Completed!</h3>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gold">{currentProgress.correctAnswers}</div>
+                <div className="text-white/80 text-sm">Correct</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-400">{currentProgress.incorrectAnswers}</div>
+                <div className="text-white/80 text-sm">Incorrect</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue">{currentProgress.accuracyPercentage.toFixed(1)}%</div>
+                <div className="text-white/80 text-sm">Accuracy</div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-white">
+                Time: {Math.floor(currentProgress.timeElapsed / 60)}:{(currentProgress.timeElapsed % 60).toString().padStart(2, '0')}
+              </div>
+              <div className="text-white/80 text-sm">
+                Average: {(currentProgress.timeElapsed / currentProgress.totalQuestions).toFixed(1)}s per question
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

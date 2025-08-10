@@ -15,7 +15,7 @@ export interface LevelProgressAccordionProps {
 const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
   levelProgress,
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Calculate level completion status
   const levelStats = useMemo(() => {

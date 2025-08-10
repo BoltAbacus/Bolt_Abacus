@@ -114,11 +114,37 @@ export const LevelProgressSchema = z.object({
 });
 export type LevelProgress = z.infer<typeof LevelProgressSchema>;
 
+export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
+export type PracticeStats = z.infer<typeof PracticeStatsSchema>;
+
+// Practice Statistics Schema
+export const PracticeSessionSchema = z.object({
+  practiceQuestionId: z.number(),
+  practiceType: z.string(),
+  operation: z.string(),
+  score: z.number(),
+  totalTime: z.number(),
+  averageTime: z.number(),
+  created_at: z.string(),
+});
+
+export const PracticeStatsSchema = z.object({
+  totalSessions: z.number(),
+  totalPracticeTime: z.number(),
+  totalProblemsSolved: z.number(),
+  totalQuestionsAttempted: z.number(),
+  averageTimePerSession: z.number(),
+  averageProblemsPerSession: z.number(),
+  recentSessions: z.number(),
+  practiceSessions: z.array(PracticeSessionSchema),
+});
+
 export const GetStudentProgressResponseSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   batchName: z.string(),
   levels: z.array(LevelProgressSchema),
+  practiceStats: PracticeStatsSchema.optional(),
 });
 
 export type GetStudentProgressResponse = z.infer<

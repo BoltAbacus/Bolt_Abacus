@@ -61,6 +61,8 @@ urlpatterns = [
     path('submitPracticeQuestions/', views.SubmitPracticeQuestions.as_view()),
     path('getStudentPracticeQuestions/', views.GetStudentPracticeQuestions.as_view()),
     path('getStudentPracticeQuestionsStudent/', views.GetStudentPracticeQuestionsStudent.as_view()),
-    path('deleteStudentPracticeQuestion/', views.DeleteStudentPracticeQuestion.as_view())
+    path('deleteStudentPracticeQuestion/', views.DeleteStudentPracticeQuestion.as_view()),
+    path('updatePracticeProgress/', views.UpdatePracticeProgress.as_view()),
+    path('getPracticeProgress/', views.GetPracticeProgress.as_view())
 
 ]

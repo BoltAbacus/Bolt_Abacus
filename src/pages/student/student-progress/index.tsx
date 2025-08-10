@@ -12,6 +12,7 @@ import { getProgressRequest } from '@services/student';
 import {
   GetStudentProgressResponse,
   LevelProgress,
+  PracticeStats,
 } from '@interfaces/apis/teacher';
 import { StudentProgressPageParams } from '@interfaces/RouteParams';
 
@@ -35,6 +36,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
 
   const [studentProgress, setStudentProgress] = useState<LevelProgress[]>();
   const [batchName, setBatchName] = useState<string>();
+  const [practiceStats, setPracticeStats] = useState<PracticeStats>();
 
   useEffect(() => {
     const getStudentProgressData = async () => {
@@ -47,6 +49,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
 
             setStudentProgress(getStudentProgressResponse.levels);
             setBatchName(getStudentProgressResponse.batchName);
+            setPracticeStats(getStudentProgressResponse.practiceStats);
           }
         } catch (error) {
           if (isAxiosError(error)) {
@@ -98,6 +101,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
               <StudentProgressSection
                 batchName={batchName!}
                 progress={studentProgress!}
+                practiceStats={practiceStats}
               />
             </>
           )}

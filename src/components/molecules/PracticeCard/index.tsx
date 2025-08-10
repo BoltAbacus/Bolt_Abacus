@@ -42,23 +42,23 @@ const PracticeCard: FC<PracticeCardProps> = ({
   return (
     <Link
       to={link}
-      className={`group tablet:gap-6 flex flex-col justify-center items-center gap-4 bg-white/80 backdrop-blur-xl p-6 rounded-2xl w-full text-gray-800 transition-all duration-500 hover:transform hover:scale-105 hover:shadow-2xl border ${getColorClasses(color)}`}
+      className={`group tablet:gap-6 flex flex-col justify-center items-center gap-4 bg-black/80 backdrop-blur-xl p-6 rounded-2xl w-full text-white transition-all duration-500 hover:transform hover:scale-105 hover:shadow-2xl border ${getColorClasses(color)}`}
     >
       <div className="relative">
         <img
           src={image}
           alt={title}
-          className="tablet:h-40 h-32 object-cover text-center rounded-xl group-hover:scale-110 transition-transform duration-300"
+          className="tablet:h-40 h-32 object-cover text-center rounded-xl group-hover:scale-110 transition-transform duration-300 filter brightness-0 invert"
         />
         {/* Overlay effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
-      <h2 className="font-bold text-gray-800 text-lg tablet:text-xl text-center group-hover:text-gray-900 transition-colors duration-300">{title}</h2>
-      <p className="tablet:text-md flex-1 w-full text-gray-600 text-sm text-center leading-relaxed group-hover:text-gray-700 transition-colors duration-300">
+      <h2 className="font-bold text-white text-lg tablet:text-xl text-center group-hover:text-gold transition-colors duration-300">{title}</h2>
+      <p className="tablet:text-md flex-1 w-full text-white/80 text-sm text-center leading-relaxed group-hover:text-white transition-colors duration-300">
         {description}
       </p>
       <div className="w-full mt-4">
-        <div className="bg-gradient-to-r from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 text-gray-700 group-hover:text-gray-800 font-semibold py-2 px-4 rounded-xl text-center transition-all duration-300 transform group-hover:scale-105">
+        <div className="bg-gradient-to-r from-gold to-lightGold group-hover:from-lightGold group-hover:to-gold text-black font-semibold py-2 px-4 rounded-xl text-center transition-all duration-300 transform group-hover:scale-105">
           Start Practice
         </div>
       </div>

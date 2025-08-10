@@ -155,11 +155,21 @@ export const useGamification = () => {
       };
     }
     
+    // Previously returned a mid-milestone. We now skip the 50% CTA and move to the next objective.
+    if (progressStats.overallProgress < 75) {
+      return {
+        title: 'Reach 75%',
+        description: 'Push to 75% completion for a major milestone!',
+        progress: progressStats.overallProgress,
+        target: '75% Completion',
+      };
+    }
+
     return {
-      title: 'Reach 50%',
-      description: 'Complete half of your levels to unlock new achievements!',
+      title: 'Complete the Journey',
+      description: 'You are close! Finish the remaining progress to complete your journey.',
       progress: progressStats.overallProgress,
-      target: '50% Completion',
+      target: '100% Completion',
     };
   };
 

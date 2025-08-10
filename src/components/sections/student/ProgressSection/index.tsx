@@ -1,28 +1,38 @@
-import { FC, useMemo, useEffect } from 'react';
+import { FC, useMemo, useEffect, useState } from 'react';
 import { FaTrophy, FaStar, FaMedal, FaCrown, FaFire, FaRocket } from 'react-icons/fa';
 import { BiTargetLock } from 'react-icons/bi';
+import { useNavigate } from 'react-router-dom';
 
-import { LevelProgress } from '@interfaces/apis/teacher';
+import { LevelProgress, PracticeStats } from '@interfaces/apis/teacher';
 import LevelProgressAccordion from '@components/organisms/LevelProgressAccordion';
 import StreakCard from '@components/atoms/StreakCard';
 import CoinsDisplay from '@components/atoms/CoinsDisplay';
 import ProgressBar from '@components/atoms/ProgressBar';
-import ProgressChart from '@components/atoms/ProgressChart';
+import LineChart from '@components/atoms/LineChart';
 import AchievementNotification from '@components/atoms/AchievementNotification';
 import { useGamification } from '@helpers/gamification';
+import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
+import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
+import AchievementsModal from '@components/organisms/AchievementsModal';
+import { ACHIEVEMENTS } from '@constants/achievements';
+import { STUDENT_ROADMAP } from '@constants/routes';
 
 import styles from './index.module.css';
 
 export interface StudentProgressSectionProps {
   batchName: string;
   progress: LevelProgress[];
+  practiceStats?: PracticeStats;
 }
 
 const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   batchName,
   progress,
+  practiceStats,
 }) => {
-  const { calculateProgressStats, checkAndUnlockAchievements, getMotivationalMessage, getNextGoal } = useGamification();
+  const navigate = useNavigate();
+  const { calculateProgressStats, checkAndUnlockAchievements, getMotivationalMessage } = useGamification();
+  const [showAchievements, setShowAchievements] = useState(false);
 
   // Calculate overall progress statistics
   const progressStats = useMemo(() => {
@@ -107,22 +117,6 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
     return achievements;
   }, [progressStats]);
 
-  // Get next goal and motivational message
-  const nextGoal = useMemo(() => {
-    const goal = getNextGoal(progressStats);
-    const iconMap = {
-      'Master Achieved!': FaCrown,
-      'Complete the Journey': FaRocket,
-      'Reach 75%': BiTargetLock,
-      'Reach 50%': FaStar,
-    };
-    
-    return {
-      ...goal,
-      icon: iconMap[goal.title as keyof typeof iconMap] || FaStar,
-    };
-  }, [progressStats, getNextGoal]);
-
   const motivationalMessage = useMemo(() => {
     return getMotivationalMessage(progressStats);
   }, [progressStats, getMotivationalMessage]);
@@ -147,7 +141,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         </div>
       </div>
 
-      {/* Progress Overview Dashboard */}
+      {/* Progress Overview Dashboard (moved to top) */}
       <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
         <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
           <div className="flex items-center gap-3 mb-3">
@@ -202,26 +196,38 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         </div>
       </div>
 
+      {/* Weekly Goals */}
+      <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <WeeklyGoalsSection 
+          sessionsCompleted={practiceStats?.recentSessions || 0}
+          sessionsTotal={5}
+          practiceMinutes={Math.floor((practiceStats?.totalPracticeTime || 0) / 60)}
+          practiceTargetMinutes={240}
+          problemsSolved={practiceStats?.totalProblemsSolved || 0}
+          problemsTarget={300}
+        />
+      </div>
+
+      {/* Pinned Achievements (compact) + modal trigger */}
+      <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <AchievementsSection
+          compact
+          items={ACHIEVEMENTS.slice(0, 6)}
+          onViewAll={() => setShowAchievements(true)}
+        />
+      </div>
+
       {/* Motivational Message */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 rounded-lg border border-blue-500/30">
+      <div 
+        className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 rounded-lg border border-blue-500/30 cursor-pointer hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300"
+        onClick={() => navigate(STUDENT_ROADMAP)}
+      >
         <div className="text-center">
           <p className="text-lg text-white font-medium">{motivationalMessage}</p>
         </div>
       </div>
 
-      {/* Next Goal Card */}
-      <div className="bg-gradient-to-r from-[#1b1b1b] to-[#2a2a2a] p-6 rounded-lg border border-lightGold">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-gold to-yellow-500 rounded-full flex items-center justify-center">
-            <nextGoal.icon className="text-white text-xl" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">{nextGoal.title}</h3>
-            <p className="text-gray-300">{nextGoal.description}</p>
-          </div>
-        </div>
-        <ProgressBar percentage={nextGoal.progress} type="yellow" />
-      </div>
+      
 
       {/* Achievements Section */}
       {achievements.length > 0 && (
@@ -243,8 +249,58 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         </div>
       )}
 
-      {/* Progress Chart */}
-      <ProgressChart progress={progress} />
+      {/* Trend Cards (line charts) */}
+      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
+        {/* Accuracy Trend */}
+        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gold">Accuracy Trend</h3>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-green-400">92%</div>
+              <div className="text-xs text-gray-400">Current Accuracy</div>
+            </div>
+          </div>
+          <LineChart
+            data={[70, 78, 86, 94, 100]}
+            labels={["7d ago", "", "", "", "Today"]}
+            stroke="#f59e0b"
+            fill="rgba(245,158,11,0.12)"
+            yTicks={[70, 78, 86, 94, 100]}
+            valueFormatter={(v) => `${v}% Accuracy`}
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>7d ago</span>
+            <span>Today</span>
+          </div>
+          <div className="mt-3 text-sm text-green-300 font-semibold">Weekly Progress <span className="text-white">+14%</span> this week</div>
+        </div>
+
+        {/* Speed Trend */}
+        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gold">Speed Trend</h3>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-blue-400">65</div>
+              <div className="text-xs text-gray-400">Problems/Minute</div>
+            </div>
+          </div>
+          <LineChart
+            data={[40, 48, 56, 64, 70]}
+            labels={["7d ago", "", "", "", "Today"]}
+            stroke="#f59e0b"
+            fill="rgba(245,158,11,0.12)"
+            yTicks={[40, 48, 56, 64, 70]}
+            valueFormatter={(v) => `${v}`}
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>7d ago</span>
+            <span>Today</span>
+          </div>
+          <div className="mt-3 text-sm text-blue-300 font-semibold">Weekly Progress <span className="text-white">+20</span> this week</div>
+        </div>
+      </div>
+
+      
 
       {/* Detailed Progress */}
       <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
@@ -257,6 +313,11 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
           ))}
         </div>
       </div>
+      <AchievementsModal
+        isOpen={showAchievements}
+        onClose={() => setShowAchievements(false)}
+        achievements={ACHIEVEMENTS}
+      />
     </div>
   );
 };

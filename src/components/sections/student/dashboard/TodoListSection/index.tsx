@@ -35,11 +35,11 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
           onChange={(e) => setNewTodo(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Add a new task..."
-          className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+          className="flex-1 bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-white/5 focus:outline-none focus:border-gold/70 backdrop-blur-sm transition-colors"
         />
         <button
           onClick={handleAddTodo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors"
+          className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors"
         >
           <AiOutlinePlus size={16} />
         </button>
@@ -48,19 +48,19 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
       {/* Todo list */}
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {todos.map((todo) => (
-          <div key={todo.id} className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-lg">
+          <div key={todo.id} className="flex items-center space-x-3 p-2 bg-[#080808]/50 hover:bg-[#191919] rounded-lg border border-gold/20 ring-1 ring-white/5 backdrop-blur-sm transition-colors">
             <input
               type="checkbox"
               checked={todo.completed}
               onChange={() => toggleTodo(todo.id)}
-              className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-gold bg-[#080808] border-gold/40 rounded focus:ring-gold/50"
             />
             <span className={`flex-1 text-sm ${todo.completed ? 'line-through text-gray-400' : 'text-gray-200'}`}>
               {todo.text}
             </span>
             <button
               onClick={() => deleteTodo(todo.id)}
-              className="text-red-400 hover:text-red-300 transition-colors"
+              className="text-red hover:text-red/80 transition-colors"
             >
               <AiOutlineDelete size={14} />
             </button>
@@ -69,7 +69,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
       </div>
       
       {/* Summary */}
-      <div className="mt-4 pt-4 border-t border-gray-700">
+      <div className="mt-4 pt-4 border-t border-gold/20">
         <p className="text-sm text-gray-400">
           {getCompletedCount()} of {getTotalCount()} tasks completed
         </p>

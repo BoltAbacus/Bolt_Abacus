@@ -34,7 +34,7 @@ const AchievementNotification: FC<AchievementNotificationProps> = ({ className =
     }
     
     setUnlockedAchievements(newUnlockedIds);
-  }, [getUnlockedAchievements, unlockedAchievements]);
+  }, [getUnlockedAchievements]);
 
   const getIcon = (iconName: string) => {
     const iconMap: { [key: string]: any } = {

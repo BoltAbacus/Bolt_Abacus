@@ -60,6 +60,9 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
   const [includeSubtraction, setIncludeSubtraction] = useState(false);
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
   const [includeDecimals, setIncludeDecimals] = useState(true);
+  const [audioMode, setAudioMode] = useState(false);
+  const [audioPace, setAudioPace] = useState('normal');
+  const [showQuestion, setShowQuestion] = useState(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState('');
@@ -222,6 +225,12 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
           setPersistNumberOfDigits={setPersistNumberOfDigits}
           includeDecimals={includeDecimals}
           setIncludeDecimals={setIncludeDecimals}
+          audioMode={audioMode}
+          setAudioMode={setAudioMode}
+          audioPace={audioPace}
+          setAudioPace={setAudioPace}
+          showQuestion={showQuestion}
+          setShowQuestion={setShowQuestion}
           handleStartQuiz={handleStartQuiz}
         />
       ) : (
@@ -270,6 +279,10 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
                       setAnswer={setCurrentAnswer}
                       setDisabled={setIsNextDisabled}
                       submitAnswer={answerQuestion}
+                      audioMode={audioMode}
+                      audioPace={audioPace}
+                      showQuestion={showQuestion}
+                      setShowQuestion={setShowQuestion}
                     />
                   </div>
                   <div className="tablet:gap-12 flex justify-center items-center gap-4 pt-4">

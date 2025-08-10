@@ -1,5 +1,4 @@
 import { FC, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
@@ -15,7 +14,6 @@ export interface StudentPvPPageProps {}
 const StudentPvPPage: FC<StudentPvPPageProps> = () => {
   const authToken = useAuthStore((state) => state.authToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);

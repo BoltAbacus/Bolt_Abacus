@@ -1,4 +1,5 @@
 import { FC, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   AiOutlineMenu, 
@@ -14,6 +15,7 @@ import {
   AiOutlineCalculator,
   AiOutlineTrophy
 } from 'react-icons/ai';
+import AbacusWidget from '@components/organisms/AbacusWidget';
 
 import BrandLogo from '@components/atoms/BrandLogo';
 import ProfileIcon from '@components/atoms/ProfileIcon';
@@ -38,6 +40,7 @@ export interface LeftNavigationProps {
 
 const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showAbacusWidget, setShowAbacusWidget] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -178,20 +181,33 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
-              <li key={item.name}>
-                                 <Link
-                   to={item.href}
-                   className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 ${
-                     isActive(item.href)
-                       ? 'bg-[#facb25] text-[#1a1a1a] shadow-lg'
-                       : 'text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md'
-                   }`}
-                 >
+              <li key={item.name} className="relative">
+                <Link
+                  to={item.href}
+                  className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? 'bg-[#facb25] text-[#1a1a1a] shadow-lg'
+                      : 'text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md'
+                  }`}
+                >
                   <Icon size={20} />
                   {!isCollapsed && (
                     <span className="ml-3 text-sm font-medium">{item.name}</span>
                   )}
                 </Link>
+                {!isCollapsed && item.name === 'Virtual Abacus' && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowAbacusWidget(true);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-gray-700 text-gray-200 bg-[#0f0f0f] hover:bg-[#facb25] hover:text-[#1a1a1a]"
+                    title="Open mini abacus"
+                  >
+                    Mini
+                  </button>
+                )}
               </li>
             );
           })}
@@ -236,6 +252,10 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           </li>
         </ul>
       </div>
+      {showAbacusWidget && createPortal(
+        <AbacusWidget onClose={() => setShowAbacusWidget(false)} />,
+        document.body
+      )}
     </div>
   );
 };

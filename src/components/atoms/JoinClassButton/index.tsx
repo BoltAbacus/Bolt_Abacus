@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AiOutlineVideoCamera } from 'react-icons/ai';
 
 import Button from '@components/atoms/Button';
+import { useGoalsStore } from '@store/goalsStore';
 
 export interface JoinClassButtonProps {
   classLink: string;
@@ -10,13 +11,20 @@ export interface JoinClassButtonProps {
 }
 
 const JoinClassButton: FC<JoinClassButtonProps> = ({ classLink, className = '' }) => {
+  const { markSessionCompleted } = useGoalsStore();
+
+  const handleClick = () => {
+    // Mark a session as completed when the user joins class
+    markSessionCompleted();
+  };
+
   return (
     <div className={className}>
-      <Link to={classLink} target="_blank" className="block">
+      <Link to={classLink} target="_blank" className="block" onClick={handleClick}>
         <Button 
           text="Join Class" 
-          type="blue" 
-          className="flex items-center justify-center space-x-2 w-full h-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
+          type="primary" 
+          className="flex items-center justify-center space-x-2 w-full h-full"
         >
           <div className="flex items-center space-x-2">
             <AiOutlineVideoCamera size={16} />

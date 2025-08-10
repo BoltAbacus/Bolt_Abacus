@@ -1607,10 +1607,14 @@ def getStudentProgress(userId):
             for topics in classes['classes']:
                 topics['topics'] = sorted(topics['topics'], key=lambda x: x[Constants.TOPIC_ID])
 
+        # Get practice statistics
+        practiceStats = getStudentPracticeStatistics(userId)
+        
         return Response({Constants.FIRST_NAME: user.firstName,
                          Constants.LAST_NAME: user.lastName,
                          Constants.BATCH_NAME: batch.batchName,
-                         "levels": levelsProgressData}, status=status.HTTP_200_OK)
+                         "levels": levelsProgressData,
+                         "practiceStats": practiceStats}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2344,28 +2348,49 @@ def getStudentPracticeStatistics(userId):
     try:
         user = UserDetails.objects.filter(userId=userId).first()
         if user is None:
-            return Response({Constants.JSON_MESSAGE: "User doesn't exist."}, status=status.HTTP_404_NOT_FOUND)
+            return None
         if user.role != Constants.STUDENT:
-            return Response({Constants.JSON_MESSAGE: "User is not a Student"}, status=status.HTTP_403_FORBIDDEN)
-        practiceQuestions = PracticeQuestions.objects.filter(user_id=userId).values(
+            return None
+            
+        # Get all practice sessions for the user
+        practiceQuestions = PracticeQuestions.objects.filter(user_id=userId)
+        
+        # Calculate aggregated statistics
+        totalSessions = practiceQuestions.count()
+        totalPracticeTime = sum(pq.totalTime for pq in practiceQuestions if pq.totalTime)
+        totalProblemsSolved = sum(pq.score for pq in practiceQuestions if pq.score)
+        totalQuestionsAttempted = sum(pq.numberOfQuestions for pq in practiceQuestions if pq.numberOfQuestions)
+        
+        # Calculate averages
+        averageTimePerSession = totalPracticeTime / totalSessions if totalSessions > 0 else 0
+        averageProblemsPerSession = totalProblemsSolved / totalSessions if totalSessions > 0 else 0
+        
+        # Get recent practice sessions (last 7 days)
+        from datetime import datetime, timedelta
+        weekAgo = datetime.now() - timedelta(days=7)
+        recentSessions = practiceQuestions.filter(created_at__gte=weekAgo).count()
+        
+        return {
+            "totalSessions": totalSessions,
+            "totalPracticeTime": totalPracticeTime,  # in seconds
+            "totalProblemsSolved": totalProblemsSolved,
+            "totalQuestionsAttempted": totalQuestionsAttempted,
+            "averageTimePerSession": averageTimePerSession,
+            "averageProblemsPerSession": averageProblemsPerSession,
+            "recentSessions": recentSessions,
+            "practiceSessions": list(practiceQuestions.values(
                 Constants.PRACTICE_QUESTION_ID,
                 Constants.PRACTICE_TYPE,
                 Constants.OPERATION,
-                Constants.NUMBER_OF_DIGITS,
-                Constants.NUMBER_OF_QUESTIONS,
-                Constants.NUMBER_OF_ROWS,
-                Constants.ZIG_ZAG,
-                Constants.INCLUDE_SUBTRACTION,
-                Constants.PERSIST_NUMBER_OF_DIGITS,
                 Constants.SCORE,
                 Constants.TOTAL_TIME,
-                Constants.AVERAGE_TIME
-            ) 
-        return Response({"practiceQuestions": practiceQuestions})
-            
+                Constants.AVERAGE_TIME,
+                'created_at'
+            ).order_by('-created_at')[:10])  # Last 10 sessions
+        }
 
     except Exception as e:
-            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return None
 
 def ifPracticeQuestionsAlreadyExists(data, userId):
     practiceQuestions =  PracticeQuestions.objects.filter(
@@ -2386,5 +2411,134 @@ def ifPracticeQuestionsAlreadyExists(data, userId):
     return True
 def temp():
     print()
+
+
+class UpdatePracticeProgress(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                userId = IdExtraction(requestUserToken)
+                if isinstance(userId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=userId).first()
+            if user is None:
+                return Response({Constants.JSON_MESSAGE: "User doesn't exist."}, status=status.HTTP_404_NOT_FOUND)
+            
+            data = request.data
+            practiceType = data.get(Constants.PRACTICE_TYPE, 'flashcards')
+            operation = data.get(Constants.OPERATION, 'addition')
+            currentQuestion = data.get('currentQuestion', 0)
+            totalQuestions = data.get('totalQuestions', 10)
+            correctAnswers = data.get('correctAnswers', 0)
+            incorrectAnswers = data.get('incorrectAnswers', 0)
+            timeElapsed = data.get('timeElapsed', 0)
+            isCompleted = data.get('isCompleted', False)
+            
+            # Calculate progress percentage
+            progressPercentage = (currentQuestion / totalQuestions) * 100 if totalQuestions > 0 else 0
+            accuracyPercentage = (correctAnswers / (correctAnswers + incorrectAnswers)) * 100 if (correctAnswers + incorrectAnswers) > 0 else 0
+            
+            # Create or update practice progress
+            practiceProgress, created = PracticeQuestions.objects.get_or_create(
+                user_id=userId,
+                practiceType=practiceType,
+                operation=operation,
+                defaults={
+                    'numberOfDigits': data.get(Constants.NUMBER_OF_DIGITS, 1),
+                    'numberOfQuestions': totalQuestions,
+                    'numberOfRows': data.get(Constants.NUMBER_OF_ROWS, 1),
+                    'zigZag': data.get(Constants.ZIG_ZAG, False),
+                    'includeSubtraction': data.get(Constants.INCLUDE_SUBTRACTION, False),
+                    'persistNumberOfDigits': data.get(Constants.PERSIST_NUMBER_OF_DIGITS, False),
+                    'score': correctAnswers,
+                    'totalTime': timeElapsed,
+                    'averageTime': timeElapsed / currentQuestion if currentQuestion > 0 else 0
+                }
+            )
+            
+            if not created:
+                # Update existing progress
+                practiceProgress.score = correctAnswers
+                practiceProgress.totalTime = timeElapsed
+                practiceProgress.averageTime = timeElapsed / currentQuestion if currentQuestion > 0 else practiceProgress.averageTime
+                practiceProgress.save()
+            
+            return Response({
+                'message': 'Progress updated successfully',
+                'progress': {
+                    'currentQuestion': currentQuestion,
+                    'totalQuestions': totalQuestions,
+                    'progressPercentage': progressPercentage,
+                    'correctAnswers': correctAnswers,
+                    'incorrectAnswers': incorrectAnswers,
+                    'accuracyPercentage': accuracyPercentage,
+                    'timeElapsed': timeElapsed,
+                    'isCompleted': isCompleted
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetPracticeProgress(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                userId = IdExtraction(requestUserToken)
+                if isinstance(userId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=userId).first()
+            if user is None:
+                return Response({Constants.JSON_MESSAGE: "User doesn't exist."}, status=status.HTTP_404_NOT_FOUND)
+            
+            data = request.data
+            practiceType = data.get(Constants.PRACTICE_TYPE, 'flashcards')
+            operation = data.get(Constants.OPERATION, 'addition')
+            
+            # Get the most recent practice session for this type and operation
+            practiceProgress = PracticeQuestions.objects.filter(
+                user_id=userId,
+                practiceType=practiceType,
+                operation=operation
+            ).order_by('-practiceQuestionId').first()
+            
+            if practiceProgress:
+                return Response({
+                    'practiceProgress': {
+                        'practiceQuestionId': practiceProgress.practiceQuestionId,
+                        'practiceType': practiceProgress.practiceType,
+                        'operation': practiceProgress.operation,
+                        'score': practiceProgress.score,
+                        'totalTime': practiceProgress.totalTime,
+                        'averageTime': practiceProgress.averageTime,
+                        'numberOfQuestions': practiceProgress.numberOfQuestions,
+                        'numberOfDigits': practiceProgress.numberOfDigits,
+                        'numberOfRows': practiceProgress.numberOfRows,
+                        'zigZag': practiceProgress.zigZag,
+                        'includeSubtraction': practiceProgress.includeSubtraction,
+                        'persistNumberOfDigits': practiceProgress.persistNumberOfDigits
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'practiceProgress': None
+                }, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # Create your views here.
