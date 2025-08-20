@@ -54,6 +54,7 @@ import AdminViewQuizPage from '@pages/admin/view-quiz';
 import AdminAddOrganizationPage from '@pages/admin/add-organization';
 import AdminViewOrganizationPage from '@pages/admin/view-organization';
 import AdminEditOrganizationPage from '@pages/admin/edit-organization';
+import AdminLeaderboardPage from '@pages/admin/leaderboard';
 
 import SubAdminDashboardPage from '@pages/sub-admin/dashboard';
 import SubAdminAddBatchPage from '@pages/sub-admin/add-batch';
@@ -68,6 +69,7 @@ import SubAdminBatchViewStudentsPage from '@pages/sub-admin/batch-all-students';
 import SubAdminEditBatchPage from '@pages/sub-admin/edit-batch';
 import SubAdminUpdateStudentBatchPage from '@pages/sub-admin/update-student-batch';
 import SubAdminUpdateBatchTeacherPage from '@pages/sub-admin/update-batch-teacher';
+import SubAdminLeaderboardPage from '@pages/sub-admin/leaderboard';
 
 import TeacherDashboardPage from '@pages/teacher/dashboard';
 import TeacherUpdateLinkPage from '@pages/teacher/update-link';
@@ -76,6 +78,7 @@ import TeacherSearchStudentsPage from '@pages/teacher/search-students';
 import TeacherStudentProgressPage from '@pages/teacher/student-progress';
 import TeacherViewStudentsPage from '@pages/teacher/students';
 import TeacherOralTestPage from '@pages/teacher/oral-test';
+import TeacherLeaderboardPage from '@pages/teacher/leaderboard';
 
 export const router = createBrowserRouter([
   {
@@ -322,6 +325,10 @@ export const router = createBrowserRouter([
             element: <AdminEditQuestionPage />,
           },
           {
+            path: 'leaderboard',
+            element: <AdminLeaderboardPage />,
+          },
+          {
             path: '*',
             element: (
               <Custom404Page
@@ -401,6 +408,10 @@ export const router = createBrowserRouter([
             element: <SubAdminUpdateBatchTeacherPage />,
           },
           {
+            path: 'leaderboard',
+            element: <SubAdminLeaderboardPage />,
+          },
+          {
             path: '*',
             element: (
               <Custom404Page
@@ -458,6 +469,10 @@ export const router = createBrowserRouter([
           {
             path: 'students/:batchId',
             element: <TeacherViewStudentsPage />,
+          },
+          {
+            path: 'leaderboard',
+            element: <TeacherLeaderboardPage />,
           },
         ],
       },

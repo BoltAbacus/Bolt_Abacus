@@ -4,19 +4,19 @@ export interface WeeklyStatsSectionProps {
   className?: string;
   sessions?: number;
   accuracy?: number;
-  timeSpent?: number;
+  timeSpent?: string;
 }
 
-const WeeklyStatsSection: FC<WeeklyStatsSectionProps> = ({ 
-  className = '', 
-  sessions = 0, 
-  accuracy = 0, 
-  timeSpent = 0 
+const WeeklyStatsSection: FC<WeeklyStatsSectionProps> = ({
+  className = '',
+  sessions = 0,
+  accuracy = 0,
+  timeSpent = '0h 0m',
 }) => {
   const stats = [
     { label: 'Sessions', value: sessions.toString(), icon: '📊' },
     { label: 'Accuracy', value: `${accuracy}%`, icon: '🎯' },
-    { label: 'Time Spent', value: `${timeSpent}h 0m`, icon: '⏱️' },
+    { label: 'Time Spent', value: timeSpent, icon: '⏱️' },
   ];
 
   return (

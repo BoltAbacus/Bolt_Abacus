@@ -46,6 +46,7 @@ export const ADMIN_EDIT_ORGANIZATION = `${ADMIN_ROUTE}/edit/organization`;
 export const ADMIN_BULK_ADD_QUESTION = `${ADMIN_ROUTE}/add/question/bulk`;
 export const ADMIN_EDIT_QUESTION = `${ADMIN_ROUTE}/edit/question`;
 export const ADMIN_VIEW_QUIZ = `${ADMIN_ROUTE}/view/quiz`;
+export const ADMIN_LEADERBOARD = `${ADMIN_ROUTE}/leaderboard`;
 
 export const SUB_ADMIN_ROUTE = '/sub-admin';
 export const SUB_ADMIN_DASHBOARD = `${SUB_ADMIN_ROUTE}/dashboard`;
@@ -62,6 +63,7 @@ export const SUB_ADMIN_EDIT_BATCH = `${SUB_ADMIN_ROUTE}/edit/batch`;
 export const SUB_ADMIN_BATCH_STUDENTS = `${SUB_ADMIN_ROUTE}/batch/students`;
 export const SUB_ADMIN_STUDENT_MOVE_BATCH = `${SUB_ADMIN_ROUTE}/student/update-batch`;
 export const SUB_ADMIN_UPDATE_BATCH_TEACHER = `${SUB_ADMIN_ROUTE}/batch/update-teacher`;
+export const SUB_ADMIN_LEADERBOARD = `${SUB_ADMIN_ROUTE}/leaderboard`;
 
 export const TEACHER_ROUTE = '/teacher';
 export const TEACHER_DASHBOARD = `${TEACHER_ROUTE}/dashboard`;
@@ -71,6 +73,7 @@ export const TEACHER_STUDENT_PROGRESS = `${TEACHER_ROUTE}/student-progress`;
 export const TEACHER_SEARCH_STUDENTS = `${TEACHER_ROUTE}/search/student`;
 export const TEACHER_STUDENTS = `${TEACHER_ROUTE}/students`;
 export const TEACHER_ORAL_TEST = `${TEACHER_ROUTE}/oral-test`;
+export const TEACHER_LEADERBOARD = `${TEACHER_ROUTE}/leaderboard`;
 
 // Backend Endpoints
 export const LOGIN_ENDPOINT = '/login/';

@@ -47,33 +47,36 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    let isMounted = true;
     const getDashboardData = async () => {
       if (isAuthenticated) {
         try {
           const res = await dashboardRequestV2(authToken!);
           if (res.status === 200) {
             const dashboardResponse: DashboardResponseV2 = res.data;
+            if (!isMounted) return;
             setCurrentLevel(dashboardResponse.levelId);
             setClassLink(dashboardResponse.latestLink);
             setApiError(null);
             setProgress(dashboardResponse.levelsPercentage);
-            
             // Fetch practice data
             try {
               const practiceRes = await getPracticeProgressRequest('flashcards', 'addition', authToken!);
               if (practiceRes.status === 200) {
                 const practiceData = practiceRes.data.practiceProgress;
+                if (!isMounted) return;
                 setDashboardData({
                   ...dashboardResponse,
                   practiceStats: practiceData ? {
-                    totalSessions: 1,
+                    totalSessions: practiceData.totalSessions || 0,
                     totalPracticeTime: practiceData.totalTime || 0,
-                    totalProblemsSolved: practiceData.score || 0,
-                    totalQuestionsAttempted: practiceData.numberOfQuestions || 0,
-                    averageTimePerSession: practiceData.averageTime || 0,
-                    averageProblemsPerSession: practiceData.score || 0,
-                    recentSessions: 1,
-                    practiceSessions: [practiceData]
+                    totalProblemsSolved: practiceData.totalProblemsSolved || 0,
+                    totalQuestionsAttempted: practiceData.totalQuestionsAttempted || 0,
+                    averageTimePerSession: practiceData.averageTimePerSession || 0,
+                    averageProblemsPerSession: practiceData.averageProblemsPerSession || 0,
+                    recentSessions: practiceData.recentSessions || 0,
+                    practiceSessions: practiceData.practiceSessions || []
                   } : null
                 });
               } else {
@@ -82,10 +85,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
             } catch (practiceError) {
               setDashboardData(dashboardResponse);
             }
-            
             // Only increment streak if this is the first visit today
             incrementStreak();
-            
             // Add some coins for daily login (you can adjust this logic)
             addCoins(10);
           }
@@ -117,7 +118,12 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       }
     };
     getDashboardData();
-  }, [authToken, isAuthenticated]);
+    intervalId = setInterval(getDashboardData, 10000); // Poll every 10 seconds
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [authToken, isAuthenticated, incrementStreak, addCoins]);
 
   return (
     <div className="min-h-screen">
@@ -273,11 +279,19 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"></div>
                     
                                            <div className="relative z-10">
-                         <WeeklyStatsSection 
-                           sessions={dashboardData?.practiceStats?.recentSessions || 0}
-                           accuracy={dashboardData?.practiceStats?.totalProblemsSolved > 0 ? 
-                             Math.round((dashboardData?.practiceStats?.totalProblemsSolved / dashboardData?.practiceStats?.totalQuestionsAttempted) * 100) : 0}
-                           timeSpent={Math.floor((dashboardData?.practiceStats?.totalPracticeTime || 0) / 3600)}
+                         <WeeklyStatsSection
+                           sessions={dashboardData?.practiceStats?.totalSessions || 0}
+                           accuracy={
+                             dashboardData?.practiceStats?.totalQuestionsAttempted > 0
+                               ? Math.round((dashboardData.practiceStats.totalProblemsSolved / dashboardData.practiceStats.totalQuestionsAttempted) * 100)
+                               : 0
+                           }
+                           timeSpent={(() => {
+                             const totalSeconds = dashboardData?.practiceStats?.totalPracticeTime || 0;
+                             const hours = Math.floor(totalSeconds / 3600);
+                             const minutes = Math.floor((totalSeconds % 3600) / 60);
+                             return `${hours}h ${minutes}m`;
+                           })()}
                          />
                        </div>
                   </div>

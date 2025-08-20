@@ -6,6 +6,7 @@ import {
 } from 'react-icons/md';
 
 import InfoCard from '@components/molecules/InfoCard';
+import ScrollAnimation from '@components/atoms/ScrollAnimation';
 
 import {
   aboutUsDescription,
@@ -17,28 +18,36 @@ export interface InfoSectionProps {}
 
 const InfoSection: FC<InfoSectionProps> = () => {
   return (
-    <div id="about" className="p-12 tablet:p-10 desktop:py-12 desktop:px-24">
-      <div className="grid grid-cols-1 gap-12 py-16 mx-auto tablet:grid-cols-3 tablet:gap-6 desktop:grid-cols-3 desktop:gap-16">
-        <InfoCard
-          type="primary"
-          icon={<MdOutlineAccountCircle />}
-          title="About Us"
-          description={aboutUsDescription}
-        />
-        <InfoCard
-          type="secondary"
-          icon={<MdOutlineVisibility />}
-          title="Our Innovation"
-          description={ourInnovationDescription}
-        />
-        <InfoCard
-          type="primary"
-          icon={<MdOutlineCelebration />}
-          title="Learn with fun"
-          description={learnWithFunDescription}
-        />
+    <ScrollAnimation direction="up" delay={50}>
+      <div id="about" className="p-12 tablet:p-10 desktop:py-12 desktop:px-24">
+        <div className="grid grid-cols-1 gap-12 py-16 mx-auto tablet:grid-cols-3 tablet:gap-6 desktop:grid-cols-3 desktop:gap-16">
+          <ScrollAnimation direction="up" delay={100}>
+            <InfoCard
+              type="primary"
+              icon={<MdOutlineAccountCircle />}
+              title="About Us"
+              description={aboutUsDescription}
+            />
+          </ScrollAnimation>
+          <ScrollAnimation direction="up" delay={150}>
+            <InfoCard
+              type="secondary"
+              icon={<MdOutlineVisibility />}
+              title="Our Innovation"
+              description={ourInnovationDescription}
+            />
+          </ScrollAnimation>
+          <ScrollAnimation direction="up" delay={200}>
+            <InfoCard
+              type="primary"
+              icon={<MdOutlineCelebration />}
+              title="Learn with fun"
+              description={learnWithFunDescription}
+            />
+          </ScrollAnimation>
+        </div>
       </div>
-    </div>
+    </ScrollAnimation>
   );
 };
 

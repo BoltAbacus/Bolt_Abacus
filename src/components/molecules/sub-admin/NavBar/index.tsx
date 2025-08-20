@@ -11,6 +11,7 @@ import {
   LOGIN_PAGE,
   PROFILE_PAGE,
   SUB_ADMIN_DASHBOARD,
+  SUB_ADMIN_LEADERBOARD,
 } from '@constants/routes';
 
 export interface SubAdminNavBarProps {}
@@ -35,6 +36,9 @@ const SubAdminNavBar: FC<SubAdminNavBarProps> = () => {
               <>
                 <NavBarLink type="desktop" href={SUB_ADMIN_DASHBOARD}>
                   Dashboard
+                </NavBarLink>
+                <NavBarLink type="desktop" href={SUB_ADMIN_LEADERBOARD}>
+                  Students Leaderboard
                 </NavBarLink>
                 <NavBarLink type="desktop" href={LOGIN_PAGE} onclick={logout}>
                   Log out
@@ -83,6 +87,9 @@ const SubAdminNavBar: FC<SubAdminNavBarProps> = () => {
                 <>
                   <NavBarLink type="mobile" href={SUB_ADMIN_DASHBOARD}>
                     Dashboard
+                  </NavBarLink>
+                  <NavBarLink type="mobile" href={SUB_ADMIN_LEADERBOARD}>
+                    Students Leaderboard
                   </NavBarLink>
                   <NavBarLink type="mobile" href={LOGIN_PAGE} onclick={logout}>
                     Log out

@@ -29,6 +29,10 @@ class UserDetails(models.Model):
     created_date = models.DateField()
     blocked = models.BooleanField()
     blockedTimestamp = models.DateField(default=datetime.today)
+    last_login_date = models.DateField(null=True, blank=True)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    xp = models.IntegerField(default=0)
     tag = models.ForeignKey(OrganizationTag, to_field="tagId", null=True, on_delete=models.CASCADE, default=1)
 
 
@@ -102,4 +106,5 @@ class PracticeQuestions(models.Model):
     score = models.IntegerField(default=0)
     totalTime = models.FloatField(default=0)
     averageTime = models.FloatField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 # Create your models here.

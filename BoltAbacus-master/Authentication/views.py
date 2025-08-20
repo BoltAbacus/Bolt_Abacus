@@ -15,6 +15,7 @@ from Authentication.models import (UserDetails, Student,
                                    TopicDetails, QuizQuestions,
                                    Progress, Teacher, OrganizationTag,
                                    PracticeQuestions)
+from django.db.models import F
 
 
 # ------------ Student Related APIs -----------------------
@@ -61,6 +62,22 @@ class SignIn(APIView):
                 },
                     status=status.HTTP_200_OK
                 )
+                # --- Streak Logic ---
+                from datetime import date, timedelta
+                user_obj = UserDetails.objects.get(userId=user[Constants.USER_ID])
+                today = date.today()
+                last_login = user_obj.last_login_date
+                if last_login == today:
+                    pass  # Already logged in today
+                elif last_login == today - timedelta(days=1):
+                    user_obj.current_streak += 1
+                else:
+                    user_obj.current_streak = 1
+                user_obj.last_login_date = today
+                if user_obj.current_streak > user_obj.longest_streak:
+                    user_obj.longest_streak = user_obj.current_streak
+                user_obj.save()
+                # --- End Streak Logic ---
                 return response
             else:
                 return Response({Constants.JSON_MESSAGE: "Invalid Password. Try Again"},
@@ -116,26 +133,49 @@ class CurrentLevelsV2(APIView):
             latestLink = userBatch.latestLink
             latestClass = userBatchDetails.latestClassId
             levelsPercentage = {}
-            for level in range(1,latestLevel+1):
+            levelsCompleted = 0
+            totalScore = 0
+            totalClasses = 0
+            totalTopics = 0
+            for level in range(1, latestLevel + 1):
                 latestClassId = 12
                 topicCount = 0
                 numberOfTopicsPassed = 0
+                levelScore = 0
+                levelClasses = 0
                 for currentClassId in range(1, latestClassId + 1):
-                        curriculumDetails = Curriculum.objects.filter(levelId=level, classId=currentClassId)
-                        if latestLevel > level or (latestClass >= currentClassId and level == latestLevel):
-                            for quiz in curriculumDetails:
-                                topicCount += 1
-                                quizId = quiz.quizId
-                                progress = Progress.objects.filter(quiz_id=quizId, user_id=requestUserId).first()
-                                if progress.quizPass:
-                                    numberOfTopicsPassed += 1
-                        else:
-                            topicCount+=len(curriculumDetails)
-                levelsPercentage.update({level: (int((numberOfTopicsPassed / topicCount) * 100))}) 
-            return Response({"levelsPercentage": levelsPercentage,
-                             Constants.LEVEL_ID: latestLevel, 
-                             Constants.LATEST_CLASS: latestClass,
-                             Constants.LATEST_LINK: latestLink}, status=status.HTTP_200_OK)
+                    curriculumDetails = Curriculum.objects.filter(levelId=level, classId=currentClassId)
+                    if latestLevel > level or (latestClass >= currentClassId and level == latestLevel):
+                        classPassed = False
+                        for quiz in curriculumDetails:
+                            topicCount += 1
+                            quizId = quiz.quizId
+                            progress = Progress.objects.filter(quiz_id=quizId, user_id=requestUserId).first()
+                            if progress and progress.quizPass:
+                                numberOfTopicsPassed += 1
+                                levelScore += progress.score
+                                classPassed = True
+                        if classPassed:
+                            levelClasses += 1
+                    else:
+                        topicCount += len(curriculumDetails)
+                percent = (numberOfTopicsPassed / topicCount) if topicCount > 0 else 0
+                levelsPercentage.update({level: percent})
+                if percent >= 1:
+                    levelsCompleted += 1
+                totalClasses += levelClasses
+                totalTopics += topicCount
+                totalScore += levelScore
+            averageScore = (totalScore / totalTopics) if totalTopics > 0 else 0
+            return Response({
+                "levelsPercentage": levelsPercentage,
+                "levelsCompleted": levelsCompleted,
+                "averageScore": averageScore,
+                "classesCompleted": totalClasses,
+                Constants.LEVEL_ID: latestLevel,
+                Constants.LATEST_CLASS: latestClass,
+                Constants.LATEST_LINK: latestLink
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -2274,6 +2314,12 @@ class SubmitPracticeQuestions(APIView):
                     totalTime = totalTime,
                     averageTime = averageTime
                 )
+                # --- XP Award Logic for Practice ---
+                streak = user.current_streak if hasattr(user, 'current_streak') else 0
+                xp_award = (streak ** 2) + (score or 0)
+                user.xp += xp_award
+                user.save()
+                # --- End XP Award Logic ---
                 return Response({Constants.JSON_MESSAGE: "Practice Attempt stored Successfully"}, status=status.HTTP_200_OK)
             return Response({Constants.JSON_MESSAGE: "Practice Attempt already stored"}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
@@ -2542,3 +2588,23 @@ class GetPracticeProgress(APIView):
 
 
 # Create your views here.
+
+class Leaderboard(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # Get top 20 students by XP
+        students = UserDetails.objects.filter(role=Constants.STUDENT).order_by('-xp')[:20]
+        leaderboard = []
+        for idx, student in enumerate(students, start=1):
+            # Get latest level and streak from Student model
+            student_profile = Student.objects.filter(user=student).first()
+            leaderboard.append({
+                'rank': idx,
+                'name': f"{student.firstName} {student.lastName}",
+                'xp': student.xp,
+                'level': student_profile.latestLevelId if student_profile else 1,
+                'streak': student.current_streak,
+                'userId': student.userId,
+            })
+        return Response({'leaderboard': leaderboard}, status=status.HTTP_200_OK)

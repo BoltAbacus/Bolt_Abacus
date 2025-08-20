@@ -13,6 +13,7 @@ import {
   ADMIN_ADD_TEACHER,
   ADMIN_DASHBOARD,
   ADMIN_VIEW_QUIZ,
+  ADMIN_LEADERBOARD,
   HOME_PAGE,
   LOGIN_PAGE,
 } from '@constants/routes';
@@ -40,6 +41,9 @@ const AdminNavBar: FC<AdminNavBarProps> = () => {
               <>
                 <NavBarLink type="desktop" href={ADMIN_DASHBOARD}>
                   Dashboard
+                </NavBarLink>
+                <NavBarLink type="desktop" href={ADMIN_LEADERBOARD}>
+                  Students Leaderboard
                 </NavBarLink>
                 <NavBarLink type="desktop" href={LOGIN_PAGE} onclick={logout}>
                   <Button type="secondary" text="Logout" />
@@ -83,6 +87,9 @@ const AdminNavBar: FC<AdminNavBarProps> = () => {
                 <>
                   <NavBarLink type="mobile" href={ADMIN_DASHBOARD}>
                     Dashboard
+                  </NavBarLink>
+                  <NavBarLink type="mobile" href={ADMIN_LEADERBOARD}>
+                    Students Leaderboard
                   </NavBarLink>
                   <NavBarLink type="mobile" href={ADMIN_ADD_STUDENT}>
                     Add Student

@@ -31,7 +31,7 @@ const config: Config = {
     boxShadow: {
       sm: '0 1px 2px rgba(0,0,0,0.2)',
       card: '0 2px 6px rgba(0,0,0,0.4)',
-      glowGold: '0 0 10px rgb(251, 234, 0)',
+      glowGold: '0 0 10px rgb(251, 234, 100)',
       glowPurple: '0 0 10px rgba(230, 120, 239, 0.4)',
       glowBlue: '0 0 10px rgba(43, 101, 237, 0.4)',
     },

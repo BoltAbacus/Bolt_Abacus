@@ -1,29 +1,18 @@
 import { FC } from 'react';
+import StaticAbacus from '../../../StaticAbacus.tsx';
+import ScrollAnimation from '@components/atoms/ScrollAnimation';
 
 export interface HeroImageProps {}
 
 const HeroImage: FC<HeroImageProps> = () => {
   return (
-    <div className="grid grid-cols-2 grid-rows-3 gap-4 p-6 w-72 tablet:w-[560px] tablet:gap-8 desktop:gap-12">
-      <div className="col-span-1 row-span-2 row-start-2">
-        <img
-          src="/images/class_four.png"
-          alt=""
-          height={311}
-          width={265}
-          className="border rounded-lg shadow-boxGold border-gold"
-        />
+    <ScrollAnimation direction="up" delay={50}>
+      <div className="flex justify-center items-center p-6 w-72 tablet:w-[900px] desktop:gap-12">
+        <div className="h-[500px] w-[10000px] overflow-hidden">
+          <StaticAbacus />
+        </div>
       </div>
-      <div className="col-span-1 row-span-2 row-start-1">
-        <img
-          src="/images/class_one.png"
-          alt=""
-          height={311}
-          width={265}
-          className="border rounded-lg shadow-boxGold border-gold"
-        />
-      </div>
-    </div>
+    </ScrollAnimation>
   );
 };
 

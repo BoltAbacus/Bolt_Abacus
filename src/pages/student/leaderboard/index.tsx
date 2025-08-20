@@ -12,6 +12,7 @@ import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
+import axios from 'axios';
 
 export interface StudentLeaderboardPageProps {}
 
@@ -24,34 +25,30 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
   const { incrementStreak } = useStreakStore();
 
-  // Mock leaderboard data - in real app, this would come from API
-  const seedTop10 = [
-    { rank: 1, name: 'Alex Johnson', xp: 2840, avatar: 'AJ', level: 8, streak: 15 },
-    { rank: 2, name: 'Sarah Chen', xp: 2650, avatar: 'SC', level: 7, streak: 12 },
-    { rank: 3, name: 'Mike Davis', xp: 2480, avatar: 'MD', level: 7, streak: 8 },
-    { rank: 4, name: 'Emma Wilson', xp: 2320, avatar: 'EW', level: 6, streak: 10 },
-    { rank: 5, name: 'David Brown', xp: 2180, avatar: 'DB', level: 6, streak: 6 },
-    { rank: 6, name: 'Lisa Garcia', xp: 2050, avatar: 'LG', level: 5, streak: 9 },
-    { rank: 7, name: 'You', xp: 1850, avatar: 'YO', level: 5, streak: 29 },
-    { rank: 8, name: 'Tom Anderson', xp: 1720, avatar: 'TA', level: 4, streak: 5 },
-    { rank: 9, name: 'Anna Lee', xp: 1580, avatar: 'AL', level: 4, streak: 7 },
-    { rank: 10, name: 'Chris Taylor', xp: 1450, avatar: 'CT', level: 3, streak: 4 },
-  ];
-  const totalMock = 250;
-  const leaderboard = useMemo(() => {
-    const list = [...seedTop10];
-    for (let i = 11; i <= totalMock; i += 1) {
-      list.push({
-        rank: i,
-        name: `Student ${i}`,
-        xp: Math.max(100, 1500 - i * 3),
-        avatar: `S${i}`.slice(0, 2),
-        level: Math.max(1, Math.min(10, 10 - Math.floor(i / 25))),
-        streak: Math.max(0, (i % 13)),
-      });
-    }
-    return list;
-  }, []);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get('/leaderboard/', {
+          headers: { 'AUTH-TOKEN': authToken },
+        });
+        if (res.status === 200 && res.data.leaderboard) {
+          setLeaderboard(res.data.leaderboard);
+          setApiError(null);
+        } else {
+          setApiError('No leaderboard data found.');
+        }
+      } catch (error) {
+        setApiError('Failed to fetch leaderboard.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (isAuthenticated) fetchLeaderboard();
+    else setLoading(false);
+  }, [authToken, isAuthenticated]);
 
   // Achievements data for modal (expanded placeholder set)
   const achievementsList = ACHIEVEMENTS;
