@@ -40,9 +40,60 @@ export const generatePracticeQuestions = (
       }
 
       if (includeSubtraction) {
-        for (let j = 0; j < numbers.length; j += 1) {
-          if (Math.random() < 0.5) {
-            numbers[j] *= -1;
+        // Ensure the cumulative sum is always positive at each step
+        let attempts = 0;
+        const maxAttempts = 100; // Prevent infinite loops
+        let cumulativeSum = 0;
+        
+        do {
+          // Reset numbers to positive values
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = zigZag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = zigZag
+              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Apply subtraction randomly but ensure cumulative sum never goes below 0
+          cumulativeSum = numbers[0]; // Start with first number (always positive)
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+              // Only make negative if it won't make cumulative sum negative
+              numbers[j] *= -1;
+              cumulativeSum += numbers[j];
+            } else {
+              // Keep positive
+              cumulativeSum += numbers[j];
+            }
+          }
+          
+          attempts++;
+        } while (cumulativeSum <= 0 && attempts < maxAttempts);
+        
+        // If we still couldn't find a valid combination, use a more conservative approach
+        if (attempts >= maxAttempts) {
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = zigZag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = zigZag
+              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Conservative approach: ensure first number is large enough to handle all subtractions
+          cumulativeSum = numbers[0];
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+              numbers[j] *= -1;
+              cumulativeSum += numbers[j];
+            } else {
+              cumulativeSum += numbers[j];
+            }
           }
         }
       }
@@ -58,6 +109,36 @@ export const generatePracticeQuestions = (
               : 10 ** numberOfDigitsRight - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
+          
+          // Re-apply subtraction logic if needed
+          if (includeSubtraction) {
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            do {
+              const tempNumbers = [...numbers];
+              let cumulativeSum = tempNumbers[0]; // Start with first number
+              
+              for (let j = 1; j < tempNumbers.length; j += 1) {
+                if (Math.random() < 0.5 && cumulativeSum - tempNumbers[j] > 0) {
+                  // Only make negative if it won't make cumulative sum negative
+                  tempNumbers[j] *= -1;
+                  cumulativeSum += tempNumbers[j];
+                } else {
+                  // Keep positive
+                  cumulativeSum += tempNumbers[j];
+                }
+              }
+              
+              if (cumulativeSum > 0) {
+                numbers = tempNumbers;
+                break;
+              }
+              
+              attempts++;
+            } while (attempts < maxAttempts);
+          }
+          
           sum = numbers.reduce((a, b) => a + b, 0);
         }
       }

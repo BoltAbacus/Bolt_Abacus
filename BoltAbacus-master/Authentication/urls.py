@@ -64,6 +64,14 @@ urlpatterns = [
     path('deleteStudentPracticeQuestion/', views.DeleteStudentPracticeQuestion.as_view()),
     path('updatePracticeProgress/', views.UpdatePracticeProgress.as_view()),
     path('getPracticeProgress/', views.GetPracticeProgress.as_view()),
-    path('leaderboard/', views.Leaderboard.as_view())
+    path('leaderboard/', views.Leaderboard.as_view()),
 
+    # Multiplayer Game APIs
+    path('game/create-room/', views.CreateGameRoom.as_view()),
+    path('game/join-room/', views.JoinGameRoom.as_view()),
+    path('game/rooms/', views.GetGameRooms.as_view()),
+    path('game/room-details/', views.GetGameRoomDetails.as_view()),
+    path('game/leave-room/', views.LeaveGameRoom.as_view()),
+    path('game/match-history/', views.GetGameMatchHistory.as_view()),
+    path('game/user-stats/', views.GetUserGameStats.as_view()),
 ]

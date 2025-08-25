@@ -14,8 +14,12 @@ from Authentication.models import (UserDetails, Student,
                                    Batch, Curriculum,
                                    TopicDetails, QuizQuestions,
                                    Progress, Teacher, OrganizationTag,
-                                   PracticeQuestions)
+                                   PracticeQuestions, GameRoom, GameMatch, 
+                                   GamePlayer, GameQuestion, GameAnswer, PlayerConnection)
 from django.db.models import F
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import uuid
 
 
 # ------------ Student Related APIs -----------------------
@@ -2608,3 +2612,436 @@ class Leaderboard(APIView):
                 'userId': student.userId,
             })
         return Response({'leaderboard': leaderboard}, status=status.HTTP_200_OK)
+
+# ------------ Multiplayer Game APIs -----------------------
+
+class CreateGameRoom(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not user or user.role != Constants.STUDENT:
+                return Response({Constants.JSON_MESSAGE: "Only students can create game rooms"}, 
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            data = request.data
+            roomName = data.get('roomName', f"Room by {user.firstName}")
+            maxPlayers = data.get('maxPlayers', 2)
+            isPrivate = data.get('isPrivate', False)
+            gameType = data.get('gameType', 'abacus_pvp')
+            difficulty = data.get('difficulty', 'medium')
+            
+            # Generate unique room code for private rooms
+            roomCode = None
+            if isPrivate:
+                roomCode = str(uuid.uuid4())[:8].upper()
+            
+            room = GameRoom.objects.create(
+                roomName=roomName,
+                createdBy=user,
+                maxPlayers=maxPlayers,
+                isPrivate=isPrivate,
+                roomCode=roomCode,
+                gameType=gameType,
+                difficulty=difficulty
+            )
+            
+            return Response({
+                'roomId': room.roomId,
+                'roomName': room.roomName,
+                'roomCode': room.roomCode,
+                'maxPlayers': room.maxPlayers,
+                'gameType': room.gameType,
+                'difficulty': room.difficulty,
+                'createdBy': {
+                    'userId': user.userId,
+                    'firstName': user.firstName,
+                    'lastName': user.lastName
+                }
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class JoinGameRoom(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not user or user.role != Constants.STUDENT:
+                return Response({Constants.JSON_MESSAGE: "Only students can join game rooms"}, 
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            data = request.data
+            roomId = data.get('roomId')
+            roomCode = data.get('roomCode')
+            
+            # Find room by ID or code
+            room = None
+            if roomId:
+                room = GameRoom.objects.filter(roomId=roomId, isActive=True).first()
+            elif roomCode:
+                room = GameRoom.objects.filter(roomCode=roomCode, isActive=True).first()
+            
+            if not room:
+                return Response({Constants.JSON_MESSAGE: "Room not found or inactive"}, 
+                                status=status.HTTP_404_NOT_FOUND)
+            
+            if room.currentPlayers >= room.maxPlayers:
+                return Response({Constants.JSON_MESSAGE: "Room is full"}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user is already in the room
+            existing_connection = PlayerConnection.objects.filter(
+                user=user, room=room, isOnline=True
+            ).first()
+            
+            if existing_connection:
+                return Response({Constants.JSON_MESSAGE: "Already in this room"}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Add user to room
+            PlayerConnection.objects.create(
+                user=user,
+                room=room,
+                isOnline=True
+            )
+            
+            room.currentPlayers += 1
+            room.save()
+            
+            # Broadcast to other players in room
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'lobby_{room.roomId}',
+                {
+                    'type': 'player_joined',
+                    'userId': user.userId,
+                    'firstName': user.firstName,
+                    'lastName': user.lastName
+                }
+            )
+            
+            return Response({
+                'roomId': room.roomId,
+                'roomName': room.roomName,
+                'currentPlayers': room.currentPlayers,
+                'maxPlayers': room.maxPlayers,
+                'gameType': room.gameType,
+                'difficulty': room.difficulty
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetGameRooms(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            # Get available public rooms
+            rooms = GameRoom.objects.filter(
+                isActive=True,
+                isPrivate=False
+            ).order_by('-created_at')[:20]
+            
+            room_list = []
+            for room in rooms:
+                room_list.append({
+                    'roomId': room.roomId,
+                    'roomName': room.roomName,
+                    'currentPlayers': room.currentPlayers,
+                    'maxPlayers': room.maxPlayers,
+                    'gameType': room.gameType,
+                    'difficulty': room.difficulty,
+                    'createdBy': {
+                        'firstName': room.createdBy.firstName,
+                        'lastName': room.createdBy.lastName
+                    },
+                    'created_at': room.created_at.isoformat()
+                })
+            
+            return Response({'rooms': room_list}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetGameRoomDetails(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            data = request.data
+            roomId = data.get('roomId')
+            
+            room = GameRoom.objects.filter(roomId=roomId, isActive=True).first()
+            if not room:
+                return Response({Constants.JSON_MESSAGE: "Room not found"}, 
+                                status=status.HTTP_404_NOT_FOUND)
+            
+            # Get players in room
+            players = PlayerConnection.objects.filter(
+                room=room,
+                isOnline=True
+            ).select_related('user')
+            
+            player_list = []
+            for player in players:
+                player_list.append({
+                    'userId': player.user.userId,
+                    'firstName': player.user.firstName,
+                    'lastName': player.user.lastName,
+                    'isReady': getattr(player, 'isReady', False)
+                })
+            
+            # Get active match if exists
+            active_match = GameMatch.objects.filter(
+                room=room,
+                status__in=['waiting', 'active']
+            ).first()
+            
+            match_info = None
+            if active_match:
+                match_players = GamePlayer.objects.filter(match=active_match)
+                match_info = {
+                    'matchId': active_match.matchId,
+                    'status': active_match.status,
+                    'currentQuestion': active_match.currentQuestion,
+                    'totalQuestions': active_match.totalQuestions,
+                    'players': [{
+                        'userId': mp.user.userId,
+                        'firstName': mp.user.firstName,
+                        'lastName': mp.user.lastName,
+                        'score': mp.currentScore,
+                        'isReady': mp.isReady
+                    } for mp in match_players]
+                }
+            
+            return Response({
+                'room': {
+                    'roomId': room.roomId,
+                    'roomName': room.roomName,
+                    'currentPlayers': room.currentPlayers,
+                    'maxPlayers': room.maxPlayers,
+                    'gameType': room.gameType,
+                    'difficulty': room.difficulty,
+                    'isPrivate': room.isPrivate,
+                    'roomCode': room.roomCode
+                },
+                'players': player_list,
+                'activeMatch': match_info
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LeaveGameRoom(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            data = request.data
+            roomId = data.get('roomId')
+            
+            room = GameRoom.objects.filter(roomId=roomId).first()
+            if not room:
+                return Response({Constants.JSON_MESSAGE: "Room not found"}, 
+                                status=status.HTTP_404_NOT_FOUND)
+            
+            # Remove user from room
+            connection = PlayerConnection.objects.filter(
+                user=user,
+                room=room,
+                isOnline=True
+            ).first()
+            
+            if connection:
+                connection.isOnline = False
+                connection.save()
+                
+                room.currentPlayers = max(0, room.currentPlayers - 1)
+                room.save()
+                
+                # Broadcast to other players
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'lobby_{room.roomId}',
+                    {
+                        'type': 'player_left',
+                        'userId': user.userId,
+                        'firstName': user.firstName,
+                        'lastName': user.lastName
+                    }
+                )
+            
+            return Response({Constants.JSON_MESSAGE: "Left room successfully"}, 
+                            status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetGameMatchHistory(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            data = request.data
+            roomId = data.get('roomId')
+            
+            matches = GameMatch.objects.filter(
+                room_id=roomId,
+                status='completed'
+            ).order_by('-ended_at')[:10]
+            
+            match_history = []
+            for match in matches:
+                players = GamePlayer.objects.filter(match=match)
+                player_results = []
+                for player in players:
+                    player_results.append({
+                        'userId': player.user.userId,
+                        'firstName': player.user.firstName,
+                        'lastName': player.user.lastName,
+                        'score': player.currentScore,
+                        'correct': player.totalCorrect,
+                        'incorrect': player.totalIncorrect,
+                        'averageTime': player.averageTime
+                    })
+                
+                # Sort by score
+                player_results.sort(key=lambda x: x['score'], reverse=True)
+                
+                match_history.append({
+                    'matchId': match.matchId,
+                    'started_at': match.started_at.isoformat() if match.started_at else None,
+                    'ended_at': match.ended_at.isoformat() if match.ended_at else None,
+                    'totalQuestions': match.totalQuestions,
+                    'players': player_results
+                })
+            
+            return Response({'matchHistory': match_history}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetUserGameStats(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            
+            # Get user's game statistics
+            matches_played = GamePlayer.objects.filter(user=user).count()
+            matches_won = GamePlayer.objects.filter(
+                user=user,
+                match__status='completed'
+            ).count()
+            
+            total_score = sum([p.currentScore for p in GamePlayer.objects.filter(user=user)])
+            total_correct = sum([p.totalCorrect for p in GamePlayer.objects.filter(user=user)])
+            total_incorrect = sum([p.totalIncorrect for p in GamePlayer.objects.filter(user=user)])
+            
+            avg_time = 0
+            players_with_time = GamePlayer.objects.filter(user=user, averageTime__gt=0)
+            if players_with_time.exists():
+                avg_time = sum([p.averageTime for p in players_with_time]) / players_with_time.count()
+            
+            # Get recent matches
+            recent_matches = GamePlayer.objects.filter(
+                user=user
+            ).select_related('match').order_by('-match__ended_at')[:5]
+            
+            recent_match_list = []
+            for player in recent_matches:
+                if player.match and player.match.status == 'completed':
+                    recent_match_list.append({
+                        'matchId': player.match.matchId,
+                        'score': player.currentScore,
+                        'correct': player.totalCorrect,
+                        'incorrect': player.totalIncorrect,
+                        'ended_at': player.match.ended_at.isoformat() if player.match.ended_at else None
+                    })
+            
+            return Response({
+                'stats': {
+                    'matchesPlayed': matches_played,
+                    'matchesWon': matches_won,
+                    'winRate': (matches_won / matches_played * 100) if matches_played > 0 else 0,
+                    'totalScore': total_score,
+                    'totalCorrect': total_correct,
+                    'totalIncorrect': total_incorrect,
+                    'accuracy': (total_correct / (total_correct + total_incorrect) * 100) if (total_correct + total_incorrect) > 0 else 0,
+                    'averageTime': avg_time
+                },
+                'recentMatches': recent_match_list
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

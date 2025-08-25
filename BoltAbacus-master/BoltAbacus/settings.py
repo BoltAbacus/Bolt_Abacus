@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0g1c($2c113=8r=hih*ymw^=-2yk^gzj*2ifd-rb5m$$#!#483'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0g1c($2c113=8r=hih*ymw^=-2yk^gzj*2ifd-rb5m$$#!#483')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework',
     "rest_framework.authtoken",
     'corsheaders',
+    'channels',  # Django Channels for WebSocket support
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -75,22 +76,57 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BoltAbacus.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# ASGI Application for WebSocket support
+ASGI_APPLICATION = 'BoltAbacus.asgi.application'
 
-DATABASES = {
+# Channel Layers Configuration for Redis
+CHANNEL_LAYERS = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'boltabacusdb',
-        # 'NAME': 'BoltAbacus',
-        'USER': 'postgres',
-        'PASSWORD': '12345678',
-        # 'HOST': 'localhost',
-        'HOST': 'boltabacusdb.cxoohqadjgtz.ap-south-1.rds.amazonaws.com',
-        # 'HOST': 'boltabacus.cxoohqadjgtz.ap-south-1.rds.amazonaws.com',
-        'PORT': '5432'
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [
+                (os.environ.get('REDIS_HOST', '127.0.0.1'), 
+                 int(os.environ.get('REDIS_PORT', 6379)))
+            ],
+        },
+    },
 }
+
+# Database Configuration - Support for both local and Google Cloud
+DATABASE_TYPE = os.environ.get('DATABASE_TYPE', 'local')  # local, gcp_postgresql, gcp_mysql
+
+if DATABASE_TYPE == 'gcp_postgresql':
+    # Google Cloud PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'boltabacus'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', ''),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
+elif DATABASE_TYPE == 'gcp_mysql':
+    # Google Cloud MySQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('DB_NAME', 'boltabacus'),
+            'USER': os.environ.get('DB_USER', 'root'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', ''),
+            'PORT': os.environ.get('DB_PORT', '3306'),
+        }
+    }
+else:
+    # Local SQLite for development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # AUTH_USER_MODEL = "Authentication.TopicDetails"
 
@@ -126,11 +162,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'build/static')
-]
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Development static files
+if DEBUG:
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -160,9 +199,36 @@ CORS_ALLOW_HEADERS = (
     "AUTH-TOKEN",
 )
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_PASSWORD = 'deamwhhkmfigbihz'
-EMAIL_HOST_USER = 'sankeerth@boltabacus.com'
-EMAIL_USE_TLS = True
+# CORS settings for WebSocket support
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",  # Vite default port
+    "http://127.0.0.1:5173",
+    "https://boltabacus.com",
+    "https://www.boltabacus.com",
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Email Configuration
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'deamwhhkmfigbihz')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'sankeerth@boltabacus.com')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+
+# Google Cloud Storage for static files (production)
+if not DEBUG and os.environ.get('USE_GOOGLE_CLOUD_STORAGE', 'False').lower() == 'true':
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'boltabacus-static')
+    GS_DEFAULT_ACL = 'publicRead'
+    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
