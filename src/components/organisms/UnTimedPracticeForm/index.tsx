@@ -13,6 +13,12 @@ export interface UnTimedPracticeFormProps {
   setNumberOfDigitsRight: Dispatch<SetStateAction<number>>;
   numberOfRows: number;
   setNumberOfRows: Dispatch<SetStateAction<number>>;
+  isZigzag: boolean;
+  setIsZigzag: Dispatch<SetStateAction<boolean>>;
+  includeSubtraction: boolean;
+  setIncludeSubtraction: Dispatch<SetStateAction<boolean>>;
+  persistNumberOfDigits: boolean;
+  setPersistNumberOfDigits: Dispatch<SetStateAction<boolean>>;
   audioMode: boolean;
   setAudioMode: Dispatch<SetStateAction<boolean>>;
   audioPace: string;
@@ -28,6 +34,9 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
   numberOfDigitsLeft,
   numberOfDigitsRight,
   numberOfRows,
+  isZigzag,
+  includeSubtraction,
+  persistNumberOfDigits,
   audioMode,
   audioPace,
   showQuestion,
@@ -35,6 +44,9 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
   setNumberOfDigitsLeft,
   setNumberOfDigitsRight,
   setNumberOfRows,
+  setIsZigzag,
+  setIncludeSubtraction,
+  setPersistNumberOfDigits,
   setAudioMode,
   setAudioPace,
   setShowQuestion,
@@ -63,10 +75,19 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
       return;
     }
 
-    if (!numberOfDigitsRight || numberOfDigitsRight <= 0 || numberOfDigitsRight > 15) {
+    if (operation === 'multiplication' && (!numberOfDigitsRight || numberOfDigitsRight <= 0 || numberOfDigitsRight > 15)) {
       swal({
         title: 'Invalid number of digits',
         text: 'Please enter between 1 and 15 digits',
+        icon: 'error',
+      });
+      return;
+    }
+
+    if (operation === 'division' && (!numberOfDigitsRight || numberOfDigitsRight <= 0 || numberOfDigitsRight > 5)) {
+      swal({
+        title: 'Invalid number of digits',
+        text: 'Please enter between 1 and 5 digits',
         icon: 'error',
       });
       return;
@@ -81,10 +102,10 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
       return;
     }
 
-    if (!numberOfRows || numberOfRows <= 0 || numberOfRows > 15) {
+    if (operation === 'addition' && (!numberOfRows || numberOfRows <= 0 || numberOfRows > 15)) {
       swal({
         title: 'Invalid number of rows',
-        text: 'Please enter between 1 and 15 digits',
+        text: 'Please enter between 1 and 15 rows',
         icon: 'error',
       });
       return;
@@ -112,7 +133,11 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
         </div>
         <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
           <p className="text-md text-left">
-            Number of Digits ({operation === 'division' ? 'Numerator' : 'Left'}):{' '}
+            {operation === 'division'
+              ? 'Number of Digits on Numerator: '
+              : operation === 'multiplication'
+                ? 'Number of Digits on First Operand: '
+                : 'Number of Digits: '}
           </p>
           <input
             type="number"
@@ -123,30 +148,69 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
             onChange={(e) => setNumberOfDigitsLeft(parseInt(e.target.value, 10))}
           />
         </div>
-        <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
-          <p className="text-md text-left">
-            Number of Digits ({operation === 'division' ? 'Denominator' : 'Right'}):{' '}
-          </p>
-          <input
-            type="number"
-            className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
-            value={Number(numberOfDigitsRight)}
-            max={15}
-            min={1}
-            onChange={(e) => setNumberOfDigitsRight(parseInt(e.target.value, 10))}
-          />
-        </div>
-        <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
-          <p className="text-md text-left">Number of Rows: </p>
-          <input
-            type="number"
-            className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
-            value={Number(numberOfRows)}
-            max={15}
-            min={1}
-            onChange={(e) => setNumberOfRows(parseInt(e.target.value, 10))}
-          />
-        </div>
+        {(operation === 'division' || operation === 'multiplication') && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">
+              {operation === 'multiplication'
+                ? 'Number of Digits in Second Operand:'
+                : 'Number of Digits on Denominator: '}
+            </p>
+            <input
+              type="number"
+              className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+              value={Number(numberOfDigitsRight)}
+              max={operation === 'division' ? 5 : 15}
+              min={1}
+              onChange={(e) => setNumberOfDigitsRight(parseInt(e.target.value, 10))}
+            />
+          </div>
+        )}
+        {operation === 'addition' && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">Number of Rows: </p>
+            <input
+              type="number"
+              className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+              value={Number(numberOfRows)}
+              max={15}
+              min={1}
+              onChange={(e) => setNumberOfRows(parseInt(e.target.value, 10))}
+            />
+          </div>
+        )}
+        {operation === 'addition' && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">Zig-Zag Pattern: </p>
+            <input
+              type="checkbox"
+              className="bg-gold px-2 py-1 border rounded-md w-full h-4 text-black text-center accent-gold"
+              checked={isZigzag}
+              onChange={(e) => setIsZigzag(e.target.checked)}
+            />
+          </div>
+        )}
+        {operation === 'addition' && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">Include Subtraction: </p>
+            <input
+              type="checkbox"
+              className="bg-gold px-2 py-1 border rounded-md w-full h-4 text-black text-center accent-gold"
+              checked={includeSubtraction}
+              onChange={(e) => setIncludeSubtraction(e.target.checked)}
+            />
+          </div>
+        )}
+        {operation === 'addition' && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">Same number of digits in answer as question: </p>
+            <input
+              type="checkbox"
+              className="bg-gold px-2 py-1 border rounded-md w-full h-4 text-black text-center accent-gold"
+              checked={persistNumberOfDigits}
+              onChange={(e) => setPersistNumberOfDigits(e.target.checked)}
+            />
+          </div>
+        )}
 
         {/* Audio Mode Settings */}
         <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
