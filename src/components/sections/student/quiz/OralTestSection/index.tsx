@@ -161,6 +161,7 @@ const OralTestSection: FC<OralTestSectionProps> = ({
                 noOfQuestions={quizQuestions.length}
                 minutes={minutes}
                 seconds={seconds}
+                levelId={levelId}
               />
               <div className="tablet:px-4">
                 <OralTestBox

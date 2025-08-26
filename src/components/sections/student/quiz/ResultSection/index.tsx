@@ -34,6 +34,13 @@ const ResultSection: FC<ResultSectionProps> = ({
           `Topic ${params.topicId}`,
         ];
 
+  // Calculate statistics
+  const totalQuestions = result.length;
+  const correctAnswers = result.filter(question => question.verdict).length;
+  const wrongAnswers = totalQuestions - correctAnswers;
+  const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+  const percentage = accuracy;
+
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumbs links={links} />
@@ -45,6 +52,29 @@ const ResultSection: FC<ResultSectionProps> = ({
             <span className="text-red">{MESSAGES.QUIZ_FAIL}</span>
           )}
         </div>
+        
+        {/* Summary Statistics */}
+        <div className="bg-darkBlack border border-gold rounded-lg p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="flex flex-col items-center">
+              <span className="text-green font-bold text-xl">{correctAnswers}</span>
+              <span className="text-gray-300 text-sm">Correct</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-red font-bold text-xl">{wrongAnswers}</span>
+              <span className="text-gray-300 text-sm">Wrong</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-gold font-bold text-xl">{accuracy.toFixed(1)}%</span>
+              <span className="text-gray-300 text-sm">Accuracy</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-blue-400 font-bold text-xl">{secondsToMinutesSeconds(time)}</span>
+              <span className="text-gray-300 text-sm">Time Taken</span>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-2 justify-between">
           <p className="font-bold text-gold tablet:text-xl">
             {params.quizType === 'classwork'
@@ -52,9 +82,6 @@ const ResultSection: FC<ResultSectionProps> = ({
               : params.quizType === 'homework'
                 ? 'Homework'
                 : 'Test'}
-          </p>
-          <p className="font-bold text-sm tablet:text-md">
-            Time Taken: {secondsToMinutesSeconds(time)}
           </p>
         </div>
         <QuizResultTable result={result} />

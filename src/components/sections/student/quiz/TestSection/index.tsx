@@ -20,6 +20,7 @@ import { useTimer } from 'react-timer-hook';
 
 export interface TestSectionProps {
   levelId: number;
+  classId?: number;
   quizId: number;
   quizQuestions: Array<QuizQuestion>;
   quizAnswers: Array<QuizAnswer>;
@@ -30,6 +31,7 @@ export interface TestSectionProps {
 
 const TestSection: FC<TestSectionProps> = ({
   levelId,
+  classId,
   quizId,
   quizQuestions,
   quizAnswers,
@@ -171,6 +173,8 @@ const TestSection: FC<TestSectionProps> = ({
                 noOfQuestions={quizQuestions.length}
                 minutes={minutes}
                 seconds={seconds}
+                levelId={levelId}
+                classId={classId}
               />
               <div className="tablet:px-4">
                 <QuizBox

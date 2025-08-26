@@ -137,6 +137,7 @@ const StudentTestPage: FC<StudentTestPageProps> = () => {
               <SeoComponent title="Test" />
               <TestSection
                 levelId={level!}
+                classId={parseInt(params.classId!, 10)}
                 quizId={quizId!}
                 quizQuestions={quizQuestions!}
                 quizAnswers={quizAnswers}

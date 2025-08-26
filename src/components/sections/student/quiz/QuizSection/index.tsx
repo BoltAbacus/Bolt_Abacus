@@ -20,6 +20,8 @@ import { useStopwatch } from 'react-timer-hook';
 
 export interface QuizSectionProps {
   levelId: number;
+  classId: number;
+  topicId: number;
   quizId: number;
   quizQuestions: Array<QuizQuestion>;
   quizAnswers: Array<QuizAnswer>;
@@ -29,6 +31,8 @@ export interface QuizSectionProps {
 
 const QuizSection: FC<QuizSectionProps> = ({
   levelId,
+  classId,
+  topicId,
   quizId,
   quizQuestions,
   quizAnswers,
@@ -160,6 +164,9 @@ const QuizSection: FC<QuizSectionProps> = ({
                 noOfQuestions={quizQuestions.length}
                 minutes={minutes}
                 seconds={seconds}
+                levelId={levelId}
+                classId={classId}
+                topicId={topicId}
               />
               <div className="tablet:px-4">
                 <QuizBox

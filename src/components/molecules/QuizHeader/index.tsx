@@ -11,6 +11,9 @@ export interface QuizHeaderProps {
   noOfQuestions: number;
   minutes: number;
   seconds: number;
+  levelId?: number;
+  classId?: number;
+  topicId?: number;
 }
 
 const QuizHeader: FC<QuizHeaderProps> = ({
@@ -19,11 +22,41 @@ const QuizHeader: FC<QuizHeaderProps> = ({
   noOfQuestions,
   minutes,
   seconds,
+  levelId,
+  classId,
+  topicId,
 }) => {
   return (
     <div className="w-full px-1 py-4">
       <div className="flex flex-col gap-4 tablet:flex-row tablet:gap-20">
-        <div className="flex gap-2 tablet:flex-col">
+        <div className="flex flex-col gap-2">
+          {levelId && classId && topicId && (
+            <div className="bg-[#212121] p-2 rounded-lg -ml-6 -mt-8">
+              <div className="inline-flex items-center justify-start px-5 py-2 rounded-full bg-neutral-500 shadow-lg shadow-gray-900/50 hover:shadow-xl transition-all duration-300">
+                <span className="text-white font-bold text-base tracking-wide">
+                  Level {levelId} / Class {classId} / Topic {topicId}
+                </span>
+              </div>
+            </div>
+          )}
+          {levelId && classId && !topicId && (
+            <div className="bg-[#212121] p-2 rounded-lg -ml-6 -mt-8">
+              <div className="inline-flex items-center justify-start px-5 py-2 rounded-full bg-neutral-500 shadow-lg shadow-gray-900/50 hover:shadow-xl transition-all duration-300">
+                <span className="text-white font-bold text-base tracking-wide">
+                  Level {levelId} / Class {classId}
+                </span>
+              </div>
+            </div>
+          )}
+          {levelId && !classId && (
+            <div className="bg-[#212121] p-2 rounded-lg -ml-6 -mt-8">
+              <div className="inline-flex items-center justify-start px-5 py-2 rounded-full bg-neutral-500 shadow-lg shadow-gray-900/50 hover:shadow-xl transition-all duration-300">
+                <span className="text-white font-bold text-base tracking-wide">
+                  Level {levelId}
+                </span>
+              </div>
+            </div>
+          )}
           <h1 className="flex-1 text-xl font-bold">
             {quizType === 'classwork'
               ? 'Classwork'

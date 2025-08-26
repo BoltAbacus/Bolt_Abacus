@@ -136,6 +136,8 @@ const StudentQuizPage: FC<StudentQuizPageProps> = () => {
               <SeoComponent title="Quiz" />
               <QuizSection
                 levelId={level!}
+                classId={parseInt(params.classId!, 10)}
+                topicId={parseInt(params.topicId!, 10)}
                 quizId={quizId!}
                 quizQuestions={quizQuestions!}
                 quizAnswers={quizAnswers}

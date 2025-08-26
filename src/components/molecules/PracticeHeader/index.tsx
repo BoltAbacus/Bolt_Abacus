@@ -15,6 +15,8 @@ export interface PracticeHeaderProps {
   minutes: number;
   seconds: number;
   showProgressBar?: boolean;
+  levelId?: number;
+  classId?: number;
 }
 
 const PracticeHeader: FC<PracticeHeaderProps> = ({
@@ -24,11 +26,22 @@ const PracticeHeader: FC<PracticeHeaderProps> = ({
   minutes,
   seconds,
   showProgressBar = true,
+  levelId,
+  classId,
 }) => {
   return (
     <div className="px-1 py-4 w-full">
       <div className="tablet:gap-20 flex tablet:flex-row flex-col gap-4">
-        <div className="flex tablet:flex-col gap-2">
+        <div className="flex flex-col gap-2">
+          {levelId && classId && (
+            <div className="bg-[#212121] p-2 rounded-lg -ml-6 -mt-8">
+              <div className="inline-flex items-center justify-start px-5 py-2 rounded-full bg-neutral-500 shadow-lg shadow-gray-900/50 hover:shadow-xl transition-all duration-300">
+                <span className="text-white font-bold text-base tracking-wide">
+                  Level {levelId} / Class {classId}
+                </span>
+              </div>
+            </div>
+          )}
           <h1 className="flex-1 font-bold text-xl">
             {practiceType === 'timed'
               ? 'Question Countdown'
