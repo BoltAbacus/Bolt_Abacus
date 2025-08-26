@@ -19,6 +19,8 @@ export interface QuizBoxProps {
   setAnswer: Dispatch<SetStateAction<string>>;
   setDisabled: Dispatch<SetStateAction<boolean>>;
   submitAnswer: () => void;
+  operation?: 'addition' | 'multiplication' | 'division';
+  includeDecimals?: boolean;
   audioMode?: boolean;
   audioPace?: string;
   showQuestion?: boolean;
@@ -31,6 +33,8 @@ const QuizBox: FC<QuizBoxProps> = ({
   setAnswer,
   setDisabled,
   submitAnswer,
+  operation,
+  includeDecimals = false,
   audioMode = false,
   audioPace = 'normal',
   showQuestion: propShowQuestion,
@@ -45,10 +49,26 @@ const QuizBox: FC<QuizBoxProps> = ({
   const setShowQuestion = propSetShowQuestion || setInternalShowQuestion;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const result = event.target.value.replace(/[^0-9-]/gi, '');
+    let result = event.target.value;
+    
+    // Allow decimal input for division with decimals enabled
+    if (operation === 'division' && includeDecimals) {
+      // Allow numbers, minus sign, and decimal point
+      result = result.replace(/[^0-9.-]/gi, '');
+      // Ensure only one decimal point
+      const parts = result.split('.');
+      if (parts.length > 2) {
+        result = parts[0] + '.' + parts.slice(1).join('');
+      }
+    } else {
+      // For other operations or when operation is not provided, only allow integers
+      result = result.replace(/[^0-9-]/gi, '');
+    }
+    
     setAnswer(result);
 
-    const num = parseInt(result, 10);
+    // Validate the number
+    const num = operation === 'division' && includeDecimals ? parseFloat(result) : parseInt(result, 10);
     if (Number.isNaN(num)) setDisabled(true);
     else setDisabled(false);
   };

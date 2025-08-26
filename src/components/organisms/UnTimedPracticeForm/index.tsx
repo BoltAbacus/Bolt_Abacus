@@ -19,6 +19,8 @@ export interface UnTimedPracticeFormProps {
   setIncludeSubtraction: Dispatch<SetStateAction<boolean>>;
   persistNumberOfDigits: boolean;
   setPersistNumberOfDigits: Dispatch<SetStateAction<boolean>>;
+  includeDecimals: boolean;
+  setIncludeDecimals: Dispatch<SetStateAction<boolean>>;
   audioMode: boolean;
   setAudioMode: Dispatch<SetStateAction<boolean>>;
   audioPace: string;
@@ -37,6 +39,7 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
   isZigzag,
   includeSubtraction,
   persistNumberOfDigits,
+  includeDecimals,
   audioMode,
   audioPace,
   showQuestion,
@@ -47,6 +50,7 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
   setIsZigzag,
   setIncludeSubtraction,
   setPersistNumberOfDigits,
+  setIncludeDecimals,
   setAudioMode,
   setAudioPace,
   setShowQuestion,
@@ -208,6 +212,17 @@ const UnTimedPracticeForm: FC<UnTimedPracticeFormProps> = ({
               className="bg-gold px-2 py-1 border rounded-md w-full h-4 text-black text-center accent-gold"
               checked={persistNumberOfDigits}
               onChange={(e) => setPersistNumberOfDigits(e.target.checked)}
+            />
+          </div>
+        )}
+        {operation === 'division' && (
+          <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+            <p className="text-md text-left">Include Decimal:</p>
+            <input
+              type="checkbox"
+              className="bg-gold px-2 py-1 border rounded-md w-full h-4 text-black text-center accent-gold"
+              checked={includeDecimals}
+              onChange={(e) => setIncludeDecimals(e.target.checked)}
             />
           </div>
         )}

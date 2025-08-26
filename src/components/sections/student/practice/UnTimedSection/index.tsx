@@ -54,7 +54,7 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
   const [isZigzag, setIsZigzag] = useState(false);
   const [includeSubtraction, setIncludeSubtraction] = useState(false);
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
-  const [includeDecimals, setIncludeDecimals] = useState(true);
+  const [includeDecimals, setIncludeDecimals] = useState(false);
   const [audioMode, setAudioMode] = useState(false);
   const [audioPace, setAudioPace] = useState('normal');
   const [showQuestion, setShowQuestion] = useState(true);
@@ -114,6 +114,7 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
         isZigzag,
         includeSubtraction,
         persistNumberOfDigits,
+        includeDecimals,
         score,
         totalSeconds,
         parseFloat(avg.toFixed(2)),
@@ -133,8 +134,9 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
       } else {
         setApiError(ERRORS.SERVER_ERROR);
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleStartQuiz = async () => {
@@ -200,6 +202,8 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
           setIncludeSubtraction={setIncludeSubtraction}
           persistNumberOfDigits={persistNumberOfDigits}
           setPersistNumberOfDigits={setPersistNumberOfDigits}
+          includeDecimals={includeDecimals}
+          setIncludeDecimals={setIncludeDecimals}
           audioMode={audioMode}
           setAudioMode={setAudioMode}
           audioPace={audioPace}
@@ -250,6 +254,8 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
                   setAnswer={setCurrentAnswer}
                   setDisabled={setIsNextDisabled}
                   submitAnswer={answerQuestion}
+                  operation={operation}
+                  includeDecimals={includeDecimals}
                   audioMode={audioMode}
                   audioPace={audioPace}
                   showQuestion={showQuestion}

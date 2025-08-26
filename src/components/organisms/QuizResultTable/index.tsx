@@ -43,7 +43,15 @@ const QuizResultTable: FC<QuizResultTableProps> = ({ result }) => {
             </div>
             <div className="tablet:p-4 desktop:p-3 flex justify-center items-center p-3 text-center break-all text-wrap">
               {question.answer !== null
-                ? BigInt(question.answer).toString()
+                ? (() => {
+                    // Handle both integer and decimal answers
+                    const answer = question.answer;
+                    if (Number.isInteger(answer)) {
+                      return BigInt(answer).toString();
+                    } else {
+                      return answer.toString();
+                    }
+                  })()
                 : '-'}
             </div>
           </div>

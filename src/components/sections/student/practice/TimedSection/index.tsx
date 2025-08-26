@@ -56,7 +56,7 @@ const TimedPracticeSection: FC<TimedPracticeSectionProps> = ({ operation }) => {
   const [numberOfRows, setNumberOfRows] = useState(2);
   const [includeSubtraction, setIncludeSubtraction] = useState(false);
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
-  const [includeDecimals, setIncludeDecimals] = useState(true);
+  const [includeDecimals, setIncludeDecimals] = useState(false);
   const [audioMode, setAudioMode] = useState(false);
   const [audioPace, setAudioPace] = useState('normal');
   const [showQuestion, setShowQuestion] = useState(true);
@@ -112,6 +112,7 @@ const TimedPracticeSection: FC<TimedPracticeSectionProps> = ({ operation }) => {
         isZigzag,
         includeSubtraction,
         persistNumberOfDigits,
+        includeDecimals,
         score,
         timeLimit * 60,
         parseFloat(avg.toFixed(2)),
@@ -131,8 +132,9 @@ const TimedPracticeSection: FC<TimedPracticeSectionProps> = ({ operation }) => {
       } else {
         setApiError(ERRORS.SERVER_ERROR);
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -267,6 +269,8 @@ const TimedPracticeSection: FC<TimedPracticeSectionProps> = ({ operation }) => {
                   setAnswer={setCurrentAnswer}
                   setDisabled={setIsNextDisabled}
                   submitAnswer={answerQuestion}
+                  operation={operation}
+                  includeDecimals={includeDecimals}
                   audioMode={audioMode}
                   audioPace={audioPace}
                   showQuestion={showQuestion}
