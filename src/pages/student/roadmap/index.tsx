@@ -33,7 +33,7 @@ const StudentRoadmapPage: FC<StudentRoadmapPageProps> = () => {
   const [currentLevel, setCurrentLevel] = useState<number>(1);
   const [currentClass, setCurrentClass] = useState<number>(1);
   const [progress, setProgress] = useState<LevelsPercentage>({});
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
 
   useEffect(() => {
     const getDashboardData = async () => {
@@ -48,7 +48,7 @@ const StudentRoadmapPage: FC<StudentRoadmapPageProps> = () => {
             setProgress(dashboardResponse.levelsPercentage);
             
             // Only increment streak if this is the first visit today
-            incrementStreak();
+            updateStreak();
           }
         } catch (error) {
           if (isAxiosError(error)) {
@@ -78,7 +78,7 @@ const StudentRoadmapPage: FC<StudentRoadmapPageProps> = () => {
       }
     };
     getDashboardData();
-  }, [authToken, isAuthenticated, incrementStreak]);
+  }, [authToken, isAuthenticated, updateStreak]);
 
   return (
     <div className="min-h-screen">

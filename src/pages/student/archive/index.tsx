@@ -19,7 +19,7 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
 
   // Mock activity data - in real app, this would come from API
   const activities = [
@@ -40,7 +40,7 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
           const res = await dashboardRequestV2(authToken!);
           if (res.status === 200) {
             setApiError(null);
-            incrementStreak();
+            updateStreak();
           }
         } catch (error) {
           if (isAxiosError(error)) {
@@ -59,7 +59,7 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
       }
     };
     getDashboardData();
-  }, [authToken, isAuthenticated, incrementStreak]);
+  }, [authToken, isAuthenticated, updateStreak]);
 
   const getActivityTypeColor = (type: string) => {
     switch (type) {

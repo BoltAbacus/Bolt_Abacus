@@ -37,7 +37,7 @@ const StudentLevelPage: FC<StudentLevelPageProps> = () => {
 
   const [levelId, setLevelId] = useState<number>();
   const [progress, setProgress] = useState<Array<ClassProgressV2>>();
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
   // const [oralTest, setOralTest] = useState<QuizResultV2>();
   // const [finalTest, setFinalTest] = useState<QuizResultV2>();
 
@@ -63,7 +63,7 @@ const StudentLevelPage: FC<StudentLevelPageProps> = () => {
               setApiError(null);
               
               // Only increment streak if this is the first visit today
-              incrementStreak();
+              updateStreak();
             }
           } catch (error) {
             if (isAxiosError(error)) {

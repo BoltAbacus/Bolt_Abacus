@@ -351,7 +351,7 @@ const StudentVirtualAbacusPage: FC<StudentVirtualAbacusPageProps> = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
 
   useEffect(() => {
     const getDashboardData = async () => {
@@ -360,7 +360,7 @@ const StudentVirtualAbacusPage: FC<StudentVirtualAbacusPageProps> = () => {
           const res = await dashboardRequestV2(authToken!);
           if (res.status === 200) {
             setApiError(null);
-            incrementStreak();
+            updateStreak();
           }
         } catch (error) {
           if (isAxiosError(error)) {
@@ -379,7 +379,7 @@ const StudentVirtualAbacusPage: FC<StudentVirtualAbacusPageProps> = () => {
       }
     };
     getDashboardData();
-  }, [authToken, isAuthenticated, incrementStreak]);
+  }, [authToken, isAuthenticated, updateStreak]);
 
   return (
     <div className="min-h-screen">

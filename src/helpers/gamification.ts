@@ -16,7 +16,7 @@ export interface ProgressStats {
 export const useGamification = () => {
   const { unlockAchievement, isAchievementUnlocked } = useAchievementStore();
   const { addCoins } = useCoinsStore();
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
 
   const calculateProgressStats = (progress: LevelProgress[]): ProgressStats => {
     const totalLevels = progress.length;
@@ -50,37 +50,37 @@ export const useGamification = () => {
     if (progressStats.completedLevels >= 1 && !isAchievementUnlocked('first-level')) {
       unlockAchievement('first-level');
       addCoins(50);
-      incrementStreak();
+      updateStreak();
     }
     
     if (progressStats.completedLevels >= 3 && !isAchievementUnlocked('three-levels')) {
       unlockAchievement('three-levels');
       addCoins(100);
-      incrementStreak();
+      updateStreak();
     }
     
     if (progressStats.averageScore >= 80 && !isAchievementUnlocked('high-scorer')) {
       unlockAchievement('high-scorer');
       addCoins(150);
-      incrementStreak();
+      updateStreak();
     }
     
     if (progressStats.overallProgress >= 50 && !isAchievementUnlocked('halfway')) {
       unlockAchievement('halfway');
       addCoins(200);
-      incrementStreak();
+      updateStreak();
     }
     
     if (progressStats.overallProgress >= 75 && !isAchievementUnlocked('almost-there')) {
       unlockAchievement('almost-there');
       addCoins(300);
-      incrementStreak();
+      updateStreak();
     }
     
     if (progressStats.overallProgress >= 100 && !isAchievementUnlocked('champion')) {
       unlockAchievement('champion');
       addCoins(500);
-      incrementStreak();
+      updateStreak();
     }
   };
 
@@ -88,19 +88,19 @@ export const useGamification = () => {
     if (score >= 100 && !isAchievementUnlocked('perfect-score')) {
       unlockAchievement('perfect-score');
       addCoins(100);
-      incrementStreak();
+      updateStreak();
     } else if (score >= 90 && !isAchievementUnlocked('excellent-score')) {
       unlockAchievement('excellent-score');
       addCoins(75);
-      incrementStreak();
+      updateStreak();
     } else if (score >= 80 && !isAchievementUnlocked('great-score')) {
       unlockAchievement('great-score');
       addCoins(50);
-      incrementStreak();
+      updateStreak();
     } else if (score >= 70 && !isAchievementUnlocked('good-score')) {
       unlockAchievement('good-score');
       addCoins(25);
-      incrementStreak();
+      updateStreak();
     }
   };
 
