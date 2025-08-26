@@ -74,4 +74,9 @@ urlpatterns = [
     path('game/leave-room/', views.LeaveGameRoom.as_view()),
     path('game/match-history/', views.GetGameMatchHistory.as_view()),
     path('game/user-stats/', views.GetUserGameStats.as_view()),
+
+    # Streak APIs
+    path('streak/', views.GetUserStreak.as_view()),
+    path('streak/update/', views.UpdateUserStreak.as_view()),
+    path('streak/reset/', views.ResetUserStreak.as_view()),
 ]

@@ -18,6 +18,7 @@ import { dashboardRequestV2, getPracticeProgressRequest } from '@services/studen
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
 import { useCoinsStore } from '@store/coinsStore';
+import StreakTest from '@components/atoms/StreakTest';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
 import {
@@ -42,7 +43,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [classLink, setClassLink] = useState<string>();
   const [progress, setProgress] = useState<LevelsPercentage>({});
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const { incrementStreak, currentStreak } = useStreakStore();
+  const { currentStreak, updateStreak } = useStreakStore();
   const { addCoins, coins } = useCoinsStore();
   const user = useAuthStore((state) => state.user);
 
@@ -85,8 +86,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
             } catch (practiceError) {
               setDashboardData(dashboardResponse);
             }
-            // Only increment streak if this is the first visit today
-            incrementStreak();
+            // Update streak for daily activity
+            updateStreak();
             // Add some coins for daily login (you can adjust this logic)
             addCoins(10);
           }
@@ -123,7 +124,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       isMounted = false;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [authToken, isAuthenticated, incrementStreak, addCoins]);
+  }, [authToken, isAuthenticated, updateStreak, addCoins]);
 
   return (
     <div className="min-h-screen">
@@ -303,6 +304,13 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     <div className="relative z-10">
                       <AchievementsSection />
                     </div>
+                  </div>
+                </div>
+                
+                {/* 🧪 STREAK TEST COMPONENT */}
+                <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
+                  <div className="relative z-10">
+                    <StreakTest />
                   </div>
                 </div>
               </div>

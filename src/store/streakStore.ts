@@ -1,83 +1,129 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getUserStreak, updateUserStreak, resetUserStreak, StreakData } from '@services/streak';
+import { useAuthStore } from './authStore';
 
 interface StreakState {
   currentStreak: number;
-  lastActivityDate: string | null;
   maxStreak: number;
-  incrementStreak: () => void;
-  resetStreak: () => void;
-  checkAndUpdateStreak: () => void;
+  lastActivityDate: string | null;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions
+  fetchStreak: () => Promise<void>;
+  updateStreak: () => Promise<void>;
+  resetStreak: () => Promise<void>;
+  setStreak: (streakData: StreakData) => void;
+  clearError: () => void;
 }
 
 export const useStreakStore = create<StreakState>()(
   persist(
     (set, get) => ({
       currentStreak: 0,
-      lastActivityDate: null,
       maxStreak: 0,
+      lastActivityDate: null,
+      isLoading: false,
+      error: null,
 
-      incrementStreak: () => {
-        const today = new Date().toDateString();
-        const { currentStreak, maxStreak, lastActivityDate } = get();
-        
-        // Only increment if we haven't already incremented today
-        if (lastActivityDate !== today) {
-          const newStreak = currentStreak + 1;
-          set({
-            currentStreak: newStreak,
-            lastActivityDate: today,
-            maxStreak: Math.max(maxStreak, newStreak),
-          });
-        }
-      },
-
-      resetStreak: () => {
-        set({
-          currentStreak: 0,
-          lastActivityDate: null,
-        });
-      },
-
-      checkAndUpdateStreak: () => {
-        const today = new Date().toDateString();
-        const { lastActivityDate, currentStreak } = get();
-
-        if (!lastActivityDate) {
-          // First time user
-          set({
-            currentStreak: 1,
-            lastActivityDate: today,
-            maxStreak: 1,
-          });
+      fetchStreak: async () => {
+        const authToken = useAuthStore.getState().authToken;
+        if (!authToken) {
+          set({ error: 'No authentication token' });
           return;
         }
 
-        const lastDate = new Date(lastActivityDate);
-        const currentDate = new Date(today);
-        const diffTime = currentDate.getTime() - lastDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 1) {
-          // Consecutive day
-          const newStreak = currentStreak + 1;
+        set({ isLoading: true, error: null });
+        try {
+          const streakData = await getUserStreak(authToken);
           set({
-            currentStreak: newStreak,
-            lastActivityDate: today,
-            maxStreak: Math.max(get().maxStreak, newStreak),
+            currentStreak: streakData.currentStreak,
+            maxStreak: streakData.maxStreak,
+            lastActivityDate: streakData.lastActivityDate,
+            isLoading: false,
+            error: null,
           });
-        } else if (diffDays > 1) {
-          // Streak broken
+        } catch (error) {
+          console.error('Error fetching streak:', error);
           set({
-            currentStreak: 1,
-            lastActivityDate: today,
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch streak',
           });
         }
-        // If diffDays === 0, same day, do nothing
+      },
+
+      updateStreak: async () => {
+        const authToken = useAuthStore.getState().authToken;
+        if (!authToken) {
+          set({ error: 'No authentication token' });
+          return;
+        }
+
+        set({ isLoading: true, error: null });
+        try {
+          const streakData = await updateUserStreak(authToken);
+          set({
+            currentStreak: streakData.currentStreak,
+            maxStreak: streakData.maxStreak,
+            lastActivityDate: streakData.lastActivityDate,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          console.error('Error updating streak:', error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to update streak',
+          });
+        }
+      },
+
+      resetStreak: async () => {
+        const authToken = useAuthStore.getState().authToken;
+        if (!authToken) {
+          set({ error: 'No authentication token' });
+          return;
+        }
+
+        set({ isLoading: true, error: null });
+        try {
+          const streakData = await resetUserStreak(authToken);
+          set({
+            currentStreak: streakData.currentStreak,
+            maxStreak: streakData.maxStreak,
+            lastActivityDate: streakData.lastActivityDate,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          console.error('Error resetting streak:', error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to reset streak',
+          });
+        }
+      },
+
+      setStreak: (streakData: StreakData) => {
+        set({
+          currentStreak: streakData.currentStreak,
+          maxStreak: streakData.maxStreak,
+          lastActivityDate: streakData.lastActivityDate,
+        });
+      },
+
+      clearError: () => {
+        set({ error: null });
       },
     }),
     {
       name: 'streak-storage',
+      partialize: (state) => ({
+        currentStreak: state.currentStreak,
+        maxStreak: state.maxStreak,
+        lastActivityDate: state.lastActivityDate,
+      }),
     }
   )
 ); 

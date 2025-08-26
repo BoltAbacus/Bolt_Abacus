@@ -15,7 +15,8 @@ from Authentication.models import (UserDetails, Student,
                                    TopicDetails, QuizQuestions,
                                    Progress, Teacher, OrganizationTag,
                                    PracticeQuestions, GameRoom, GameMatch, 
-                                   GamePlayer, GameQuestion, GameAnswer, PlayerConnection)
+                                   GamePlayer, GameQuestion, GameAnswer, PlayerConnection,
+                                   UserStreak)
 from django.db.models import F
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -69,6 +70,12 @@ class SignIn(APIView):
                 # --- Streak Logic ---
                 from datetime import date, timedelta
                 user_obj = UserDetails.objects.get(userId=user[Constants.USER_ID])
+                
+                # Update UserStreak model
+                user_streak, created = UserStreak.objects.get_or_create(user=user_obj)
+                user_streak.update_streak()
+                
+                # Also update UserDetails for backward compatibility
                 today = date.today()
                 last_login = user_obj.last_login_date
                 if last_login == today:
@@ -3041,6 +3048,109 @@ class GetUserGameStats(APIView):
                     'averageTime': avg_time
                 },
                 'recentMatches': recent_match_list
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetUserStreak(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not user:
+                return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get or create user streak
+            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            
+            return Response({
+                'currentStreak': user_streak.current_streak,
+                'maxStreak': user_streak.max_streak,
+                'lastActivityDate': user_streak.last_activity_date.isoformat() if user_streak.last_activity_date else None,
+                'createdAt': user_streak.created_at.isoformat(),
+                'updatedAt': user_streak.updated_at.isoformat()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UpdateUserStreak(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not user:
+                return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get or create user streak
+            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            
+            # Update streak
+            new_streak = user_streak.update_streak()
+            
+            return Response({
+                'currentStreak': user_streak.current_streak,
+                'maxStreak': user_streak.max_streak,
+                'lastActivityDate': user_streak.last_activity_date.isoformat() if user_streak.last_activity_date else None,
+                'streakUpdated': True,
+                'newStreak': new_streak
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResetUserStreak(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            try:
+                requestUserId = IdExtraction(requestUserToken)
+                if isinstance(requestUserId, Exception):
+                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not user:
+                return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get or create user streak
+            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            
+            # Reset streak
+            user_streak.current_streak = 0
+            user_streak.last_activity_date = None
+            user_streak.save()
+            
+            return Response({
+                'currentStreak': user_streak.current_streak,
+                'maxStreak': user_streak.max_streak,
+                'lastActivityDate': None,
+                'streakReset': True
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

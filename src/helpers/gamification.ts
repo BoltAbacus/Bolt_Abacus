@@ -1,6 +1,7 @@
 import { useAchievementStore } from '@store/achievementStore';
 import { useCoinsStore } from '@store/coinsStore';
 import { useStreakStore } from '@store/streakStore';
+import { useAuthStore } from '@store/authStore';
 import { LevelProgress } from '@interfaces/apis/teacher';
 
 export interface ProgressStats {
@@ -180,4 +181,159 @@ export const useGamification = () => {
     getMotivationalMessage,
     getNextGoal,
   };
+}; 
+
+export const awardCoinsForQuizCompletion = (score: number) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  // Base coins for completion
+  let coins = 10;
+  
+  // Bonus coins for high score
+  if (score >= 90) {
+    coins += 20;
+  } else if (score >= 80) {
+    coins += 15;
+  } else if (score >= 70) {
+    coins += 10;
+  } else if (score >= 60) {
+    coins += 5;
+  }
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForPracticeCompletion = (problemsSolved: number, timeSpent: number) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  // Base coins for practice
+  let coins = 5;
+  
+  // Bonus for problems solved
+  coins += Math.floor(problemsSolved / 5) * 2;
+  
+  // Bonus for time spent (efficiency bonus)
+  if (timeSpent > 0) {
+    const efficiency = problemsSolved / (timeSpent / 60); // problems per minute
+    if (efficiency > 2) {
+      coins += 5;
+    } else if (efficiency > 1) {
+      coins += 3;
+    }
+  }
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForLevelCompletion = (levelId: number) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  // More coins for higher levels
+  const coins = 15 + (levelId * 5);
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForDailyLogin = () => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  const coins = 10;
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForAchievement = (achievementId: number) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  // Different coins for different achievements
+  const achievementCoins = {
+    1: 50,  // First Quiz
+    2: 100, // Perfect Score
+    3: 75,  // Speed Demon
+    4: 200, // Streak Master
+    5: 150, // Practice Makes Perfect
+  };
+  
+  const coins = achievementCoins[achievementId as keyof typeof achievementCoins] || 25;
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForLeaderboardRank = (rank: number) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  // More coins for higher ranks
+  const rankCoins = {
+    1: 100,
+    2: 75,
+    3: 50,
+    4: 25,
+    5: 15,
+  };
+  
+  const coins = rankCoins[rank as keyof typeof rankCoins] || 5;
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForGameWin = (gameType: string, difficulty: string) => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  let coins = 20; // Base coins for winning
+  
+  // Bonus for difficulty
+  if (difficulty === 'hard') {
+    coins += 15;
+  } else if (difficulty === 'medium') {
+    coins += 10;
+  }
+  
+  // Bonus for game type
+  if (gameType === 'tournament') {
+    coins += 25;
+  } else if (gameType === 'team') {
+    coins += 15;
+  }
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
+};
+
+export const awardCoinsForPerfectGame = () => {
+  const { addCoins } = useCoinsStore.getState();
+  const { updateStreak } = useStreakStore.getState();
+  
+  const coins = 50; // Bonus for perfect game
+  
+  addCoins(coins);
+  updateStreak();
+  
+  return coins;
 }; 

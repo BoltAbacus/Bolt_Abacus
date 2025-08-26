@@ -44,12 +44,12 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const { currentStreak, checkAndUpdateStreak } = useStreakStore();
+  const { currentStreak, fetchStreak } = useStreakStore();
 
-  // Check and update streak when component mounts
+  // Fetch streak when component mounts
   useEffect(() => {
-    checkAndUpdateStreak();
-  }, [checkAndUpdateStreak]);
+    fetchStreak();
+  }, [fetchStreak]);
 
   const navigationItems = [
     {

@@ -1,7 +1,6 @@
 from django.db import models
-from django.db.models.functions.datetime import datetime
 import json
-import datetime as dt
+from datetime import date, datetime
 
 
 # from django.contrib.auth.models import AbstractBaseUser
@@ -209,6 +208,53 @@ class PlayerConnection(models.Model):
 
     class Meta:
         unique_together = ('user', 'room', 'match')
+
+
+class UserStreak(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(UserDetails, to_field='userId', on_delete=models.CASCADE)
+    current_streak = models.IntegerField(default=0)
+    max_streak = models.IntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user',)
+        db_table = 'Authentication_userstreak'
+
+    def __str__(self):
+        return f"Streak for {self.user.firstName} {self.user.lastName}: {self.current_streak} days"
+
+    def update_streak(self, activity_date=None):
+        """Update streak based on activity date"""
+        if activity_date is None:
+            activity_date = date.today()
+        
+        if self.last_activity_date is None:
+            # First time activity
+            self.current_streak = 1
+            self.max_streak = 1
+            self.last_activity_date = activity_date
+        else:
+            # Check if it's a consecutive day
+            days_diff = (activity_date - self.last_activity_date).days
+            
+            if days_diff == 1:
+                # Consecutive day
+                self.current_streak += 1
+                self.max_streak = max(self.max_streak, self.current_streak)
+            elif days_diff == 0:
+                # Same day, no change
+                pass
+            else:
+                # Streak broken, start new streak
+                self.current_streak = 1
+            
+            self.last_activity_date = activity_date
+        
+        self.save()
+        return self.current_streak
 
 
 # Create your models here.

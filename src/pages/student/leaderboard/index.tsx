@@ -23,7 +23,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
-  const { incrementStreak } = useStreakStore();
+  const { updateStreak } = useStreakStore();
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
@@ -112,7 +112,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
           const res = await dashboardRequestV2(authToken!);
           if (res.status === 200) {
             setApiError(null);
-            incrementStreak();
+            updateStreak();
           }
         } catch (error) {
           if (isAxiosError(error)) {
@@ -131,7 +131,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
       }
     };
     getDashboardData();
-  }, [authToken, isAuthenticated, incrementStreak]);
+  }, [authToken, isAuthenticated, updateStreak]);
 
   const getRankBadgeColor = (rank: number) => {
     return 'bg-[#080808]/80 text-white font-bold border border-gold/30 ring-1 ring-white/5 shadow-lg';

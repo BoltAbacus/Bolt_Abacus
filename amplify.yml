@@ -1,0 +1,42 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Installing frontend dependencies..."
+            - npm ci
+        build:
+          commands:
+            - echo "Building frontend..."
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+  
+  - backend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Setting up Python environment..."
+            - cd BoltAbacus-master
+            - python -m pip install --upgrade pip
+            - pip install -r requirements.txt
+        build:
+          commands:
+            - echo "Running Django migrations..."
+            - python manage.py migrate
+            - echo "Collecting static files..."
+            - python manage.py collectstatic --noinput
+      artifacts:
+        baseDirectory: BoltAbacus-master
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - BoltAbacus-master/.venv/**/*
+          - BoltAbacus-master/__pycache__/**/*
