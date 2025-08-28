@@ -36,11 +36,24 @@ export const getDayOptions = () => {
 };
 
 export const getLevelOptions = () => {
+  const levelNames = [
+    'Earth Realm',
+    'Water Realm', 
+    'Fire Realm',
+    'Wind Realm',
+    'Lightning Realm',
+    'Crystal Realm',
+    'Shadow Realm',
+    'Light Realm',
+    'Celestial Realm',
+    'Eternal Realm'
+  ];
+
   const options: LabelValuePair[] = [];
 
   for (let i = 1; i <= 10; i += 1) {
     options.push({
-      label: i.toString(),
+      label: levelNames[i - 1],
       value: i,
     });
   }

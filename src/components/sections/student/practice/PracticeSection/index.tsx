@@ -29,7 +29,7 @@ const PracticeSection: FC<PracticeSectionProps> = () => {
           <div className="relative z-10 text-center">
             <h1 className="text-5xl font-black text-gold mb-4">
               🏰 PRACTICE ARENA 🏰
-            </h1>
+        </h1>
             <div className="flex justify-center items-center gap-4 mb-6">
               <div className="bg-gold text-black px-4 py-2 rounded-full font-bold">
                 ⚡ MASTER YOUR SKILLS

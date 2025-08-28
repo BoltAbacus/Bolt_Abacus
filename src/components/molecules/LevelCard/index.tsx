@@ -8,6 +8,7 @@ import LockIcon from '@components/atoms/LockIcon';
 import ProgressBar from '@components/atoms/ProgressBar';
 
 import { STUDENT_LEVEL } from '@constants/routes';
+import { getLevelName } from '@helpers/levelNames';
 
 import styles from './index.module.css';
 
@@ -36,7 +37,7 @@ const LevelCard: FC<LevelCardProps> = ({
             <LockIcon />
           </div>
         )}
-        <p className="text-sm font-semibold desktop:text-md">Level - {level}</p>
+        <p className="text-sm font-semibold desktop:text-md">{getLevelName(level)}</p>
         {type === 'finished' && (
           <div className="flex items-center gap-1 text-sm font-medium text-green desktop:text-md">
             <p>Finished</p>

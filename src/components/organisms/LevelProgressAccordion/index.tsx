@@ -5,6 +5,7 @@ import ClassProgressAccordion from '@components/organisms/ClassProgressAccordion
 import ProgressBar from '@components/atoms/ProgressBar';
 
 import { LevelProgress } from '@interfaces/apis/teacher';
+import { getLevelName } from '@helpers/levelNames';
 
 import styles from './index.module.css';
 
@@ -112,7 +113,7 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
                 </div>
               )}
               <div>
-                <p className="font-medium text-lg text-white">Level {levelProgress.levelId}</p>
+                <p className="font-medium text-lg text-white">{getLevelName(levelProgress.levelId)}</p>
                 <p className="text-sm text-gray-300">
                   {levelStats.completedClasses}/{levelStats.totalClasses} classes completed
                 </p>

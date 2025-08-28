@@ -8,7 +8,7 @@ const RecentActivitySection: FC<RecentActivitySectionProps> = ({ className = '' 
   const activities = [
     { id: 1, action: 'Completed Speed Math', xp: '+150 XP', time: '2 hours ago', icon: '✅' },
     { id: 2, action: 'Practiced Virtual Abacus', xp: '+75 XP', time: '4 hours ago', icon: '✅' },
-    { id: 3, action: 'Took Level 5 Quiz', xp: '+200 XP', time: '6 hours ago', icon: '✅' },
+    { id: 3, action: 'Took Lightning Realm Quiz', xp: '+200 XP', time: '6 hours ago', icon: '✅' },
     { id: 4, action: 'Maintained Daily Streak', xp: '+50 XP', time: '1 day ago', icon: '🔥' },
     { id: 5, action: 'Unlocked Achievement', xp: '+100 XP', time: '1 day ago', icon: '🏆' },
   ];

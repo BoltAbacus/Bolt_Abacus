@@ -22,7 +22,7 @@ export const useTodoStore = create<TodoState>()(
   persist(
     (set, get) => ({
       todos: [
-        { id: 1, text: 'Complete Level 5 quiz', completed: false, createdAt: new Date() },
+        { id: 1, text: 'Complete Lightning Realm quiz', completed: false, createdAt: new Date() },
         { id: 2, text: 'Practice addition for 30 minutes', completed: false, createdAt: new Date() },
         { id: 3, text: 'Review yesterday\'s lessons', completed: true, createdAt: new Date() },
       ],

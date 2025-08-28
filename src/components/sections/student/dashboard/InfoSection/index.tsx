@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 import { STUDENT_LEVEL } from '@constants/routes';
+import { getLevelName } from '@helpers/levelNames';
 
 export interface InfoSectionProps {
   currentLevel: number;
@@ -22,7 +23,7 @@ const InfoSection: FC<InfoSectionProps> = ({
       <div className="space-y-4">
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-300">Level {currentLevel} Progress</span>
+            <span className="text-sm text-gray-300">{getLevelName(currentLevel)} Progress</span>
             <span className="text-xs text-gray-400">{Math.round(Math.max((progress || 0) * 100, 40))}%</span>
           </div>
           {/* Enhanced Progress Bar */}

@@ -14,6 +14,7 @@ import { areValidReportsParams } from '@helpers/paramsValidator';
 import ReportSection from '@components/sections/student/report/ReportSection';
 import { reportRequest } from '@services/student';
 import { ClassReport, QuizReport, TestReport } from '@interfaces/apis/student';
+import { getLevelName } from '@helpers/levelNames';
 
 export interface StudentReportPageProps {}
 
@@ -105,7 +106,7 @@ const StudentReportPage: FC<StudentReportPageProps> = () => {
             </>
           ) : (
             <>
-              <SeoComponent title={`Level ${params.levelId} | Report`} />
+              <SeoComponent title={`${getLevelName(params.levelId || '1')} | Report`} />
               <div className="tablet:gap-8 tablet:p-10 desktop:p-20 desktop:py-8 flex flex-col justify-evenly tablet:justify-between tablet:items-center gap-4 p-6">
                 <ReportSection
                   quizReport={quizReport!}

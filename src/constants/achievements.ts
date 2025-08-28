@@ -9,7 +9,7 @@ export interface AchievementItemConst {
 export const ACHIEVEMENTS: AchievementItemConst[] = [
   { id: 1, name: 'First Steps', icon: '👣', unlocked: true, description: 'Complete your first lesson' },
   { id: 2, name: 'Speed Demon', icon: '⚡', unlocked: true, description: 'Complete 5 sessions in a day' },
-  { id: 3, name: 'Champion', icon: '🏆', unlocked: false, description: 'Reach level 10' },
+  { id: 3, name: 'Champion', icon: '🏆', unlocked: false, description: 'Reach Eternal Realm' },
   { id: 4, name: 'Streak Master', icon: '🔥', unlocked: true, description: 'Maintain 7-day streak' },
   { id: 5, name: 'Math Wizard', icon: '🧙‍♂️', unlocked: false, description: 'Achieve 95% accuracy' },
   { id: 6, name: 'Time Traveler', icon: '⏰', unlocked: false, description: 'Spend 10 hours learning' },

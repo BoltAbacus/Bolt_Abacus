@@ -19,6 +19,7 @@ import { levelRequestV2 } from '@services/student';
 import { ClassProgressV2, LevelResponseV2 } from '@interfaces/apis/student';
 import { LevelPageParams } from '@interfaces/RouteParams';
 import { createClassAccordionsV2 } from '@helpers/level';
+import { getLevelName } from '@helpers/levelNames';
 
 export interface StudentLevelPageProps {}
 
@@ -116,7 +117,7 @@ const StudentLevelPage: FC<StudentLevelPageProps> = () => {
             </>
           ) : (
             <>
-              <SeoComponent title={`Level ${params.levelId}`} />
+              <SeoComponent title={`${getLevelName(params.levelId || '1')}`} />
               <div className="tablet:gap-8 tablet:p-10 desktop:p-20 flex flex-col justify-evenly tablet:justify-between tablet:items-center gap-4 p-6">
                 {createClassAccordionsV2(levelId!, progress!)}
                 {/* <div

@@ -25,10 +25,10 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
   const activities = [
     { id: 1, action: 'Completed Speed Math', xp: '+150 XP', time: '2 hours ago', icon: '✅', type: 'quiz' },
     { id: 2, action: 'Practiced Virtual Abacus', xp: '+75 XP', time: '4 hours ago', icon: '✅', type: 'practice' },
-    { id: 3, action: 'Took Level 5 Quiz', xp: '+200 XP', time: '6 hours ago', icon: '✅', type: 'quiz' },
+    { id: 3, action: 'Took Lightning Realm Quiz', xp: '+200 XP', time: '6 hours ago', icon: '✅', type: 'quiz' },
     { id: 4, action: 'Maintained Daily Streak', xp: '+50 XP', time: '1 day ago', icon: '🔥', type: 'streak' },
     { id: 5, action: 'Unlocked Achievement', xp: '+100 XP', time: '1 day ago', icon: '🏆', type: 'achievement' },
-    { id: 6, action: 'Completed Level 4', xp: '+300 XP', time: '2 days ago', icon: '🎯', type: 'level' },
+    { id: 6, action: 'Completed Wind Realm', xp: '+300 XP', time: '2 days ago', icon: '🎯', type: 'level' },
     { id: 7, action: 'Practiced Addition', xp: '+45 XP', time: '3 days ago', icon: '✅', type: 'practice' },
     { id: 8, action: 'Joined Live Class', xp: '+25 XP', time: '4 days ago', icon: '📹', type: 'class' },
   ];
