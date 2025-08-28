@@ -11,6 +11,7 @@ export interface StreakData {
   lastActivityDate: string | null;
   createdAt: string;
   updatedAt: string;
+  streakCreated?: boolean;
 }
 
 export interface StreakUpdateResponse extends StreakData {

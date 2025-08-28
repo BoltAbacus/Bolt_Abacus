@@ -6,12 +6,19 @@ export interface LeaderboardSectionProps {
 
 const LeaderboardSection: FC<LeaderboardSectionProps> = ({ className = '' }) => {
   const leaderboard = [
-    { rank: 1, name: 'Alex Johnson', xp: 2840, avatar: 'AJ' },
-    { rank: 2, name: 'Sarah Chen', xp: 2650, avatar: 'SC' },
-    { rank: 3, name: 'Mike Davis', xp: 2480, avatar: 'MD' },
+    { rank: 1, name: 'Emma Johnson', xp: 8920, avatar: 'EJ' },
+    { rank: 2, name: 'Alex Chen', xp: 8745, avatar: 'AC' },
+    { rank: 3, name: 'Sarah Davis', xp: 8567, avatar: 'SD' },
+    { rank: 4, name: 'Mike Wilson', xp: 8432, avatar: 'MW' },
+    { rank: 5, name: 'Lisa Brown', xp: 8298, avatar: 'LB' },
+    { rank: 6, name: 'John Taylor', xp: 8156, avatar: 'JT' },
+    { rank: 7, name: 'Maria Anderson', xp: 8023, avatar: 'MA' },
+    { rank: 8, name: 'David Martinez', xp: 7891, avatar: 'DM' },
+    { rank: 9, name: 'Anna Garcia', xp: 7754, avatar: 'AG' },
+    { rank: 10, name: 'Robert Miller', xp: 7623, avatar: 'RM' },
   ];
 
-  const currentUser = { rank: 7, name: 'You', xp: 1850, avatar: 'YO' };
+  const currentUser = { rank: 15, name: 'You', xp: 1850, avatar: 'YO' };
 
   return (
     <div className={`bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-6 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden ${className}`}>

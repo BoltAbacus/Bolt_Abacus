@@ -13,7 +13,8 @@ import {
   AiOutlineVideoCamera,
   AiOutlineHistory,
   AiOutlineCalculator,
-  AiOutlineTrophy
+  AiOutlineTrophy,
+  AiOutlineTeam
 } from 'react-icons/ai';
 import AbacusWidget from '@components/organisms/AbacusWidget';
 
@@ -30,6 +31,7 @@ import {
   STUDENT_VIRTUAL_ABACUS,
   STUDENT_LEADERBOARD,
   STUDENT_ARCHIVE,
+  STUDENT_PVP,
   PROFILE_PAGE,
 } from '@constants/routes';
 
@@ -71,6 +73,11 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       name: 'Practice',
       href: STUDENT_PRACTICE,
       icon: AiOutlineBook,
+    },
+    {
+      name: 'PvP Battles',
+      href: STUDENT_PVP,
+      icon: AiOutlineTeam,
     },
     {
       name: 'Virtual Abacus',

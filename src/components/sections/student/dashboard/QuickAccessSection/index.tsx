@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom';
 import { 
   AiOutlineBarChart, 
   AiOutlineBook, 
-  AiOutlineCalculator,
-  AiOutlineTeam 
+  AiOutlineCalculator
 } from 'react-icons/ai';
-import { STUDENT_ROADMAP, STUDENT_PRACTICE, STUDENT_PVP } from '@constants/routes';
+import { STUDENT_ROADMAP, STUDENT_PRACTICE } from '@constants/routes';
 
 export interface QuickAccessSectionProps {
   className?: string;
@@ -38,14 +37,7 @@ const QuickAccessSection: FC<QuickAccessSectionProps> = ({ className = '' }) => 
       link: '/virtual-abacus', // Placeholder link
       color: 'from-purple-500 to-purple-600',
     },
-    {
-      id: 4,
-      title: 'Player vs Player',
-      description: 'Challenge other students',
-      icon: AiOutlineTeam,
-      link: STUDENT_PVP,
-      color: 'from-red-500 to-red-600',
-    },
+
   ];
 
   return (

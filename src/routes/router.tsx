@@ -178,7 +178,7 @@ export const router = createBrowserRouter([
             element: <StudentPracticePage />,
           },
           {
-            path: 'practice/pvp',
+            path: 'pvp',
             element: <StudentPvPPage />,
           },
           {

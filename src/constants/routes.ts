@@ -24,7 +24,7 @@ export const STUDENT_FLASHCARDS = `${STUDENT_PRACTICE}/flashcards`;
 export const STUDENT_UNTIMED = `${STUDENT_PRACTICE}/untimed`;
 export const STUDENT_TIMED = `${STUDENT_PRACTICE}/timed`;
 export const STUDENT_SET = `${STUDENT_PRACTICE}/set`;
-export const STUDENT_PVP = `${STUDENT_PRACTICE}/pvp`;
+export const STUDENT_PVP = `${STUDENT_ROUTE}/pvp`;
 
 export const ADMIN_ROUTE = '/admin';
 export const ADMIN_DASHBOARD = `${ADMIN_ROUTE}/dashboard`;

@@ -3071,15 +3071,19 @@ class GetUserStreak(APIView):
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Get or create user streak
-            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            # Get or create user streak using the enhanced method
+            try:
+                user_streak, created = UserStreak.get_or_create_streak(user)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: f"Error accessing streak data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             return Response({
                 'currentStreak': user_streak.current_streak,
                 'maxStreak': user_streak.max_streak,
                 'lastActivityDate': user_streak.last_activity_date.isoformat() if user_streak.last_activity_date else None,
                 'createdAt': user_streak.created_at.isoformat(),
-                'updatedAt': user_streak.updated_at.isoformat()
+                'updatedAt': user_streak.updated_at.isoformat(),
+                'streakCreated': created
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -3103,18 +3107,25 @@ class UpdateUserStreak(APIView):
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Get or create user streak
-            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            # Get or create user streak using the enhanced method
+            try:
+                user_streak, created = UserStreak.get_or_create_streak(user)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: f"Error accessing streak data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # Update streak
-            new_streak = user_streak.update_streak()
+            # Update streak with proper error handling
+            try:
+                new_streak = user_streak.update_streak()
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: f"Error updating streak: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             return Response({
                 'currentStreak': user_streak.current_streak,
                 'maxStreak': user_streak.max_streak,
                 'lastActivityDate': user_streak.last_activity_date.isoformat() if user_streak.last_activity_date else None,
                 'streakUpdated': True,
-                'newStreak': new_streak
+                'newStreak': new_streak,
+                'streakCreated': created
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -3138,19 +3149,24 @@ class ResetUserStreak(APIView):
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Get or create user streak
-            user_streak, created = UserStreak.objects.get_or_create(user=user)
+            # Get or create user streak using the enhanced method
+            try:
+                user_streak, created = UserStreak.get_or_create_streak(user)
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: f"Error accessing streak data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # Reset streak
-            user_streak.current_streak = 0
-            user_streak.last_activity_date = None
-            user_streak.save()
+            # Reset streak using the enhanced method
+            try:
+                user_streak.reset_streak()
+            except Exception as e:
+                return Response({Constants.JSON_MESSAGE: f"Error resetting streak: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             return Response({
                 'currentStreak': user_streak.current_streak,
                 'maxStreak': user_streak.max_streak,
                 'lastActivityDate': None,
-                'streakReset': True
+                'streakReset': True,
+                'streakCreated': created
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

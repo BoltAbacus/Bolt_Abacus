@@ -92,10 +92,25 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Database Configuration - Support for both local and Google Cloud
-DATABASE_TYPE = os.environ.get('DATABASE_TYPE', 'local')  # local, gcp_postgresql, gcp_mysql
+# Database Configuration - Support for local, Google Cloud, and Production PostgreSQL
+DATABASE_TYPE = os.environ.get('DATABASE_TYPE', 'local')  # local, gcp_postgresql, gcp_mysql, production_postgresql
 
-if DATABASE_TYPE == 'gcp_postgresql':
+if DATABASE_TYPE == 'production_postgresql':
+    # Production PostgreSQL (AWS RDS)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'boltabacusdb'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'YOUR_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST', 'boltabacusdb.cxoohqadjgtz.ap-south-1.rds.amazonaws.com'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
+elif DATABASE_TYPE == 'gcp_postgresql':
     # Google Cloud PostgreSQL
     DATABASES = {
         'default': {
