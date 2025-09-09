@@ -24,22 +24,46 @@ export interface StreakResetResponse extends StreakData {
 }
 
 export const getUserStreak = async (token: string): Promise<StreakData> => {
+  console.log('📡 [Streak Service] Making GET request to:', GET_USER_STREAK_ENDPOINT);
   const response = await axios.get(GET_USER_STREAK_ENDPOINT, {
-    headers: { 'AUTH-TOKEN': token },
+    headers: {
+      'AUTH-TOKEN': token,
+    },
+  });
+  console.log('✅ [Streak Service] GET response received:', {
+    status: response.status,
+    data: response.data,
+    timestamp: new Date().toISOString()
   });
   return response.data;
 };
 
 export const updateUserStreak = async (token: string): Promise<StreakUpdateResponse> => {
+  console.log('📡 [Streak Service] Making POST request to:', UPDATE_USER_STREAK_ENDPOINT);
   const response = await axios.post(UPDATE_USER_STREAK_ENDPOINT, {}, {
-    headers: { 'AUTH-TOKEN': token },
+    headers: {
+      'AUTH-TOKEN': token,
+    },
+  });
+  console.log('✅ [Streak Service] POST response received:', {
+    status: response.status,
+    data: response.data,
+    timestamp: new Date().toISOString()
   });
   return response.data;
 };
 
 export const resetUserStreak = async (token: string): Promise<StreakResetResponse> => {
+  console.log('📡 [Streak Service] Making POST request to:', RESET_USER_STREAK_ENDPOINT);
   const response = await axios.post(RESET_USER_STREAK_ENDPOINT, {}, {
-    headers: { 'AUTH-TOKEN': token },
+    headers: {
+      'AUTH-TOKEN': token,
+    },
+  });
+  console.log('✅ [Streak Service] RESET response received:', {
+    status: response.status,
+    data: response.data,
+    timestamp: new Date().toISOString()
   });
   return response.data;
 };

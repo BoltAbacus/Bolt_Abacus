@@ -6,6 +6,7 @@ import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import StudentProgressSection from '@components/sections/student/ProgressSection';
+// import DebugConsole from '@components/atoms/DebugConsole';
 
 import { useAuthStore } from '@store/authStore';
 import { getProgressRequest } from '@services/student';
@@ -17,7 +18,7 @@ import {
 import { StudentProgressPageParams } from '@interfaces/RouteParams';
 
 import { ERRORS, MESSAGES } from '@constants/app';
-import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
+import { LOGIN_PAGE, STUDENT_DASHBOARD, STUDENT_PROGRESS_ENDPOINT } from '@constants/routes';
 
 export interface StudentProgressPageProps {}
 
@@ -40,39 +41,77 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
 
   useEffect(() => {
     const getStudentProgressData = async () => {
+      console.log('🔄 [Progress Page] Starting data fetch...', {
+        isAuthenticated,
+        hasAuthToken: !!authToken,
+        timestamp: new Date().toISOString()
+      });
+
       if (isAuthenticated) {
         try {
+          console.log('📡 [Progress Page] Making API request to:', STUDENT_PROGRESS_ENDPOINT);
           const res = await getProgressRequest(authToken!);
+          console.log('✅ [Progress Page] API response received:', {
+            status: res.status,
+            dataKeys: Object.keys(res.data || {}),
+            timestamp: new Date().toISOString()
+          });
+
           if (res.status === 200) {
-            const getStudentProgressResponse: GetStudentProgressResponse =
-              res.data;
+            const getStudentProgressResponse: GetStudentProgressResponse = res.data;
+            console.log('📊 [Progress Page] Processing response data:', {
+              levelsCount: getStudentProgressResponse.levels?.length || 0,
+              batchName: getStudentProgressResponse.batchName,
+              hasPracticeStats: !!getStudentProgressResponse.practiceStats
+            });
 
             setStudentProgress(getStudentProgressResponse.levels);
             setBatchName(getStudentProgressResponse.batchName);
             setPracticeStats(getStudentProgressResponse.practiceStats);
+            console.log('✅ [Progress Page] State updated successfully');
           }
         } catch (error) {
+          console.error('❌ [Progress Page] API Error:', {
+            error,
+            isAxiosError: isAxiosError(error),
+            status: isAxiosError(error) ? error.response?.status : 'unknown',
+            message: isAxiosError(error) ? error.message : 'Unknown error',
+            responseData: isAxiosError(error) ? error.response?.data : null,
+            timestamp: new Date().toISOString()
+          });
+
           if (isAxiosError(error)) {
             const status = error.response?.status;
             if (status === 401 || status === 403 || status === 404) {
-              setApiError(
-                error.response?.data?.error ||
-                  error.response?.data?.message ||
-                  ERRORS.SERVER_ERROR
-              );
+              const errorMessage = error.response?.data?.error ||
+                error.response?.data?.message ||
+                ERRORS.SERVER_ERROR;
+              console.error('🚫 [Progress Page] Auth/Not Found Error:', {
+                status,
+                errorMessage,
+                responseData: error.response?.data
+              });
+              setApiError(errorMessage);
             } else {
+              console.error('🔥 [Progress Page] Server Error:', {
+                status,
+                message: error.message
+              });
               setApiError(ERRORS.SERVER_ERROR);
             }
           } else {
+            console.error('💥 [Progress Page] Unknown Error:', error);
             setApiError(ERRORS.SERVER_ERROR);
           }
         }
       } else {
+        console.warn('⚠️ [Progress Page] User not authenticated, redirecting to login');
         setApiError(ERRORS.AUTHENTICATION_ERROR);
         setFallBackLink(LOGIN_PAGE);
         setFallBackAction(MESSAGES.GO_LOGIN);
       }
       setLoading(false);
+      console.log('🏁 [Progress Page] Data fetch completed');
     };
     getStudentProgressData();
   }, [authToken, isAuthenticated, params]);
@@ -107,6 +146,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
           )}
         </div>
       )}
+      {/* <DebugConsole /> */}
     </div>
   );
 };

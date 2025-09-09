@@ -1,79 +1,179 @@
-import { FC, useState } from 'react';
-import { AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
-import { useTodoStore } from '@store/todoStore';
+import { FC, useState, useEffect } from 'react';
+import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
+import { useTodoListStore } from '@store/todoListStore';
 
 export interface TodoListSectionProps {
   className?: string;
 }
 
 const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
-  const { todos, addTodo, toggleTodo, deleteTodo, getCompletedCount, getTotalCount } = useTodoStore();
-  const [newTodo, setNewTodo] = useState('');
+  const { todos, completed_todos, pending_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, isLoading } = useTodoListStore();
+  const [newGoal, setNewGoal] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  const handleAddTodo = () => {
-    if (newTodo.trim()) {
-      addTodo(newTodo.trim());
-      setNewTodo('');
+  useEffect(() => {
+    fetchTodoList();
+  }, [fetchTodoList]);
+
+  const handleAddGoal = async () => {
+    if (newGoal.trim()) {
+      await addPersonalGoal(newGoal.trim());
+      setNewGoal('');
+      setShowAddForm(false);
     }
+  };
+
+  const handleRemoveGoal = async (goalId: string) => {
+    await removePersonalGoal(goalId);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleAddTodo();
+      handleAddGoal();
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-400';
+      case 'medium': return 'text-yellow-400';
+      case 'low': return 'text-green-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'practice': return '📚';
+      case 'streak': return '🔥';
+      case 'level': return '⚡';
+      case 'pvp': return '⚔️';
+      default: return '📝';
     }
   };
 
   return (
     <div className={`text-white ${className}`}>
-      <h2 className="text-xl font-bold mb-4">Todo List</h2>
-      
-      {/* Add new todo */}
-      <div className="flex space-x-2 mb-4">
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Add a new task..."
-          className="flex-1 bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-white/5 focus:outline-none focus:border-gold/70 backdrop-blur-sm transition-colors"
-        />
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold flex items-center">
+          <span className="mr-2">📋</span>
+          Personal Goals
+        </h2>
         <button
-          onClick={handleAddTodo}
-          className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-1 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors text-sm"
         >
-          <AiOutlinePlus size={16} />
+          <AiOutlinePlus size={14} />
         </button>
       </div>
       
-      {/* Todo list */}
-      <div className="space-y-2 max-h-48 overflow-y-auto">
-        {todos.map((todo) => (
-          <div key={todo.id} className="flex items-center space-x-3 p-2 bg-[#080808]/50 hover:bg-[#191919] rounded-lg border border-gold/20 ring-1 ring-white/5 backdrop-blur-sm transition-colors">
+      {/* Add Goal Form */}
+      {showAddForm && (
+        <div className="mb-4 p-3 bg-[#080808]/50 rounded-lg border border-gold/20">
+          <div className="flex space-x-2">
             <input
-              type="checkbox"
-              checked={todo.completed}
-              onChange={() => toggleTodo(todo.id)}
-              className="w-4 h-4 text-gold bg-[#080808] border-gold/40 rounded focus:ring-gold/50"
+              type="text"
+              value={newGoal}
+              onChange={(e) => setNewGoal(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Add a new goal..."
+              className="flex-1 bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-white/5 focus:outline-none focus:border-gold/70 backdrop-blur-sm transition-colors text-sm"
             />
-            <span className={`flex-1 text-sm ${todo.completed ? 'line-through text-gray-400' : 'text-gray-200'}`}>
-              {todo.text}
-            </span>
             <button
-              onClick={() => deleteTodo(todo.id)}
-              className="text-red hover:text-red/80 transition-colors"
+              onClick={handleAddGoal}
+              className="bg-gold hover:bg-lightGold text-black px-3 py-2 rounded-lg font-semibold transition-colors text-sm"
             >
-              <AiOutlineDelete size={14} />
+              Add
+            </button>
+            <button
+              onClick={() => {
+                setShowAddForm(false);
+                setNewGoal('');
+              }}
+              className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors text-sm"
+            >
+              Cancel
             </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
       
-      {/* Summary */}
-      <div className="mt-4 pt-4 border-t border-gold/20">
-        <p className="text-sm text-gray-400">
-          {getCompletedCount()} of {getTotalCount()} tasks completed
-        </p>
-      </div>
+      {isLoading ? (
+        <div className="text-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold mx-auto"></div>
+          <p className="text-sm text-gray-400 mt-2">Loading goals...</p>
+        </div>
+      ) : (
+        <>
+          {/* Todo list */}
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {todos.slice(0, 4).map((todo) => (
+              <div key={todo.id} className={`p-3 rounded-lg border backdrop-blur-sm transition-all duration-200 ${
+                todo.completed 
+                  ? 'bg-green-500/10 border-green-400/30' 
+                  : 'bg-[#080808]/50 hover:bg-[#191919] border-gold/20'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-1">
+                    {todo.completed ? (
+                      <AiOutlineCheckCircle className="text-green-400 text-lg" />
+                    ) : (
+                      <AiOutlineClockCircle className="text-gold text-lg" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-lg">{getTypeIcon(todo.type)}</span>
+                      <h3 className={`text-sm font-semibold ${
+                        todo.completed ? 'line-through text-gray-400' : 'text-white'
+                      }`}>
+                        {todo.title}
+                      </h3>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        todo.completed ? 'bg-green-500/20 text-green-400' : getPriorityColor(todo.priority)
+                      }`}>
+                        {todo.priority}
+                      </span>
+                    </div>
+                    <p className={`text-xs ${
+                      todo.completed ? 'text-gray-500' : 'text-gray-300'
+                    }`}>
+                      {todo.description}
+                    </p>
+                  </div>
+                  {todo.type === 'personal' && (
+                    <button
+                      onClick={() => handleRemoveGoal(todo.id)}
+                      className="flex-shrink-0 text-red-400 hover:text-red-300 transition-colors p-1"
+                      title="Remove goal"
+                    >
+                      <AiOutlineDelete size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Summary */}
+          <div className="mt-4 pt-4 border-t border-gold/20">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">
+                {completed_todos} of {total_todos} goals completed
+              </span>
+              <span className="text-gold font-semibold">
+                {total_todos > 0 ? Math.round((completed_todos / total_todos) * 100) : 0}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+              <div 
+                className="bg-gradient-to-r from-gold to-lightGold h-2 rounded-full transition-all duration-500"
+                style={{ width: `${total_todos > 0 ? (completed_todos / total_todos) * 100 : 0}%` }}
+              ></div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

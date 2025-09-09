@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const LoginResponseSchema = z.object({
+  id: z.number(),
   email: z.string(),
   phone: z.string(),
   firstName: z.string(),

@@ -30,6 +30,8 @@ import StudentReportPage from '@pages/student/report';
 import StudentProgressPage from '@pages/student/student-progress';
 import StudentPracticePage from '@pages/student/practice-mode';
 import StudentPvPPage from '@pages/student/practice-mode/pvp';
+import StudentPvPRoomPage from '@pages/student/practice-mode/pvp/room';
+import StudentPvPGamePage from '@pages/student/practice-mode/pvp/game';
 import StudentTimedPracticePage from '@pages/student/practice-test/timed';
 import StudentUntimedPracticePage from '@pages/student/practice-test/untimed';
 import StudentFlashCardPracticePage from '@pages/student/practice-test/flashcards';
@@ -161,10 +163,10 @@ export const router = createBrowserRouter([
             path: 'roadmap',
             element: <StudentRoadmapPage />,
           },
-          {
-            path: 'archive',
-            element: <StudentArchivePage />,
-          },
+          // {
+          //   path: 'archive',
+          //   element: <StudentArchivePage />,
+          // },
           {
             path: 'virtual-abacus',
             element: <StudentVirtualAbacusPage />,
@@ -180,6 +182,14 @@ export const router = createBrowserRouter([
           {
             path: 'pvp',
             element: <StudentPvPPage />,
+          },
+          {
+            path: 'pvp/room/:roomId',
+            element: <StudentPvPRoomPage />,
+          },
+          {
+            path: 'pvp/game/:roomId',
+            element: <StudentPvPGamePage />,
           },
           {
             path: 'level/:levelId',

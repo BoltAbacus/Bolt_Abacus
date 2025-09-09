@@ -209,13 +209,24 @@ export const reportRequest = async (
 };
 
 export const getProgressRequest = async (token: string) => {
-  return axios.post(
+  console.log('📡 [Student Service] Making POST request to:', STUDENT_PROGRESS_ENDPOINT);
+  const response = await axios.post(
     STUDENT_PROGRESS_ENDPOINT,
     {},
     {
-      headers: { 'AUTH-TOKEN': token },
+      // Backend view reads only the custom header and decodes it manually.
+      headers: {
+        'AUTH-TOKEN': token,
+      },
+      timeout: 20000,
     }
   );
+  console.log('✅ [Student Service] Progress response received:', {
+    status: response.status,
+    dataKeys: Object.keys(response.data || {}),
+    timestamp: new Date().toISOString()
+  });
+  return response;
 };
 
 export const addStudentRequest = async (
@@ -313,4 +324,38 @@ export const getPracticeProgressRequest = async (
       headers: { 'AUTH-TOKEN': token },
     }
   );
+};
+
+export const getAccuracyTrendRequest = async (token: string) => {
+  console.log('📡 [Student Service] Making POST request to: /accuracyTrend/');
+  const response = await axios.post(
+    '/accuracyTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  console.log('✅ [Student Service] Accuracy trend response:', {
+    status: response.status,
+    dataKeys: Object.keys(response.data || {}),
+    timestamp: new Date().toISOString()
+  });
+  return response;
+};
+
+export const getSpeedTrendRequest = async (token: string) => {
+  console.log('📡 [Student Service] Making POST request to: /speedTrend/');
+  const response = await axios.post(
+    '/speedTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  console.log('✅ [Student Service] Speed trend response:', {
+    status: response.status,
+    dataKeys: Object.keys(response.data || {}),
+    timestamp: new Date().toISOString()
+  });
+  return response;
 };

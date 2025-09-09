@@ -6,19 +6,22 @@ import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import JoinClassButton from '@components/atoms/JoinClassButton';
+import DebugConsole from '@components/atoms/DebugConsole';
 import TodoListSection from '@components/sections/student/dashboard/TodoListSection';
 import SessionsBar from '@components/atoms/SessionsBar';
 import BoltGoalsSection from '@components/sections/student/dashboard/BoltGoalsSection';
 import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid';
 import WeeklyStatsSection from '@components/sections/student/dashboard/WeeklyStatsSection';
 // import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
-import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
+// import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
 import { dashboardRequestV2, getPracticeProgressRequest } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
-import { useCoinsStore } from '@store/coinsStore';
-import StreakTest from '@components/atoms/StreakTest';
+import { useExperienceStore } from '@store/experienceStore';
+import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
+import { useTodoListStore } from '@store/todoListStore';
+// import StreakTest from '@components/atoms/StreakTest';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
 import {
@@ -43,27 +46,59 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [classLink, setClassLink] = useState<string>();
   const [progress, setProgress] = useState<LevelsPercentage>({});
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const { currentStreak, updateStreak } = useStreakStore();
-  const { addCoins, coins } = useCoinsStore();
+  const { currentStreak, updateStreak, fetchStreak } = useStreakStore();
+  const { experience_points, level, syncWithBackend } = useExperienceStore();
+  const { sessions, accuracy, time_spent_formatted, fetchWeeklyStats } = useWeeklyStatsStore();
+  const { todos, completed_todos, pending_todos, fetchTodoList } = useTodoListStore();
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
     let isMounted = true;
+    
     const getDashboardData = async () => {
+      console.log('🔄 [Dashboard] Starting data fetch...', {
+        isAuthenticated,
+        hasAuthToken: !!authToken,
+        timestamp: new Date().toISOString()
+      });
+
       if (isAuthenticated) {
         try {
+          console.log('📡 [Dashboard] Making API request to dashboard...');
           const res = await dashboardRequestV2(authToken!);
+          console.log('✅ [Dashboard] Dashboard API response received:', {
+            status: res.status,
+            dataKeys: Object.keys(res.data || {}),
+            timestamp: new Date().toISOString()
+          });
+
           if (res.status === 200) {
             const dashboardResponse: DashboardResponseV2 = res.data;
             if (!isMounted) return;
+            
+            console.log('📊 [Dashboard] Processing dashboard data:', {
+              levelId: dashboardResponse.levelId,
+              hasLatestLink: !!dashboardResponse.latestLink,
+              levelsPercentageKeys: Object.keys(dashboardResponse.levelsPercentage || {}),
+              timestamp: new Date().toISOString()
+            });
+
             setCurrentLevel(dashboardResponse.levelId);
             setClassLink(dashboardResponse.latestLink);
             setApiError(null);
             setProgress(dashboardResponse.levelsPercentage);
+            
             // Fetch practice data
             try {
+              console.log('📡 [Dashboard] Fetching practice progress...');
               const practiceRes = await getPracticeProgressRequest('flashcards', 'addition', authToken!);
+              console.log('✅ [Dashboard] Practice progress response:', {
+                status: practiceRes.status,
+                hasData: !!practiceRes.data?.practiceProgress,
+                timestamp: new Date().toISOString()
+              });
+
               if (practiceRes.status === 200) {
                 const practiceData = practiceRes.data.practiceProgress;
                 if (!isMounted) return;
@@ -80,21 +115,80 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     practiceSessions: practiceData.practiceSessions || []
                   } : null
                 });
+                console.log('✅ [Dashboard] Practice stats processed successfully');
               } else {
                 setDashboardData(dashboardResponse);
+                console.log('⚠️ [Dashboard] Practice stats failed, using dashboard data only');
               }
             } catch (practiceError) {
+              console.warn('⚠️ [Dashboard] Practice data fetch failed:', practiceError);
               setDashboardData(dashboardResponse);
             }
+            
+            // Fetch streak data
+            console.log('🔄 [Dashboard] Fetching streak data...');
+            try {
+              await fetchStreak();
+              console.log('✅ [Dashboard] Streak data fetched successfully');
+            } catch (streakError) {
+              console.error('❌ [Dashboard] Streak fetch failed:', streakError);
+            }
+            
             // Update streak for daily activity
-            updateStreak();
-            // Add some coins for daily login (you can adjust this logic)
-            addCoins(10);
+            console.log('🔄 [Dashboard] Updating streak for daily activity...');
+            try {
+              await updateStreak();
+              console.log('✅ [Dashboard] Streak updated successfully');
+            } catch (streakUpdateError) {
+              console.error('❌ [Dashboard] Streak update failed:', streakUpdateError);
+            }
+            
+            // Sync experience data from backend
+            console.log('🔄 [Dashboard] Syncing experience data...');
+            try {
+              await syncWithBackend();
+              console.log('✅ [Dashboard] Experience data synced successfully');
+            } catch (expError) {
+              console.error('❌ [Dashboard] Experience sync failed:', expError);
+            }
+            
+            // Fetch weekly stats
+            console.log('🔄 [Dashboard] Fetching weekly stats...');
+            try {
+              await fetchWeeklyStats();
+              console.log('✅ [Dashboard] Weekly stats fetched successfully');
+            } catch (weeklyStatsError) {
+              console.error('❌ [Dashboard] Weekly stats fetch failed:', weeklyStatsError);
+            }
+            
+            // Fetch todo list
+            console.log('🔄 [Dashboard] Fetching todo list...');
+            try {
+              await fetchTodoList();
+              console.log('✅ [Dashboard] Todo list fetched successfully');
+            } catch (todoError) {
+              console.error('❌ [Dashboard] Todo list fetch failed:', todoError);
+            }
+            
+            console.log('✅ [Dashboard] All data processing completed successfully');
           }
         } catch (error) {
+          console.error('❌ [Dashboard] API Error:', {
+            error,
+            isAxiosError: isAxiosError(error),
+            status: isAxiosError(error) ? error.response?.status : 'unknown',
+            message: isAxiosError(error) ? error.message : 'Unknown error',
+            responseData: isAxiosError(error) ? error.response?.data : null,
+            timestamp: new Date().toISOString()
+          });
+
           if (isAxiosError(error)) {
             const status = error.response?.status;
             if (status === 401) {
+              console.error('🚫 [Dashboard] Authentication Error:', {
+                status,
+                message: error.response?.data?.error || error.response?.data?.message || ERRORS.SERVER_ERROR
+              });
               setApiError(
                 error.response?.data?.error ||
                   error.response?.data?.message ||
@@ -103,28 +197,36 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               setFallBackLink(LOGIN_PAGE);
               setFallBackAction(MESSAGES.GO_LOGIN);
             } else {
+              console.error('🔥 [Dashboard] Server Error:', {
+                status,
+                message: error.message
+              });
               setApiError(ERRORS.SERVER_ERROR);
             }
           } else {
+            console.error('💥 [Dashboard] Unknown Error:', error);
             setApiError(ERRORS.SERVER_ERROR);
           }
         } finally {
           setLoading(false);
+          console.log('🏁 [Dashboard] Data fetch completed');
         }
       } else {
+        console.warn('⚠️ [Dashboard] User not authenticated, redirecting to login');
         setLoading(false);
         setApiError(ERRORS.AUTHENTICATION_ERROR);
         setFallBackLink(LOGIN_PAGE);
         setFallBackAction(MESSAGES.GO_LOGIN);
       }
     };
+    
     getDashboardData();
     intervalId = setInterval(getDashboardData, 10000); // Poll every 10 seconds
     return () => {
       isMounted = false;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [authToken, isAuthenticated, updateStreak, addCoins]);
+  }, [authToken, isAuthenticated, updateStreak, syncWithBackend, fetchWeeklyStats, fetchStreak, fetchTodoList]);
 
   return (
     <div className="min-h-screen">
@@ -166,7 +268,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                       <div className="flex items-center space-x-4">
                         <span className="bg-[#080808]/80 hover:bg-[#191919] text-white font-bold px-3 py-2 rounded-xl border border-gold/50 ring-1 ring-white/5 shadow-lg backdrop-blur-md transition-colors duration-200">
                           <span className="text-lg mr-1">⚡</span>
-                          <span>{coins.toLocaleString()} XP</span>
+                          <span>{experience_points.toLocaleString()} XP</span>
                         </span>
                         <span className="bg-[#080808]/80 hover:bg-[#191919] text-white font-bold px-3 py-2 rounded-xl border border-gold/50 ring-1 ring-white/5 shadow-lg backdrop-blur-md transition-colors duration-200">
                           <span className="text-lg mr-1">🔥</span>
@@ -186,22 +288,22 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 relative z-10">
                       <span className="text-xl font-bold text-gold mb-2">
-                        Level {currentLevel} • {Math.floor((progress[currentLevel] || 0) * 15)} / 1500 XP
+                        Class Level {currentLevel}
                       </span>
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-white/80 font-semibold">Progress</span>
-                        <span className="text-sm font-bold text-gold">{Math.round(Math.max((progress[currentLevel] || 0) * 100, 40))}%</span>
+                        <span className="text-sm font-bold text-gold">{Math.min(100, Math.round((progress[currentLevel] || 0) * 100))}%</span>
                       </div>
                                               {/* Enhanced Progress Bar */}
                         <div className="w-full bg-[#0e0e0e]/80 rounded-full h-5 shadow-inner mb-3 relative overflow-hidden border border-gold/30 ring-1 ring-white/5">
                           <div 
                             className="bg-gold h-5 rounded-full transition-all duration-700 shadow-[0_0_16px_rgba(255,186,8,0.30)] relative overflow-hidden"
-                            style={{ width: `${Math.max((progress[currentLevel] || 0) * 100, 40)}%` }}
+                            style={{ width: `${Math.min(100, (progress[currentLevel] || 0) * 100)}%` }}
                           />
                         </div>
                                               <div className="flex justify-between items-center">
                           <span className="text-sm text-white/70 font-medium">
-                            {Math.round(Math.max((progress[currentLevel] || 0) * 100, 40))}% to next level
+                            {Math.min(100, Math.round((progress[currentLevel] || 0) * 100))}% completed
                           </span>
                           <Link
                             to={`/student/level/${currentLevel}`}
@@ -281,43 +383,35 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     
                                            <div className="relative z-10">
                          <WeeklyStatsSection
-                           sessions={dashboardData?.practiceStats?.totalSessions || 0}
-                           accuracy={
-                             dashboardData?.practiceStats?.totalQuestionsAttempted > 0
-                               ? Math.round((dashboardData.practiceStats.totalProblemsSolved / dashboardData.practiceStats.totalQuestionsAttempted) * 100)
-                               : 0
-                           }
-                           timeSpent={(() => {
-                             const totalSeconds = dashboardData?.practiceStats?.totalPracticeTime || 0;
-                             const hours = Math.floor(totalSeconds / 3600);
-                             const minutes = Math.floor((totalSeconds % 3600) / 60);
-                             return `${hours}h ${minutes}m`;
-                           })()}
+                           sessions={dashboardData?.practiceStats?.recentSessions || 0}
+                           accuracy={dashboardData?.practiceStats?.averageAccuracy || 0}
+                           timeSpent={dashboardData?.practiceStats?.totalPracticeTime ? `${Math.round(dashboardData.practiceStats.totalPracticeTime / 60)}h ${Math.round(dashboardData.practiceStats.totalPracticeTime % 60)}m` : '0h 0m'}
                          />
                        </div>
                   </div>
-                  <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-                    {/* Animated background elements */}
+                  {/* ACHIEVEMENTS SECTION COMMENTED OUT - CLIENT DOES NOT WANT THIS FEATURE */}
+                  {/* <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 via-transparent to-orange-500/5 animate-pulse"></div>
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500"></div>
                     
                     <div className="relative z-10">
                       <AchievementsSection />
                     </div>
-                  </div>
+                  </div> */}
                 </div>
                 
-                {/* 🧪 STREAK TEST COMPONENT */}
-                <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
+                {/* 🧪 STREAK TEST COMPONENT COMMENTED OUT - NOT NEEDED */}
+                {/* <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
                   <div className="relative z-10">
                     <StreakTest />
                   </div>
-                </div>
+                </div> */}
               </div>
             </>
           )}
         </div>
       )}
+      <DebugConsole />
     </div>
   );
 };

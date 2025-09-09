@@ -16,7 +16,7 @@ from Authentication.models import (UserDetails, Student,
                                    Progress, Teacher, OrganizationTag,
                                    PracticeQuestions, GameRoom, GameMatch, 
                                    GamePlayer, GameQuestion, GameAnswer, PlayerConnection,
-                                   UserStreak)
+                                   UserStreak, UserExperience)
 from django.db.models import F
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -128,18 +128,47 @@ class CurrentLevelsV2(APIView):
 
     def get(self, request):
         try:
-            requestUserToken = request.headers[Constants.TOKEN_HEADER]
+            # Extract token from headers using .get() to avoid KeyError
+            auth_token = request.headers.get(Constants.TOKEN_HEADER)
+            
+            if not auth_token:
+                return Response({Constants.JSON_MESSAGE: "Authentication token required"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Decode token to get user
             try:
-                requestUserId = IdExtraction(requestUserToken)
-                if isinstance(requestUserId, Exception):
-                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
-            except Exception as e:
-                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
-            userBatchDetails = Student.objects.filter(user=requestUserId).first()
+                payload = jwt.decode(auth_token, Constants.SECRET_KEY, algorithms=['HS256'])
+                user_id = payload[Constants.USER_ID]
+            except jwt.ExpiredSignatureError:
+                return Response({Constants.JSON_MESSAGE: "Token expired"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            except jwt.InvalidTokenError:
+                return Response({Constants.JSON_MESSAGE: "Invalid token"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # First check if user exists
+            user = UserDetails.objects.filter(userId=user_id).first()
+            if not user:
+                return Response({Constants.JSON_MESSAGE: "User not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
+            # Check if user is a student
+            userBatchDetails = Student.objects.filter(user=user_id).first()
             if userBatchDetails is None:
-                return Response({Constants.JSON_MESSAGE: "Given user is Invalid or not a Student."}, status=status.HTTP_400_BAD_REQUEST)
+                # If user is not a student, return a more specific error
+                if user.role != 'student':
+                    return Response({Constants.JSON_MESSAGE: "This endpoint is only available for students"}, 
+                                  status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response({Constants.JSON_MESSAGE: "Student profile not found. Please contact your teacher."}, 
+                                  status=status.HTTP_400_BAD_REQUEST)
+            
             userBatchId = userBatchDetails.batch_id
             userBatch = Batch.objects.filter(batchId=userBatchId).first()
+            if not userBatch:
+                return Response({Constants.JSON_MESSAGE: "Batch not found"}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
             latestLevel = userBatchDetails.latestLevelId
             latestLink = userBatch.latestLink
             latestClass = userBatchDetails.latestClassId
@@ -161,7 +190,7 @@ class CurrentLevelsV2(APIView):
                         for quiz in curriculumDetails:
                             topicCount += 1
                             quizId = quiz.quizId
-                            progress = Progress.objects.filter(quiz_id=quizId, user_id=requestUserId).first()
+                            progress = Progress.objects.filter(quiz_id=quizId, user_id=user_id).first()
                             if progress and progress.quizPass:
                                 numberOfTopicsPassed += 1
                                 levelScore += progress.score
@@ -3059,15 +3088,25 @@ class GetUserStreak(APIView):
 
     def get(self, request):
         try:
-            requestUserToken = request.headers[Constants.TOKEN_HEADER]
-            try:
-                requestUserId = IdExtraction(requestUserToken)
-                if isinstance(requestUserId, Exception):
-                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
-            except Exception as e:
-                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            # Extract token from headers using .get() to avoid KeyError
+            auth_token = request.headers.get(Constants.TOKEN_HEADER)
             
-            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not auth_token:
+                return Response({Constants.JSON_MESSAGE: "Authentication token required"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Decode token to get user
+            try:
+                payload = jwt.decode(auth_token, Constants.SECRET_KEY, algorithms=['HS256'])
+                user_id = payload[Constants.USER_ID]
+            except jwt.ExpiredSignatureError:
+                return Response({Constants.JSON_MESSAGE: "Token expired"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            except jwt.InvalidTokenError:
+                return Response({Constants.JSON_MESSAGE: "Invalid token"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            user = UserDetails.objects.filter(userId=user_id).first()
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -3095,15 +3134,25 @@ class UpdateUserStreak(APIView):
 
     def post(self, request):
         try:
-            requestUserToken = request.headers[Constants.TOKEN_HEADER]
-            try:
-                requestUserId = IdExtraction(requestUserToken)
-                if isinstance(requestUserId, Exception):
-                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
-            except Exception as e:
-                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            # Extract token from headers using .get() to avoid KeyError
+            auth_token = request.headers.get(Constants.TOKEN_HEADER)
             
-            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not auth_token:
+                return Response({Constants.JSON_MESSAGE: "Authentication token required"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Decode token to get user
+            try:
+                payload = jwt.decode(auth_token, Constants.SECRET_KEY, algorithms=['HS256'])
+                user_id = payload[Constants.USER_ID]
+            except jwt.ExpiredSignatureError:
+                return Response({Constants.JSON_MESSAGE: "Token expired"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            except jwt.InvalidTokenError:
+                return Response({Constants.JSON_MESSAGE: "Invalid token"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            user = UserDetails.objects.filter(userId=user_id).first()
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -3137,15 +3186,25 @@ class ResetUserStreak(APIView):
 
     def post(self, request):
         try:
-            requestUserToken = request.headers[Constants.TOKEN_HEADER]
-            try:
-                requestUserId = IdExtraction(requestUserToken)
-                if isinstance(requestUserId, Exception):
-                    raise Exception(Constants.INVALID_TOKEN_MESSAGE)
-            except Exception as e:
-                return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_403_FORBIDDEN)
+            # Extract token from headers using .get() to avoid KeyError
+            auth_token = request.headers.get(Constants.TOKEN_HEADER)
             
-            user = UserDetails.objects.filter(userId=requestUserId).first()
+            if not auth_token:
+                return Response({Constants.JSON_MESSAGE: "Authentication token required"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Decode token to get user
+            try:
+                payload = jwt.decode(auth_token, Constants.SECRET_KEY, algorithms=['HS256'])
+                user_id = payload[Constants.USER_ID]
+            except jwt.ExpiredSignatureError:
+                return Response({Constants.JSON_MESSAGE: "Token expired"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            except jwt.InvalidTokenError:
+                return Response({Constants.JSON_MESSAGE: "Invalid token"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            user = UserDetails.objects.filter(userId=user_id).first()
             if not user:
                 return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -3167,6 +3226,55 @@ class ResetUserStreak(APIView):
                 'lastActivityDate': None,
                 'streakReset': True,
                 'streakCreated': created
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({Constants.JSON_MESSAGE: repr(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Experience Management API
+class GetUserExperience(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            # Extract token from headers using .get() to avoid KeyError
+            auth_token = request.headers.get(Constants.TOKEN_HEADER)
+            
+            if not auth_token:
+                return Response({Constants.JSON_MESSAGE: "Authentication token required"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Decode token to get user
+            try:
+                payload = jwt.decode(auth_token, Constants.SECRET_KEY, algorithms=['HS256'])
+                user_id = payload[Constants.USER_ID]
+            except jwt.ExpiredSignatureError:
+                return Response({Constants.JSON_MESSAGE: "Token expired"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            except jwt.InvalidTokenError:
+                return Response({Constants.JSON_MESSAGE: "Invalid token"}, 
+                              status=status.HTTP_401_UNAUTHORIZED)
+            
+            user = UserDetails.objects.filter(userId=user_id).first()
+            if user is None:
+                return Response({Constants.JSON_MESSAGE: "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            user_exp, created = UserExperience.objects.get_or_create(
+                user=user,
+                defaults={'experience_points': 0, 'level': 1}
+            )
+            
+            exp_data = {
+                'user_id': user.userId,
+                'experience_points': user_exp.experience_points,
+                'level': user_exp.level,
+                'xp_to_next_level': 100 - (user_exp.experience_points % 100)
+            }
+            
+            return Response({
+                'success': True,
+                'data': exp_data
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

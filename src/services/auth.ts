@@ -32,3 +32,9 @@ export const forgotPasswordRequest = async (email: string) => {
     email,
   });
 };
+
+export const getUserDetails = async (token: string) => {
+  return axios.post('/getUserDetails/', {}, {
+    headers: { 'AUTH-TOKEN': token },
+  });
+};

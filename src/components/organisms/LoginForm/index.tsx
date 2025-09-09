@@ -48,6 +48,7 @@ const LoginForm: FC<LoginFormProps> = () => {
 
         setAuthToken(loginResponse.token);
         setUser({
+          id: loginResponse.id,
           name: {
             first: loginResponse.firstName,
             last: loginResponse.lastName,

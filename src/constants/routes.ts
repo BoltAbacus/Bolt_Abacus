@@ -139,3 +139,25 @@ export const EDIT_TAG_ENDPOINT = '/updateTagDetails/';
 export const GET_USER_STREAK_ENDPOINT = '/streak/';
 export const UPDATE_USER_STREAK_ENDPOINT = '/streak/update/';
 export const RESET_USER_STREAK_ENDPOINT = '/streak/reset/';
+
+// Experience Endpoints
+export const GET_USER_EXPERIENCE_ENDPOINT = '/getUserExperience/';
+
+// Weekly Stats Endpoints
+export const GET_WEEKLY_STATS_ENDPOINT = '/weeklyStats/';
+
+// Todo List Endpoints
+export const GET_USER_TODO_LIST_ENDPOINT = '/getUserTodoList/';
+export const ADD_PERSONAL_GOAL_ENDPOINT = '/addPersonalGoal/';
+export const REMOVE_PERSONAL_GOAL_ENDPOINT = '/removePersonalGoal/';
+
+// PVP Endpoints
+export const CREATE_PVP_ROOM_ENDPOINT = '/createPVPRoom/';
+export const JOIN_PVP_ROOM_ENDPOINT = '/joinPVPRoom/';
+export const GET_PVP_ROOM_DETAILS_ENDPOINT = '/getPVPRoomDetails/';
+export const SET_PLAYER_READY_ENDPOINT = '/setPlayerReady/';
+export const START_PVP_GAME_ENDPOINT = '/startPVPGame/';
+export const SUBMIT_PVP_GAME_RESULT_ENDPOINT = '/submitPVPGameResult/';
+export const GET_PVP_GAME_RESULT_ENDPOINT = '/getPVPGameResult/';
+export const UPDATE_PLAYER_PROGRESS_ENDPOINT = '/updatePlayerProgress/';
+export const GET_PVP_LEADERBOARD_ENDPOINT = '/getPVPLeaderboard/';

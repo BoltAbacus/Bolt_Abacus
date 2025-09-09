@@ -79,4 +79,7 @@ urlpatterns = [
     path('streak/', views.GetUserStreak.as_view()),
     path('streak/update/', views.UpdateUserStreak.as_view()),
     path('streak/reset/', views.ResetUserStreak.as_view()),
+    
+    # Experience APIs
+    path('getUserExperience/', views.GetUserExperience.as_view()),
 ]

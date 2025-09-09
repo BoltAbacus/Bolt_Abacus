@@ -298,4 +298,16 @@ class UserStreak(models.Model):
                 raise
 
 
+# Experience and Gamification Models
+class UserExperience(models.Model):
+    user = models.OneToOneField(UserDetails, to_field='userId', on_delete=models.CASCADE)
+    experience_points = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.firstName} {self.user.lastName} - Level {self.level} ({self.experience_points} XP)"
+
+
 # Create your models here.
