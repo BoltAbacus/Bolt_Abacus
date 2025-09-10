@@ -146,7 +146,8 @@ const StudentPvPRoomPage: FC = () => {
     );
   }
 
-  const isCreator = roomDetails.creator.userId === user?.id;
+  const currentUserId = user?.id ?? (user as any)?.userId;
+  const isCreator = roomDetails.creator.userId === currentUserId;
   // const currentPlayer = roomDetails.players.find((p: any) => p.player.userId === user?.id);
   const hasEnoughPlayers = roomDetails.players.length === roomDetails.max_players;
   const isRoomWaiting = roomDetails.status === 'waiting';
@@ -159,7 +160,7 @@ const StudentPvPRoomPage: FC = () => {
     isRoomWaiting,
     canStartGame,
     creatorId: roomDetails.creator.userId,
-    userId: user?.id,
+    userId: currentUserId,
     playersCount: roomDetails.players.length,
     maxPlayers: roomDetails.max_players,
     roomStatus: roomDetails.status
