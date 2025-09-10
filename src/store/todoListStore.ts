@@ -16,6 +16,7 @@ interface TodoListState {
   setTodoList: (todoData: TodoListData) => void;
   addPersonalGoal: (title: string, description?: string) => Promise<void>;
   removePersonalGoal: (goalId: string) => Promise<void>;
+  toggleComplete: (goalId: string) => void;
   clearError: () => void;
 }
 
@@ -56,9 +57,11 @@ export const useTodoListStore = create<TodoListState>()(
           }
         } catch (error) {
           console.error('Error fetching todo list:', error);
+          // If we already have some todos in memory, don't disrupt UX with an error banner
+          const existing = get().todos;
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to fetch todo list',
+            error: existing && existing.length > 0 ? null : (error instanceof Error ? error.message : 'Failed to fetch todo list'),
           });
         }
       },
@@ -69,6 +72,7 @@ export const useTodoListStore = create<TodoListState>()(
           total_todos: todoData.total_todos,
           completed_todos: todoData.completed_todos,
           pending_todos: todoData.pending_todos,
+          error: null,
         });
       },
 
@@ -78,22 +82,49 @@ export const useTodoListStore = create<TodoListState>()(
           set({ error: 'No authentication token' });
           return;
         }
-
-        set({ isLoading: true, error: null });
+        
+        // Optimistic insert
+        const tempId = `temp-${Date.now()}`;
+        const previousTodos = get().todos;
+        set({
+          todos: [
+            {
+              id: tempId,
+              title,
+              description: description || '',
+              completed: false,
+              priority: 'medium',
+              type: 'personal' as any,
+            },
+            ...previousTodos,
+          ],
+          total_todos: get().total_todos + 1,
+          pending_todos: get().pending_todos + 1,
+          isLoading: true,
+          error: null,
+        });
         try {
           const response = await addPersonalGoal(authToken, title, description);
           if (response.success) {
             // Refresh the todo list after adding
             await get().fetchTodoList();
           } else {
+            // Revert optimistic insert
             set({
+              todos: previousTodos,
+              total_todos: get().total_todos - 1,
+              pending_todos: Math.max(0, get().pending_todos - 1),
               isLoading: false,
               error: 'Failed to add personal goal',
             });
           }
         } catch (error) {
           console.error('Error adding personal goal:', error);
+          // Revert optimistic insert
           set({
+            todos: previousTodos,
+            total_todos: get().total_todos - 1,
+            pending_todos: Math.max(0, get().pending_todos - 1),
             isLoading: false,
             error: error instanceof Error ? error.message : 'Failed to add personal goal',
           });
@@ -106,15 +137,50 @@ export const useTodoListStore = create<TodoListState>()(
           set({ error: 'No authentication token' });
           return;
         }
+        // If this is a temp goal created via optimistic add, remove locally only
+        if (goalId.startsWith('temp-')) {
+          const filtered = get().todos.filter((t) => t.id !== goalId);
+          const completed = filtered.filter((t) => t.completed).length;
+          set({
+            todos: filtered,
+            total_todos: filtered.length,
+            completed_todos: completed,
+            pending_todos: Math.max(0, filtered.length - completed),
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
 
-        set({ isLoading: true, error: null });
+        // Optimistic remove for persisted items
+        const previousTodos = get().todos;
+        const newTodos = previousTodos.filter((t) => t.id !== goalId);
+        const newCompleted = newTodos.filter((t) => t.completed).length;
+        set({
+          todos: newTodos,
+          total_todos: Math.max(0, get().total_todos - 1),
+          completed_todos: newCompleted,
+          pending_todos: Math.max(0, newTodos.length - newCompleted),
+          isLoading: true,
+          error: null,
+        });
         try {
-          const response = await removePersonalGoal(authToken, goalId);
+          // Backend expects numeric ID; coerce when possible
+          const backendId = /^(\d+)$/.test(goalId) ? goalId : String(goalId).replace(/[^0-9]/g, '');
+          const response = await removePersonalGoal(authToken, backendId || goalId);
           if (response.success) {
-            // Refresh the todo list after removing
-            await get().fetchTodoList();
+            // Try to refresh, but don't rollback if refresh fails
+            try {
+              await get().fetchTodoList();
+            } catch (e) {
+              set({ isLoading: false, error: null });
+            }
           } else {
             set({
+              todos: previousTodos,
+              total_todos: previousTodos.length,
+              completed_todos: previousTodos.filter((t) => t.completed).length,
+              pending_todos: previousTodos.filter((t) => !t.completed).length,
               isLoading: false,
               error: 'Failed to remove personal goal',
             });
@@ -122,10 +188,26 @@ export const useTodoListStore = create<TodoListState>()(
         } catch (error) {
           console.error('Error removing personal goal:', error);
           set({
+            todos: previousTodos,
+            total_todos: previousTodos.length,
+            completed_todos: previousTodos.filter((t) => t.completed).length,
+            pending_todos: previousTodos.filter((t) => !t.completed).length,
             isLoading: false,
             error: error instanceof Error ? error.message : 'Failed to remove personal goal',
           });
         }
+      },
+
+      toggleComplete: (goalId: string) => {
+        const updated = get().todos.map((t) =>
+          t.id === goalId ? { ...t, completed: !t.completed } : t
+        );
+        const completed = updated.filter((t) => t.completed).length;
+        set({
+          todos: updated,
+          completed_todos: completed,
+          pending_todos: Math.max(0, updated.length - completed),
+        });
       },
 
       clearError: () => {

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '@store/authStore';
 
 const customAxios = axios.create({
-  baseURL: (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://9f3532600a41.ngrok-free.app',
+  baseURL: (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://api2.boltabacus.com',
   // Credentials (cookies) are not needed; we authenticate via header tokens.
   // Keeping this false prevents CORS "Network Error" when the server doesn't allow credentials.
   withCredentials: false,

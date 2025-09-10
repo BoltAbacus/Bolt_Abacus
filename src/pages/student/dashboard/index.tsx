@@ -15,7 +15,7 @@ import WeeklyStatsSection from '@components/sections/student/dashboard/WeeklySta
 // import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
 // import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
-import { dashboardRequestV2, getPracticeProgressRequest } from '@services/student';
+import { dashboardRequestV2, getPracticeProgressRequest, getProgressRequest } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
 import { useExperienceStore } from '@store/experienceStore';
@@ -46,9 +46,12 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [classLink, setClassLink] = useState<string>();
   const [progress, setProgress] = useState<LevelsPercentage>({});
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [currentLevelProgressPct, setCurrentLevelProgressPct] = useState<number>(0);
   const { currentStreak, updateStreak, fetchStreak } = useStreakStore();
   const { experience_points, level, syncWithBackend } = useExperienceStore();
-  const { sessions, accuracy, time_spent_formatted, fetchWeeklyStats } = useWeeklyStatsStore();
+  const { sessions, accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
+  const [computedSessions, setComputedSessions] = useState<number>(0);
+  const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
   const { todos, completed_todos, pending_todos, fetchTodoList } = useTodoListStore();
   const user = useAuthStore((state) => state.user);
 
@@ -125,6 +128,67 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               setDashboardData(dashboardResponse);
             }
             
+            // Compute current level progress from detailed progress data
+            try {
+              const progressRes = await getProgressRequest(authToken!);
+              if (!isMounted) return;
+              if (progressRes.status === 200 && progressRes.data?.levels) {
+                const levels = progressRes.data.levels as any[];
+                const currentLevelId = dashboardResponse.levelId;
+                const levelData = levels.find((lvl: any) => lvl.levelId === currentLevelId);
+                if (levelData && Array.isArray(levelData.classes)) {
+                  let completed = 0;
+                  let total = 0;
+                  let totalMinutes = 0;
+                  let totalActivities = 0;
+                  let classesCompleted = 0;
+                  const TOTAL_CLASSES_PER_LEVEL = 12;
+                  for (const classItem of levelData.classes) {
+                    const topics = Array.isArray(classItem.topics) ? classItem.topics : [];
+                    let classCompleted = false;
+                    if (classItem.Test && classItem.Test > 0) {
+                      classCompleted = true;
+                      totalActivities += 1;
+                      totalMinutes += Math.round((classItem.Time || 0) / 60);
+                    }
+                    for (const topic of topics) {
+                      if (topic.Classwork && topic.Classwork > 0) {
+                        classCompleted = true;
+                        totalActivities += 1;
+                        totalMinutes += Math.round((topic.ClassworkTime || 0) / 60);
+                      }
+                      if (topic.Homework && topic.Homework > 0) {
+                        classCompleted = true;
+                        totalActivities += 1;
+                        totalMinutes += Math.round((topic.HomeworkTime || 0) / 60);
+                      }
+                    }
+                    if (classCompleted) classesCompleted += 1;
+                  }
+                  const pct = Math.min(100, Math.round((classesCompleted / TOTAL_CLASSES_PER_LEVEL) * 100));
+                  setCurrentLevelProgressPct(pct);
+                  // Provide fallback weekly stats when API fails later
+                  const hours = Math.floor(totalMinutes / 60);
+                  const minutes = totalMinutes % 60;
+                  setWeeklyStats({
+                    sessions: totalActivities,
+                    accuracy: accuracy || 0,
+                    time_spent_hours: hours,
+                    time_spent_minutes: minutes,
+                    time_spent_formatted: `${hours}h ${minutes}m`,
+                  });
+                  setComputedSessions(totalActivities);
+                  setComputedTimeFormatted(`${hours}h ${minutes}m`);
+                } else {
+                  setCurrentLevelProgressPct(0);
+                }
+              }
+            } catch (e) {
+              // Fallback to provided percentage if detailed call fails
+              const fallbackPct = Math.min(100, Math.round((dashboardResponse.levelsPercentage?.[dashboardResponse.levelId] || 0) * 100));
+              setCurrentLevelProgressPct(fallbackPct);
+            }
+
             // Fetch streak data
             console.log('🔄 [Dashboard] Fetching streak data...');
             try {
@@ -152,14 +216,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               console.error('❌ [Dashboard] Experience sync failed:', expError);
             }
             
-            // Fetch weekly stats
-            console.log('🔄 [Dashboard] Fetching weekly stats...');
-            try {
-              await fetchWeeklyStats();
-              console.log('✅ [Dashboard] Weekly stats fetched successfully');
-            } catch (weeklyStatsError) {
-              console.error('❌ [Dashboard] Weekly stats fetch failed:', weeklyStatsError);
-            }
+            // Skip weeklyStats API (unstable). Using computed fallback above.
             
             // Fetch todo list
             console.log('🔄 [Dashboard] Fetching todo list...');
@@ -226,7 +283,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       isMounted = false;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [authToken, isAuthenticated, updateStreak, syncWithBackend, fetchWeeklyStats, fetchStreak, fetchTodoList]);
+  }, [authToken, isAuthenticated, updateStreak, syncWithBackend, fetchStreak, fetchTodoList]);
 
   return (
     <div className="min-h-screen">
@@ -292,18 +349,18 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                       </span>
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-white/80 font-semibold">Progress</span>
-                        <span className="text-sm font-bold text-gold">{Math.min(100, Math.round((progress[currentLevel] || 0) * 100))}%</span>
+                        <span className="text-sm font-bold text-gold">{currentLevelProgressPct}%</span>
                       </div>
                                               {/* Enhanced Progress Bar */}
                         <div className="w-full bg-[#0e0e0e]/80 rounded-full h-5 shadow-inner mb-3 relative overflow-hidden border border-gold/30 ring-1 ring-white/5">
                           <div 
                             className="bg-gold h-5 rounded-full transition-all duration-700 shadow-[0_0_16px_rgba(255,186,8,0.30)] relative overflow-hidden"
-                            style={{ width: `${Math.min(100, (progress[currentLevel] || 0) * 100)}%` }}
+                            style={{ width: `${currentLevelProgressPct}%` }}
                           />
                         </div>
                                               <div className="flex justify-between items-center">
                           <span className="text-sm text-white/70 font-medium">
-                            {Math.min(100, Math.round((progress[currentLevel] || 0) * 100))}% completed
+                            {currentLevelProgressPct}% completed
                           </span>
                           <Link
                             to={`/student/level/${currentLevel}`}
@@ -383,9 +440,9 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     
                                            <div className="relative z-10">
                          <WeeklyStatsSection
-                           sessions={dashboardData?.practiceStats?.recentSessions || 0}
-                           accuracy={dashboardData?.practiceStats?.averageAccuracy || 0}
-                           timeSpent={dashboardData?.practiceStats?.totalPracticeTime ? `${Math.round(dashboardData.practiceStats.totalPracticeTime / 60)}h ${Math.round(dashboardData.practiceStats.totalPracticeTime % 60)}m` : '0h 0m'}
+                           sessions={sessions || computedSessions}
+                           accuracy={accuracy || 0}
+                           timeSpent={time_spent_formatted || computedTimeFormatted}
                          />
                        </div>
                   </div>
@@ -411,7 +468,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
           )}
         </div>
       )}
-      <DebugConsole />
+      {/* DebugConsole is dev-only; keep it disabled for production */}
+      {import.meta.env.DEV ? <DebugConsole /> : null}
     </div>
   );
 };

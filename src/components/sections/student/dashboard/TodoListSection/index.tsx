@@ -1,13 +1,14 @@
 import { FC, useState, useEffect } from 'react';
 import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
 import { useTodoListStore } from '@store/todoListStore';
+import type { TodoItem } from '@services/todoList';
 
 export interface TodoListSectionProps {
   className?: string;
 }
 
 const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
-  const { todos, completed_todos, pending_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, isLoading } = useTodoListStore();
+  const { todos, completed_todos, pending_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, toggleComplete, isLoading, error, clearError } = useTodoListStore() as any;
   const [newGoal, setNewGoal] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -105,22 +106,28 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         </div>
       ) : (
         <>
+          {error && (
+            <div className="mb-3 p-2 rounded border border-red-400/40 bg-red-500/10 text-red-300 text-xs flex justify-between items-center">
+              <span>{error}</span>
+              <button onClick={clearError} className="text-red-200/80 hover:text-red-100 text-[10px]">dismiss</button>
+            </div>
+          )}
           {/* Todo list */}
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {todos.slice(0, 4).map((todo) => (
+            {todos.slice(0, 4).map((todo: TodoItem) => (
               <div key={todo.id} className={`p-3 rounded-lg border backdrop-blur-sm transition-all duration-200 ${
                 todo.completed 
                   ? 'bg-green-500/10 border-green-400/30' 
                   : 'bg-[#080808]/50 hover:bg-[#191919] border-gold/20'
               }`}>
                 <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 mt-1">
-                    {todo.completed ? (
-                      <AiOutlineCheckCircle className="text-green-400 text-lg" />
-                    ) : (
-                      <AiOutlineClockCircle className="text-gold text-lg" />
-                    )}
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={!!todo.completed}
+                    onChange={() => toggleComplete(todo.id)}
+                    className="mt-1 h-4 w-4 accent-gold cursor-pointer"
+                    title="Mark complete"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-lg">{getTypeIcon(todo.type)}</span>

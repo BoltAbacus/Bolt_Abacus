@@ -7,7 +7,7 @@ export interface TodoItem {
   description: string;
   completed: boolean;
   priority: 'high' | 'medium' | 'low';
-  type: 'practice' | 'streak' | 'level' | 'pvp';
+  type: 'practice' | 'streak' | 'level' | 'pvp' | 'personal';
 }
 
 export interface TodoListData {
