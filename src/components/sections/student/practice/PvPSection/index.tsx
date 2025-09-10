@@ -31,6 +31,7 @@ const PvPSection: FC<PvPSectionProps> = () => {
     number_of_questions: 10,
     time_per_question: 30,
     difficulty_level: 'medium',
+    number_of_digits: 3,
     level_id: 1,
     class_id: 1,
     topic_id: 1
@@ -325,6 +326,32 @@ const PvPSection: FC<PvPSectionProps> = () => {
                           </select>
                         </div>
 
+              {/* Number of Digits */}
+                        <div>
+                <label className="block text-yellow-200 font-bold text-lg mb-2">🔢 Number of Digits</label>
+                          <select
+                  value={roomForm.number_of_digits}
+                  onChange={(e) => updateRoomForm('number_of_digits', parseInt(e.target.value))}
+                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                >
+                  <option value={1}>1 Digit - Simple</option>
+                  <option value={2}>2 Digits - Easy</option>
+                  <option value={3}>3 Digits - Standard</option>
+                  <option value={4}>4 Digits - Challenging</option>
+                  <option value={5}>5 Digits - Advanced</option>
+                  <option value={6}>6 Digits - Expert</option>
+                  <option value={7}>7 Digits - Master</option>
+                  <option value={8}>8 Digits - Legendary</option>
+                  <option value={9}>9 Digits - Epic</option>
+                  <option value={10}>10 Digits - Ultimate</option>
+                  <option value={11}>11 Digits - Extreme</option>
+                  <option value={12}>12 Digits - Insane</option>
+                  <option value={13}>13 Digits - Impossible</option>
+                  <option value={14}>14 Digits - Godlike</option>
+                  <option value={15}>15 Digits - Transcendent</option>
+                          </select>
+                        </div>
+
               {/* Difficulty Level */}
                         <div>
                 <label className="block text-yellow-200 font-bold text-lg mb-2">🎯 Difficulty Level</label>
@@ -333,10 +360,10 @@ const PvPSection: FC<PvPSectionProps> = () => {
                   onChange={(e) => updateRoomForm('difficulty_level', e.target.value)}
                   className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
                 >
-                  <option value="easy">🟢 Easy - Beginner Friendly</option>
-                  <option value="medium">🟡 Medium - Balanced Challenge</option>
-                  <option value="hard">🟠 Hard - Expert Level</option>
-                  <option value="expert">🔴 Expert - Ultimate Test</option>
+                  <option value="easy">🟢 Easy - Addition & Subtraction</option>
+                  <option value="medium">🟡 Medium - Add, Sub, Multiply</option>
+                  <option value="hard">🟠 Hard - Add, Sub, Multiply, Divide</option>
+                  <option value="expert">🔴 Expert - All + Square, Root, Cube</option>
                           </select>
                         </div>
 

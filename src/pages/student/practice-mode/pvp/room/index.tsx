@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AiOutlineCrown, AiOutlinePlayCircle } from 'react-icons/ai';
+import { AiOutlineCrown, AiOutlinePlayCircle, AiOutlineCopy } from 'react-icons/ai';
 
 import { useAuthStore } from '@store/authStore';
 import { getPVPRoomDetails, startPVPGame } from '@services/pvp';
@@ -40,6 +40,7 @@ const StudentPvPRoomPage: FC = () => {
   const [roomDetails, setRoomDetails] = useState<RoomDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     if (roomId) {
@@ -153,6 +154,18 @@ const StudentPvPRoomPage: FC = () => {
     }
   };
 
+  const copyToClipboard = async () => {
+    if (roomId) {
+      try {
+        await navigator.clipboard.writeText(roomId);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
+  };
+
   if (!roomDetails) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -196,7 +209,21 @@ const StudentPvPRoomPage: FC = () => {
             <h1 className="text-4xl font-black text-gold mb-4">
               🏰 BATTLE ROOM 🏰
             </h1>
-            <p className="text-white text-lg">Room Code: <span className="font-bold text-gold">{roomId}</span></p>
+            <div className="flex items-center justify-center gap-3">
+              <p className="text-white text-lg">Room Code: <span className="font-bold text-gold">{roomId}</span></p>
+              <button
+                onClick={copyToClipboard}
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  copySuccess 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gold/20 text-gold hover:bg-gold/30'
+                }`}
+                title="Copy room code"
+              >
+                <AiOutlineCopy className="text-sm" />
+                {copySuccess ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
           </div>
         </div>
 

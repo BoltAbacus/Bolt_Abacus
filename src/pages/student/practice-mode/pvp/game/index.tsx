@@ -9,9 +9,10 @@ import { logActivity } from '@helpers/activity';
 
 interface Question {
   question_id: number;
-  question: string;
+  operands: number[];
+  operator: string;
   correct_answer: number;
-  options: number[];
+  question_type: string;
 }
 
 interface GameData {
@@ -28,7 +29,7 @@ const StudentPvPGamePage: FC = () => {
   
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [userAnswer, setUserAnswer] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState(30);
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
@@ -190,15 +191,17 @@ const StudentPvPGamePage: FC = () => {
         questions: [
           {
             question_id: 1,
-            question: "5 + 3 + 2 + 1 + 4 = ?",
+            operands: [5, 3, 2, 1, 4],
+            operator: '+',
             correct_answer: 15,
-            options: [12, 15, 18, 20]
+            question_type: 'basic'
           },
           {
             question_id: 2,
-            question: "10 - 2 - 1 + 5 - 3 = ?",
+            operands: [10, 2, 1, 5, 3],
+            operator: '-',
             correct_answer: 9,
-            options: [7, 9, 11, 13]
+            question_type: 'basic'
           }
         ],
         total_questions: 2,
@@ -242,15 +245,17 @@ const StudentPvPGamePage: FC = () => {
           questions: [
             {
               question_id: 1,
-              question: "5 + 3 + 2 + 1 + 4 = ?",
+              operands: [5, 3, 2, 1, 4],
+              operator: '+',
               correct_answer: 15,
-              options: [12, 15, 18, 20]
+              question_type: 'basic'
             },
             {
               question_id: 2,
-              question: "10 - 2 - 1 + 5 - 3 = ?",
+              operands: [10, 2, 1, 5, 3],
+              operator: '-',
               correct_answer: 9,
-              options: [7, 9, 11, 13]
+              question_type: 'basic'
             }
           ],
           total_questions: 2,
@@ -271,15 +276,17 @@ const StudentPvPGamePage: FC = () => {
         questions: [
           {
             question_id: 1,
-            question: "5 + 3 + 2 + 1 + 4 = ?",
+            operands: [5, 3, 2, 1, 4],
+            operator: '+',
             correct_answer: 15,
-            options: [12, 15, 18, 20]
+            question_type: 'basic'
           },
           {
             question_id: 2,
-            question: "10 - 2 - 1 + 5 - 3 = ?",
+            operands: [10, 2, 1, 5, 3],
+            operator: '-',
             correct_answer: 9,
-            options: [7, 9, 11, 13]
+            question_type: 'basic'
           }
         ],
         total_questions: 2,
@@ -312,7 +319,7 @@ const StudentPvPGamePage: FC = () => {
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !gameEnded && currentQuestion) {
       console.log('Time up, auto-submitting');
-      handleAnswerSubmit(null); // Auto-submit when time runs out
+      handleAnswerSubmit(); // Auto-submit when time runs out
     }
   }, [timeLeft, gameEnded, currentQuestion, countdown]);
 
@@ -324,12 +331,13 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
-  const handleAnswerSubmit = async (answer: number | null) => {
-    if (!roomId || !authToken || !currentQuestion) return;
+  const handleAnswerSubmit = async () => {
+    if (!roomId || !authToken || !currentQuestion || !userAnswer.trim()) return;
     
     setLoading(true);
     try {
-      const isCorrect = answer === currentQuestion.correct_answer;
+      const answer = parseFloat(userAnswer.trim());
+      const isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
       const timeTaken = gameData?.time_per_question - timeLeft || 0;
       
       if (isCorrect) {
@@ -343,7 +351,7 @@ const StudentPvPGamePage: FC = () => {
       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setTimeLeft(gameData?.time_per_question || 30);
-        setSelectedAnswer(null);
+        setUserAnswer('');
       } else {
         // Game finished, submit results
         await submitGameResults();
@@ -435,9 +443,6 @@ const StudentPvPGamePage: FC = () => {
     }
   };
 
-  const handleAnswerSelect = (answer: number) => {
-    setSelectedAnswer(answer);
-  };
 
   if (waitingForOthers) {
     return (
@@ -642,34 +647,72 @@ const StudentPvPGamePage: FC = () => {
         {/* Question Card */}
         <div className="rounded-3xl p-8 border-2 border-white">
           <div className="text-center">
-            <div className="text-6xl md:text-7xl font-extrabold text-white mb-10 leading-tight tracking-wide">
-              {currentQuestion?.question}
+            {/* Math Problem Display */}
+            <div className="flex items-center justify-center gap-8 mb-10">
+              {/* Left side - Operands stacked vertically */}
+              <div className="flex flex-col items-end">
+                {currentQuestion?.operands.map((operand, index) => (
+                  <div key={index} className="text-6xl md:text-7xl font-extrabold text-white mb-2 text-right">
+                    {operand}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Operator */}
+              <div className="text-6xl md:text-7xl font-extrabold text-white">
+                {currentQuestion?.operator}
+              </div>
+              
+              {/* Equals sign */}
+              <div className="text-6xl md:text-7xl font-extrabold text-white">
+                =
+              </div>
+              
+              {/* Answer input */}
+              <div>
+                <input
+                  type="number"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAnswerSubmit();
+                    }
+                  }}
+                  className="w-32 h-20 text-4xl font-extrabold text-center bg-transparent border-2 border-white rounded-lg text-white focus:outline-none focus:border-gold"
+                  placeholder="?"
+                  autoFocus
+                />
+              </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-              {currentQuestion?.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={loading}
-                  className={`p-6 rounded-2xl font-extrabold text-3xl transition-all duration-300 transform hover:scale-105 border-2 focus:outline-none focus:ring-4 focus:ring-white/30 ${
-                    selectedAnswer === option
-                      ? 'bg-white text-black shadow-lg scale-105 border-white'
-                      : 'bg-white/10 text-white hover:bg-white/20 border-white hover:border-white'
-                  }`}
-                >
-                  {String(option)}
-                </button>
-              ))}
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setUserAnswer('');
+                  // Move to next question without submitting
+                  if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                    setCurrentQuestionIndex(currentQuestionIndex + 1);
+                    setTimeLeft(gameData?.time_per_question || 30);
+                  } else {
+                    handleAnswerSubmit();
+                  }
+                }}
+                disabled={loading}
+                className="bg-gray-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 disabled:opacity-50"
+              >
+                Skip
+              </button>
+              
+              <button
+                onClick={handleAnswerSubmit}
+                disabled={loading || !userAnswer.trim()}
+                className="bg-gold text-black px-8 py-3 rounded-xl font-bold text-lg hover:bg-lightGold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Submitting...' : 'Next'}
+              </button>
             </div>
-            
-            <button
-              onClick={() => handleAnswerSubmit(selectedAnswer)}
-              disabled={loading || selectedAnswer === null}
-              className="mt-10 bg-white text-black px-14 py-5 rounded-2xl font-extrabold text-2xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-white"
-            >
-              {loading ? 'Submitting...' : 'Submit Answer'}
-            </button>
           </div>
         </div>
       </div>
