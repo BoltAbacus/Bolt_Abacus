@@ -5,6 +5,7 @@ import { AiOutlineClockCircle } from 'react-icons/ai';
 import { useAuthStore } from '@store/authStore';
 import { useExperienceStore } from '@store/experienceStore';
 import { submitPVPGameResult, startPVPGame, getPVPRoomDetails, getPVPGameQuestions, getPVPGameResult } from '@services/pvp';
+import { logActivity } from '@helpers/activity';
 
 interface Question {
   question_id: number;
@@ -383,6 +384,15 @@ const StudentPvPGamePage: FC = () => {
                   else return 10;
                 })();
                 updateExperience(correctExperience);
+                try {
+                  const r = pollResponse.data.data;
+                  logActivity({
+                    type: 'pvp',
+                    title: r.is_draw ? 'PvP Match ended in a Draw' : r.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                    xp: correctExperience,
+                    meta: { roomId, score, correctAnswers, totalTime }
+                  });
+                } catch {}
                 // Force sync with backend to ensure persistence
                 setTimeout(() => {
                   const { syncWithBackend } = useExperienceStore.getState();
@@ -405,6 +415,14 @@ const StudentPvPGamePage: FC = () => {
             else return 10;
           })();
           updateExperience(correctExperience);
+          try {
+            logActivity({
+              type: 'pvp',
+              title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
+              xp: correctExperience,
+              meta: { roomId, score, correctAnswers, totalTime }
+            });
+          } catch {}
           // Force sync with backend to ensure persistence
           setTimeout(() => {
             const { syncWithBackend } = useExperienceStore.getState();

@@ -106,12 +106,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         </div>
       ) : (
         <>
-          {error && (
-            <div className="mb-3 p-2 rounded border border-red-400/40 bg-red-500/10 text-red-300 text-xs flex justify-between items-center">
-              <span>{error}</span>
-              <button onClick={clearError} className="text-red-200/80 hover:text-red-100 text-[10px]">dismiss</button>
-            </div>
-          )}
+          {/* Silently hide backend error banner for cleaner UX */}
           {/* Todo list */}
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {todos.slice(0, 4).map((todo: TodoItem) => (

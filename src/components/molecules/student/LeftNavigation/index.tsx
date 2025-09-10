@@ -235,7 +235,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
               )}
             </Link>
           </li>
-          {/* <li>
+          <li>
             <Link
               to={STUDENT_ARCHIVE}
               className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md`}
@@ -245,7 +245,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                 <span className="ml-3 text-sm font-medium">Archive</span>
               )}
             </Link>
-          </li> */}
+          </li>
           <li>
             <button
               onClick={logout}

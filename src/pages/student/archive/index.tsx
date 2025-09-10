@@ -4,6 +4,7 @@ import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import { dashboardRequestV2 } from '@services/student';
+import { getActivities, removeActivity, clearActivities, ActivityItem } from '@helpers/activity';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
 import { ERRORS, MESSAGES } from '@constants/app';
@@ -21,17 +22,9 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
   const { updateStreak } = useStreakStore();
 
-  // Mock activity data - in real app, this would come from API
-  const activities = [
-    { id: 1, action: 'Completed Speed Math', xp: '+150 XP', time: '2 hours ago', icon: '✅', type: 'quiz' },
-    { id: 2, action: 'Practiced Virtual Abacus', xp: '+75 XP', time: '4 hours ago', icon: '✅', type: 'practice' },
-    { id: 3, action: 'Took Lightning Realm Quiz', xp: '+200 XP', time: '6 hours ago', icon: '✅', type: 'quiz' },
-    { id: 4, action: 'Maintained Daily Streak', xp: '+50 XP', time: '1 day ago', icon: '🔥', type: 'streak' },
-    { id: 5, action: 'Unlocked Achievement', xp: '+100 XP', time: '1 day ago', icon: '🏆', type: 'achievement' },
-    { id: 6, action: 'Completed Wind Realm', xp: '+300 XP', time: '2 days ago', icon: '🎯', type: 'level' },
-    { id: 7, action: 'Practiced Addition', xp: '+45 XP', time: '3 days ago', icon: '✅', type: 'practice' },
-    { id: 8, action: 'Joined Live Class', xp: '+25 XP', time: '4 days ago', icon: '📹', type: 'class' },
-  ];
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     const getDashboardData = async () => {
@@ -59,18 +52,48 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
       }
     };
     getDashboardData();
+    // load local activity log
+    setActivities(getActivities());
   }, [authToken, isAuthenticated, updateStreak]);
 
   const getActivityTypeColor = (type: string) => {
     switch (type) {
-      case 'quiz': return 'text-blue-400';
+      case 'test': return 'text-blue-400';
       case 'practice': return 'text-green-400';
       case 'streak': return 'text-orange-400';
       case 'achievement': return 'text-yellow-400';
       case 'level': return 'text-purple-400';
-      case 'class': return 'text-red-400';
+      case 'classwork': return 'text-red-400';
+      case 'homework': return 'text-pink-400';
+      case 'pvp': return 'text-cyan-400';
       default: return 'text-gray-400';
     }
+  };
+
+  const formatTimeAgo = (ts: number) => {
+    const diff = Date.now() - ts;
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m} min ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} hour${h>1?'s':''} ago`;
+    const d = Math.floor(h / 24);
+    return `${d} day${d>1?'s':''} ago`;
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+    removeActivity(activityId);
+    setActivities(getActivities());
+    setDeleteConfirmId(null);
+  };
+
+  const handleClearAll = () => {
+    clearActivities();
+    setActivities([]);
+    setShowClearConfirm(false);
+  };
+
+  const refreshActivities = () => {
+    setActivities(getActivities());
   };
 
   return (
@@ -108,53 +131,115 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
 
                 {/* Activity List */}
                 <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
-                  <h2 className="text-2xl font-bold mb-6 flex items-center">
-                    <span className="mr-2">🕒</span>
-                    Recent Activity
-                  </h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold flex items-center">
+                      <span className="mr-2">🕒</span>
+                      Recent Activity
+                    </h2>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={refreshActivities}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        🔄 Refresh
+                      </button>
+                      {activities.length > 0 && (
+                        <button
+                          onClick={() => setShowClearConfirm(true)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          🗑️ Clear All
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   
                   <div className="space-y-4">
-                    {activities.map((activity) => (
-                      <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-                        <div className="text-2xl">{activity.icon}</div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-sm font-medium text-white">{activity.action}</p>
-                              <p className="text-xs text-gray-400">{activity.time}</p>
+                    {activities.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">📚</div>
+                        <h3 className="text-xl font-semibold text-gray-300 mb-2">No Activities Yet</h3>
+                        <p className="text-gray-400">Start practicing, taking tests, or playing PvP to see your activity history here!</p>
+                      </div>
+                    ) : (
+                      activities.map((activity) => (
+                        <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group">
+                          <div className="text-2xl">
+                            {activity.type === 'practice' ? '📚' : activity.type === 'pvp' ? '⚔️' : activity.type === 'streak' ? '🔥' : activity.type === 'level' ? '🎯' : activity.type === 'test' ? '✅' : activity.type === 'classwork' ? '🏫' : activity.type === 'homework' ? '📝' : '📌'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-sm font-medium text-white">{activity.title}</p>
+                                <p className="text-xs text-gray-400">{formatTimeAgo(activity.timestamp)}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-sm font-semibold ${getActivityTypeColor(activity.type)}`}>
+                                  {activity.xp ? `+${activity.xp} XP` : ''}
+                                </span>
+                                <button
+                                  onClick={() => setDeleteConfirmId(activity.id)}
+                                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all duration-200 p-1"
+                                  title="Delete activity"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
                             </div>
-                            <span className={`text-sm font-semibold ${getActivityTypeColor(activity.type)}`}>
-                              {activity.xp}
-                            </span>
                           </div>
                         </div>
+                      ))
+                    )}
+                  </div>
+
+                </div>
+
+                {/* Confirmation Modals */}
+                {showClearConfirm && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-[#1b1b1b] border border-gray-800 rounded-lg p-6 max-w-md mx-4">
+                      <h3 className="text-xl font-bold text-white mb-4">Clear All Activities?</h3>
+                      <p className="text-gray-300 mb-6">This will permanently delete all your activity history. This action cannot be undone.</p>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handleClearAll}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Yes, Clear All
+                        </button>
+                        <button
+                          onClick={() => setShowClearConfirm(false)}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
+                )}
 
-                  {/* Load More Button */}
-                  <div className="mt-6 text-center">
-                    <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25">
-                      Load More Activity
-                    </button>
+                {deleteConfirmId && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-[#1b1b1b] border border-gray-800 rounded-lg p-6 max-w-md mx-4">
+                      <h3 className="text-xl font-bold text-white mb-4">Delete Activity?</h3>
+                      <p className="text-gray-300 mb-6">This will permanently delete this activity from your history.</p>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => handleDeleteActivity(deleteConfirmId)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Yes, Delete
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {/* Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
-                    <h3 className="text-lg font-semibold mb-2">Total XP Earned</h3>
-                    <p className="text-3xl font-bold text-green-400">945 XP</p>
-                  </div>
-                  <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
-                    <h3 className="text-lg font-semibold mb-2">Activities Completed</h3>
-                    <p className="text-3xl font-bold text-blue-400">8</p>
-                  </div>
-                  <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
-                    <h3 className="text-lg font-semibold mb-2">Days Active</h3>
-                    <p className="text-3xl font-bold text-purple-400">4</p>
-                  </div>
-                </div>
+                )}
               </div>
             </>
           )}

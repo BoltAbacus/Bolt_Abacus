@@ -20,6 +20,7 @@ import {
   generateResult,
 } from '@helpers/questionBuilder';
 import { practiceSubmitRequest } from '@services/student';
+import { logActivity } from '@helpers/activity';
 
 import { useAuthStore } from '@store/authStore';
 import { ERRORS, MESSAGES } from '@constants/app';
@@ -126,6 +127,13 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
         parseFloat(avg.toFixed(2)),
         authToken!
       );
+      // Log to archive
+      logActivity({
+        type: 'practice',
+        title: `Set Practice (${operation}) completed with score ${score}`,
+        xp: undefined,
+        meta: { operation, numberOfDigitsLeft, numberOfQuestions }
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);

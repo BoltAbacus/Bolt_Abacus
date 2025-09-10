@@ -14,6 +14,7 @@ import {
   QuizResult,
 } from '@interfaces/apis/student';
 import { quizSubmitRequest } from '@services/student';
+import { logActivity } from '@helpers/activity';
 import { useAuthStore } from '@store/authStore';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { useTimer } from 'react-timer-hook';
@@ -87,6 +88,17 @@ const TestSection: FC<TestSectionProps> = ({
         setResult(resultResponse.results);
         setQuizVerdict(resultResponse.pass);
         setQuizCompletionTime(resultResponse.time);
+        
+        // Log activity
+        try {
+          const score = resultResponse.results.reduce((acc, r) => acc + (r.verdict ? 1 : 0), 0);
+          logActivity({
+            type: 'test',
+            title: `Test completed with score ${score}/${resultResponse.results.length}`,
+            xp: undefined,
+            meta: { quizId, levelId, classId, pass: resultResponse.pass, score, total: resultResponse.results.length }
+          });
+        } catch {}
       }
     } catch (error) {
       setApiError(ERRORS.SERVER_ERROR);

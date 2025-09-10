@@ -11,6 +11,7 @@ import { useStreakStore } from '@store/streakStore';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
 import axios from '@helpers/axios';
+import { getStreakByUserId } from '@services/streak';
 
 export interface StudentLeaderboardPageProps {}
 
@@ -55,10 +56,25 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
             name: player.name,
             xp: player.experience_points,
             level: player.level,
-            streak: 0, // PVP leaderboard doesn't have streak data
+            // Streak is resolved later if the player is the logged-in user; others default 0
+            streak: 0,
             userId: player.user_id
           }));
-          setLeaderboard(leaderboardData);
+          // Fetch streaks for all students in parallel
+          try {
+            const streaks = await Promise.allSettled(
+              leaderboardData.map((p: any) => getStreakByUserId(p.userId))
+            );
+            const withStreaks = leaderboardData.map((p: any, idx: number) => {
+              const r = streaks[idx];
+              const s = r.status === 'fulfilled' ? (r.value as any) : null;
+              const val = s?.currentStreak ?? s?.data?.currentStreak ?? 0;
+              return { ...p, streak: val };
+            });
+            setLeaderboard(withStreaks);
+          } catch {
+            setLeaderboard(leaderboardData);
+          }
           setApiError(null);
         } else {
           // No data available - show empty leaderboard
@@ -106,8 +122,8 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
           // Get leaderboard to calculate rank
           try {
             const leaderboardRes = await axios.post('/getPVPLeaderboard/', {}, {
-              headers: { 'AUTH-TOKEN': authToken },
-            });
+          headers: { 'AUTH-TOKEN': authToken },
+        });
             if (leaderboardRes.status === 200 && leaderboardRes.data.success && leaderboardRes.data.data.leaderboard) {
               const currentUserId = useAuthStore.getState().user?.id;
               const userRank = leaderboardRes.data.data.leaderboard.findIndex(
@@ -132,13 +148,24 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
             }
           } catch (leaderboardError) {
             console.error('Error fetching leaderboard for rank:', leaderboardError);
-            setUserStats({
-              totalXP: expData.experience_points,
-              level: expData.level,
+          setUserStats({
+            totalXP: expData.experience_points,
+            level: expData.level,
               rank: 0,
               totalPlayers: 0,
-              nextLevelXP: expData.xp_to_next_level
+            nextLevelXP: expData.xp_to_next_level
             });
+          }
+          // Try to fetch streak for the current user and merge into leaderboard entry
+          try {
+            const streakRes = await axios.get('/streak/', { headers: { 'AUTH-TOKEN': authToken } });
+            const currentUserId = useAuthStore.getState().user?.id;
+            if (currentUserId && streakRes?.data) {
+              const currentStreak = (streakRes.data?.currentStreak) ?? (streakRes.data?.data?.currentStreak) ?? 0;
+              setLeaderboard((prev) => prev.map((p) => p.userId === currentUserId ? { ...p, streak: currentStreak } : p));
+            }
+          } catch (e) {
+            // ignore streak failure
           }
         } else {
           setUserStats({

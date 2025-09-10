@@ -163,10 +163,10 @@ export const router = createBrowserRouter([
             path: 'roadmap',
             element: <StudentRoadmapPage />,
           },
-          // {
-          //   path: 'archive',
-          //   element: <StudentArchivePage />,
-          // },
+          {
+            path: 'archive',
+            element: <StudentArchivePage />,
+          },
           {
             path: 'virtual-abacus',
             element: <StudentVirtualAbacusPage />,

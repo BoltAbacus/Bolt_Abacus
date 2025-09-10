@@ -21,6 +21,7 @@ import {
   generateResult,
 } from '@helpers/questionBuilder';
 import { practiceSubmitRequest } from '@services/student';
+import { logActivity } from '@helpers/activity';
 
 import { useAuthStore } from '@store/authStore';
 import { ERRORS, MESSAGES } from '@constants/app';
@@ -106,11 +107,18 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
         isZigzag,
         includeSubtraction,
         persistNumberOfDigits,
+        false,
         score,
         totalSeconds,
         parseFloat(avg.toFixed(2)),
         authToken!
       );
+      logActivity({
+        type: 'practice',
+        title: `Flashcards Practice (${operation}) completed with score ${score}`,
+        xp: undefined,
+        meta: { operation, numberOfDigits, numberOfQuestions }
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);

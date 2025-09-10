@@ -3,6 +3,7 @@ import {
   GET_USER_STREAK_ENDPOINT,
   UPDATE_USER_STREAK_ENDPOINT,
   RESET_USER_STREAK_ENDPOINT,
+  GET_STREAK_BY_USER_ID_ENDPOINT,
 } from '@constants/routes';
 
 export interface StreakData {
@@ -65,5 +66,13 @@ export const resetUserStreak = async (token: string): Promise<StreakResetRespons
     data: response.data,
     timestamp: new Date().toISOString()
   });
+  return response.data;
+};
+
+export const getStreakByUserId = async (userId: number): Promise<StreakData> => {
+  const response = await axios.post(
+    GET_STREAK_BY_USER_ID_ENDPOINT,
+    { userId },
+  );
   return response.data;
 };

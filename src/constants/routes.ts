@@ -139,6 +139,7 @@ export const EDIT_TAG_ENDPOINT = '/updateTagDetails/';
 export const GET_USER_STREAK_ENDPOINT = '/streak/';
 export const UPDATE_USER_STREAK_ENDPOINT = '/streak/update/';
 export const RESET_USER_STREAK_ENDPOINT = '/streak/reset/';
+export const GET_STREAK_BY_USER_ID_ENDPOINT = '/streak/byUserId/';
 
 // Experience Endpoints
 export const GET_USER_EXPERIENCE_ENDPOINT = '/getUserExperience/';

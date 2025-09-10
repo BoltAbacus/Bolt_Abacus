@@ -1,4 +1,9 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
+import { useAuthStore } from '@store/authStore';
+import { useNavigate } from 'react-router-dom';
+import { getStudentProgressRequest } from '@services/teacher';
+import type { GetStudentProgressResponse, LevelProgress } from '@interfaces/apis/teacher';
+import { getUserStreak, getStreakByUserId } from '@services/streak';
 
 export interface LeaderboardStudent {
   rank: number;
@@ -7,6 +12,7 @@ export interface LeaderboardStudent {
   avatar: string;
   level: number;
   streak: number;
+  userId: number;
 }
 
 export interface StudentDetailsModalProps {
@@ -17,9 +23,32 @@ export interface StudentDetailsModalProps {
 
 const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, student }) => {
   const [expanded, setExpanded] = useState(false);
+  const authToken = useAuthStore((s) => s.authToken);
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const navigate = useNavigate();
 
-  const xpToNext = 200; // placeholder, align with leaderboard card
-  const progressPct = Math.min(100, Math.round((((student?.xp ?? 0) % 1500) / 1500) * 100) || 40);
+  // Remote progress state for the selected student
+  const [progressData, setProgressData] = useState<GetStudentProgressResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [streakDays, setStreakDays] = useState<number | null>(null);
+
+  // Compute level thresholds: level 1 = 0-90, then +100 per next level
+  const computeXpToNext = (xp: number) => {
+    if (xp <= 90) return Math.max(0, 90 - xp);
+    // Determine current level per backend rule
+    const currentLevel = ((xp - 90) >= 0) ? Math.floor((xp - 90) / 100) + 2 : 1;
+    const nextLevelThreshold = currentLevel === 1 ? 90 : 90 + (currentLevel - 1) * 100;
+    return Math.max(0, nextLevelThreshold - xp);
+  };
+
+  const progressPct = useMemo(() => {
+    const xp = student?.xp ?? 0;
+    const toNext = computeXpToNext(xp);
+    const span = xp <= 90 ? 90 : 100;
+    return Math.min(100, Math.round(((span - toNext) / span) * 100));
+  }, [student]);
+
+  const xpToNext = useMemo(() => computeXpToNext(student?.xp ?? 0), [student]);
 
   // Close on Escape
   useEffect(() => {
@@ -29,6 +58,100 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
+
+  // Fetch clicked student's progress when modal opens
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!isOpen || !student || !authToken) return;
+      try {
+        setLoading(true);
+        const res = await getStudentProgressRequest(student.userId, authToken);
+        if (res.status === 200 && res.data) {
+          setProgressData(res.data as GetStudentProgressResponse);
+        } else {
+          setProgressData(null);
+        }
+      } catch (_e) {
+        setProgressData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProgress();
+  }, [isOpen, student, authToken]);
+
+  // Fetch streak: for self via token; for others via byUserId endpoint
+  useEffect(() => {
+    const fetchStreak = async () => {
+      if (!isOpen || !student || !authToken) return;
+      if (currentUserId && student.userId === currentUserId) {
+        try {
+          const data = await getUserStreak(authToken) as any;
+          const value = typeof data?.currentStreak === 'number'
+            ? data.currentStreak
+            : typeof data?.data?.currentStreak === 'number'
+            ? data.data.currentStreak
+            : 0;
+          setStreakDays(value);
+        } catch {
+          setStreakDays(null);
+        }
+      } else {
+        try {
+          const data = await getStreakByUserId(student.userId) as any;
+          const value = typeof data?.currentStreak === 'number'
+            ? data.currentStreak
+            : typeof data?.data?.currentStreak === 'number'
+            ? data.data.currentStreak
+            : 0;
+          setStreakDays(value);
+        } catch {
+          setStreakDays(null);
+        }
+      }
+    };
+    fetchStreak();
+  }, [isOpen, student, authToken, currentUserId]);
+
+  // Derive stats for cards from progress
+  const derived = useMemo(() => {
+    const empty = {
+      currentLevel: 0,
+      currentLevelPct: 0,
+      levelsCompleted: 0,
+      totalLevels: 0,
+      averageScore: 0,
+      classesCompleted: 0,
+      totalClasses: 0,
+    };
+    if (!progressData) return empty;
+    const levels: LevelProgress[] = progressData.levels || [];
+    const totalLevels = levels.length;
+    let levelsCompleted = 0;
+    let classesCompleted = 0;
+    let totalClasses = 0;
+    const levelScores: number[] = [];
+    // determine current level (highest with any activity)
+    let currentLevel = 0;
+    let currentLevelPct = 0;
+    levels.forEach((lvl) => {
+      totalClasses += lvl.classes.length;
+      classesCompleted += lvl.classes.filter((c) => (c as any).Test > 0).length;
+      const isCompleted = (lvl.FinalTest > 0) && (lvl.OralTest > 0);
+      if (isCompleted) {
+        levelsCompleted += 1;
+        levelScores.push(Math.round((lvl.FinalTest + lvl.OralTest) / 2));
+      }
+      const hasAny = isCompleted || lvl.classes.some((c: any) => c.Test > 0 || (c.topics || []).some((t: any) => t.Classwork > 0 || t.Homework > 0));
+      if (hasAny && lvl.levelId > currentLevel) {
+        currentLevel = lvl.levelId;
+        const completedInLevel = lvl.classes.filter((c) => (c as any).Test > 0 || (c.topics || []).some((t: any) => t.Classwork > 0 || t.Homework > 0)).length;
+        currentLevelPct = Math.round((completedInLevel / 12) * 100);
+      }
+    });
+    const averageScore = levelScores.length > 0 ? Math.round(levelScores.reduce((s, v) => s + v, 0) / levelScores.length) : 0;
+    return { currentLevel, currentLevelPct, levelsCompleted, totalLevels, averageScore, classesCompleted, totalClasses };
+  }, [progressData]);
 
   if (!isOpen || !student) return null;
 
@@ -50,46 +173,14 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
         <div className="relative z-10 grid grid-cols-1 tablet:grid-cols-3 gap-6 overflow-y-auto max-h-[70vh] pr-2 student-details-scroll">
           {/* Left: Avatar + rank */}
           <div className="tablet:col-span-1 flex flex-col items-center justify-center">
-            <div className="relative">
-              <div className="h-24 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+            <div className="relative mb-8">
+              <div className="h-24 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold -mb-8">
                 {student.avatar}
               </div>
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-[#1b1b1b] border border-gold/40">Rank #{student.rank}</div>
             </div>
             <div className="mt-4 text-center">
               <div className="text-lg font-bold text-gold">Level {student.level}</div>
-              <div className="text-sm text-gray-300">Streak: {student.streak} days 🔥</div>
-            </div>
-
-            {/* Left-side Pinned Achievements */}
-            <div className="mt-4 w-full bg-[#0e0e0e]/80 rounded-xl border border-gold/30 p-3">
-              <div className="text-sm font-semibold text-white/80 mb-2 text-center">Pinned Achievements</div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">👣</div>
-                  <div className="text-[10px] text-gray-300 mt-1">First Steps</div>
-                </div>
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">⚡</div>
-                  <div className="text-[10px] text-gray-300 mt-1">Speed Demon</div>
-                </div>
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">🏆</div>
-                  <div className="text-[10px] text-gray-300 mt-1">Champion</div>
-                </div>
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">🔥</div>
-                  <div className="text-[10px] text-gray-300 mt-1">Streak Master</div>
-                </div>
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">🎯</div>
-                  <div className="text-[10px] text-gray-300 mt-1">Accuracy Ace</div>
-                </div>
-                <div className="p-2 rounded-lg bg-[#1b1b1b] border border-gold/30 text-center">
-                  <div className="text-lg">🧭</div>
-                  <div className="text-[10px] text-gray-300 mt-1">Explorer</div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -100,6 +191,14 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
                 <span className="text-gold">🏅</span> {student.name}
               </h2>
               <p className="text-gray-300">XP: <span className="text-green-400 font-semibold">{student.xp.toLocaleString()}</span> • Next Rank in <span className="text-green-300 font-semibold">{xpToNext} XP</span></p>
+              <div className="text-sm text-gray-300 flex items-center gap-4 mt-1">
+                {progressData?.batchName && (
+                  <span>Batch: <span className="text-white">{progressData.batchName}</span></span>
+                )}
+                {streakDays !== null && (
+                  <span>Streak: <span className="text-white">{streakDays} days 🔥</span></span>
+                )}
+              </div>
             </div>
 
             {/* XP Progress */}
@@ -121,23 +220,14 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
               >
                 View Full Progress
               </button>
-              <button className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-yellow-500/25">
+              <button className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-yellow-500/25" onClick={() => navigate('/student/pvp')}>
                 Challenge to PvP ⚔️
               </button>
             </div>
 
-            {/* Badges */}
-            <div className="bg-[#0e0e0e]/80 rounded-xl border border-gold/30 p-4">
-              <div className="text-sm font-semibold text-white/80 mb-3">Highlights</div>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 rounded-full text-xs bg-[#1b1b1b] border border-gold/40">Consistency ⭐</span>
-                <span className="px-3 py-1 rounded-full text-xs bg-[#1b1b1b] border border-gold/40">Speed ⚡</span>
-                <span className="px-3 py-1 rounded-full text-xs bg-[#1b1b1b] border border-gold/40">Accuracy 🎯</span>
-                <span className="px-3 py-1 rounded-full text-xs bg-[#1b1b1b] border border-gold/40">Team Player 🤝</span>
-              </div>
-            </div>
+            {/* Highlights removed as requested */}
 
-            {/* Expanded: Detailed Stats */}
+            {/* Expanded: Detailed Stats (real data) */}
             {expanded && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
@@ -145,12 +235,15 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">⚡</div>
                       <div>
-                        <p className="text-xl font-bold text-white">0%</p>
+                        <p className="text-xl font-bold text-white">{loading ? '—' : `${derived.currentLevelPct}%`}</p>
                         <p className="text-xs text-gray-300">Overall Progress</p>
+                        {derived.currentLevel > 0 && (
+                          <p className="text-[10px] text-gray-400">for Level {derived.currentLevel}</p>
+                        )}
                       </div>
                     </div>
                     <div className="w-full bg-[#0e0e0e]/80 rounded-full h-3 border border-gold/20">
-                      <div className="bg-gold h-3 rounded-full" style={{ width: '0%' }} />
+                      <div className="bg-gold h-3 rounded-full" style={{ width: `${derived.currentLevelPct}%` }} />
                     </div>
                   </div>
 
@@ -158,12 +251,12 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-9 h-9 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">🏆</div>
                       <div>
-                        <p className="text-xl font-bold text-white">0/5</p>
+                        <p className="text-xl font-bold text-white">{loading ? '—' : `${derived.levelsCompleted}/${derived.totalLevels}`}</p>
                         <p className="text-xs text-gray-300">Levels Completed</p>
                       </div>
                     </div>
                     <div className="w-full bg-[#0e0e0e]/80 rounded-full h-3 border border-gold/20">
-                      <div className="bg-green-400 h-3 rounded-full" style={{ width: '0%' }} />
+                      <div className="bg-green-400 h-3 rounded-full" style={{ width: `${derived.totalLevels > 0 ? Math.round((derived.levelsCompleted / derived.totalLevels) * 100) : 0}%` }} />
                     </div>
                   </div>
 
@@ -171,12 +264,12 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-9 h-9 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">🎯</div>
                       <div>
-                        <p className="text-xl font-bold text-white">0%</p>
+                        <p className="text-xl font-bold text-white">{loading ? '—' : `${derived.averageScore}%`}</p>
                         <p className="text-xs text-gray-300">Average Score</p>
                       </div>
                     </div>
                     <div className="w-full bg-[#0e0e0e]/80 rounded-full h-3 border border-gold/20">
-                      <div className="bg-yellow-400 h-3 rounded-full" style={{ width: '0%' }} />
+                      <div className="bg-yellow-400 h-3 rounded-full" style={{ width: `${derived.averageScore}%` }} />
                     </div>
                   </div>
 
@@ -184,26 +277,17 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-9 h-9 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">📚</div>
                       <div>
-                        <p className="text-xl font-bold text-white">0/59</p>
+                        <p className="text-xl font-bold text-white">{loading ? '—' : `${derived.classesCompleted}/${derived.totalClasses}`}</p>
                         <p className="text-xs text-gray-300">Classes Completed</p>
                       </div>
                     </div>
                     <div className="w-full bg-[#0e0e0e]/80 rounded-full h-3 border border-gold/20">
-                      <div className="bg-purple-400 h-3 rounded-full" style={{ width: '0%' }} />
+                      <div className="bg-purple-400 h-3 rounded-full" style={{ width: `${derived.totalClasses > 0 ? Math.round((derived.classesCompleted / derived.totalClasses) * 100) : 0}%` }} />
                     </div>
                   </div>
                 </div>
 
-                {/* Games Played (placeholder) */}
-                <div className="bg-[#1b1b1b] p-5 rounded-lg border border-lightGold">
-                  <h3 className="text-lg font-bold text-gold mb-3">Games Played</h3>
-                  <div className="grid grid-cols-1 tablet:grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-[#0e0e0e]/80 border border-gold/20">PvP Duels: 0</div>
-                    <div className="p-3 rounded-lg bg-[#0e0e0e]/80 border border-gold/20">Timed Practice: 0</div>
-                    <div className="p-3 rounded-lg bg-[#0e0e0e]/80 border border-gold/20">UnTimed Practice: 0</div>
-                    <div className="p-3 rounded-lg bg-[#0e0e0e]/80 border border-gold/20">Final Tests: 0</div>
-                  </div>
-                </div>
+                {/* Games Played removed as requested */}
 
                 <div className="flex justify-end">
                   <button
