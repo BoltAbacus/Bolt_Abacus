@@ -53,14 +53,14 @@ const StudentPvPRoomPage: FC = () => {
   // Fetch user details when component mounts
   useEffect(() => {
     console.log('Component mount useEffect:', { authToken: !!authToken, user: !!user, userId: user?.id });
-    if (authToken && !user) {
+    if (authToken && (!user || !user.id)) {
       console.log('Calling fetchUserDetails from mount...');
       fetchUserDetails();
     }
   }, []);
 
   useEffect(() => {
-    if (authToken && !user) {
+    if (authToken && (!user || !user.id)) {
       fetchUserDetails();
     }
   }, [authToken, user]);
@@ -106,10 +106,25 @@ const StudentPvPRoomPage: FC = () => {
     try {
       const response = await getPVPRoomDetails(roomId, authToken);
       if (response.data.success) {
-        setRoomDetails(response.data.data);
+        const data = response.data.data as RoomDetails;
+        setRoomDetails(data);
+        // If user id is missing, try to infer from player list by matching name
+        if (user && !user.id) {
+          const match = data.players.find(
+            (p: any) =>
+              p.player.firstName === user.name.first &&
+              p.player.lastName === user.name.last
+          );
+          if (match) {
+            setUser({
+              ...user,
+              id: match.player.userId,
+            } as any);
+          }
+        }
         
         // If game has started, navigate to game page
-        if (response.data.data.status === 'active') {
+        if (data.status === 'active') {
           navigate(`/student/pvp/game/${roomId}`);
         }
       }

@@ -188,7 +188,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               const fallbackPct = Math.min(100, Math.round((dashboardResponse.levelsPercentage?.[dashboardResponse.levelId] || 0) * 100));
               setCurrentLevelProgressPct(fallbackPct);
             }
-
+            
             // Fetch streak data
             console.log('🔄 [Dashboard] Fetching streak data...');
             try {
