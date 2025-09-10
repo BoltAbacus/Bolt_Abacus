@@ -80,7 +80,7 @@ const StudentPvPRoomPage: FC = () => {
         const userData = response.data.data;
         console.log('Setting user data:', userData);
         setUser({
-          id: userData.id,
+          id: (userData as any).id ?? (userData as any).userId,
           name: {
             first: userData.firstName,
             last: userData.lastName,
