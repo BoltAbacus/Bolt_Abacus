@@ -59,25 +59,27 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[120] bg-black/90 text-white rounded-2xl border border-gold/50 ring-1 ring-white/5 shadow-2xl backdrop-blur-md resize overflow-auto"
-      style={{ width: FRAME_WIDTH + 40, height: FRAME_HEIGHT + 120, minWidth: 360, minHeight: 260 }}
+      className="fixed bottom-4 right-4 z-[120] bg-[#1c1c1e] text-white rounded-2xl shadow-2xl resize overflow-auto"
+      style={{ width: FRAME_WIDTH + 40, height: FRAME_HEIGHT + 120, minWidth: 360, minHeight: 260, border: 'none' }}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gold/30">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2c2c2e]">
         <div className="text-sm font-semibold">
           <span className="mr-1">🧮</span> Abacus
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={resetAbacus}
-            className="w-8 h-8 grid place-items-center rounded-md border border-gold/30 hover:bg-white/10 transition-colors"
+            className="w-8 h-8 grid place-items-center rounded-md hover:bg-[#2c2c2e] transition-colors"
             title="Reset Abacus"
+            style={{ border: 'none' }}
           >
             🔄
           </button>
           <button
             aria-label="Close mini abacus"
             onClick={onClose}
-            className="w-8 h-8 grid place-items-center rounded-md border border-gold/30 hover:bg-white/10 transition-colors"
+            className="w-8 h-8 grid place-items-center rounded-md hover:bg-[#2c2c2e] transition-colors"
+            style={{ border: 'none' }}
           >
             ×
           </button>
@@ -86,17 +88,17 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
       <div className="p-3 pb-8">
         <div
-          className="relative mx-auto bg-gradient-to-b from-[#d4a574] to-[#8B4513] rounded-2xl border-8 border-[#654321] shadow-2xl"
-          style={{ height: FRAME_HEIGHT, width: FRAME_WIDTH }}
+          className="relative mx-auto rounded-2xl shadow-2xl"
+          style={{ height: FRAME_HEIGHT, width: FRAME_WIDTH, background: '#1c1c1e', border: '2px solid #FFD700' }}
         >
           {/* Horizontal beam */}
-          <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: BEAM_Y, height: 18, zIndex: 10 }}>
+          <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: BEAM_Y, height: 9, zIndex: 10 }}>
             <div
-              className="w-[92%] h-5 rounded-full shadow-lg"
+              className="w-[92%] h-2.5 rounded-full shadow-lg"
               style={{
-                background: 'linear-gradient(90deg, #FFD700 0%, #bfa14a 50%, #FFD700 100%)',
-                border: '2px solid #bfa14a',
-                boxShadow: '0 1px 6px #0005, 0 0px 0px #fff8 inset',
+                background: '#FFD700',
+                border: 'none',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.3)',
               }}
             />
           </div>
@@ -110,32 +112,34 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
                   className="absolute left-1/2 -translate-x-1/2"
                   style={{
                     top: 0,
-                    height: FRAME_HEIGHT - 18,
+                    height: FRAME_HEIGHT - 24,
                     width: ROD_WIDTH,
-                    background: 'linear-gradient(to bottom, #FFD700 0%, #654321 100%)',
+                    background: '#2c2c2e',
                     borderRadius: 6,
                     zIndex: 1,
-                    boxShadow: '0 0 8px #0003',
+                    boxShadow: '0 0 8px rgba(0,0,0,0.3)',
                   }}
                 />
 
                 {/* Upper bead */}
                 <div
-                  className={`absolute w-7 h-7 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center ${
+                  className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
                     rod.upperBead.isActive
-                      ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
-                      : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
+                      ? 'bg-[#FFD700]'
+                      : 'bg-[#48484a] hover:bg-[#636366]'
                   }`}
                   onClick={() => toggleUpperBead(rodIndex)}
                   style={{
                     left: '50%',
-                    transform: 'translateX(-50%)',
-                    top: rod.upperBead.isActive ? BEAM_Y - BEAD_SIZE - 4 : 12,
-                    boxShadow: '0 3px 10px #0006',
+                    transform: 'translateX(-50%) rotate(45deg)',
+                    top: rod.upperBead.isActive ? BEAM_Y - BEAD_SIZE - 4 : 18,
+                    boxShadow: '0 3px 10px rgba(0,0,0,0.3)',
                     zIndex: 15,
+                    border: 'none',
+                    borderRadius: '3px'
                   }}
                 >
-                  <div className="w-3 h-1.5 rounded-full bg-white opacity-30" />
+                  <div className="w-3 h-1.5 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '1px' }} />
                 </div>
 
                 {/* Lower beads */}
@@ -152,63 +156,27 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
                   return (
                     <div
                       key={beadIndex}
-                      className={`absolute w-7 h-7 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center ${
+                      className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
                         isActive
-                          ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
-                          : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
+                          ? 'bg-[#FFD700]'
+                          : 'bg-[#48484a] hover:bg-[#636366]'
                       }`}
                       onClick={() => toggleLowerBeads(rodIndex, beadIndex + 1)}
                       style={{
                         left: '50%',
-                        transform: 'translateX(-50%)',
+                        transform: 'translateX(-50%) rotate(45deg)',
                         top,
-                        boxShadow: '0 3px 10px #0006',
+                        boxShadow: '0 3px 10px rgba(0,0,0,0.3)',
                         zIndex: 15,
+                        border: 'none',
+                        borderRadius: '3px'
                       }}
                     >
-                      <div className="w-3 h-1.5 rounded-full bg-white opacity-30" />
+                      <div className="w-3 h-1.5 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '1px' }} />
                     </div>
                   );
                 })}
 
-                {/* Position labels */}
-                <div
-                  className="text-xs text-[#FFD700] font-mono font-bold whitespace-nowrap bg-black/70 px-1 py-0.5 rounded shadow-lg"
-                  style={{
-                    position: 'absolute',
-                    bottom: -30,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    textShadow: '0 1px 2px #000a',
-                    zIndex: 20,
-                  }}
-                >
-                  {rodIndex === 12
-                    ? '1'
-                    : rodIndex === 11
-                    ? '10'
-                    : rodIndex === 10
-                    ? '100'
-                    : rodIndex === 9
-                    ? '1K'
-                    : rodIndex === 8
-                    ? '10K'
-                    : rodIndex === 7
-                    ? '100K'
-                    : rodIndex === 6
-                    ? '1M'
-                    : rodIndex === 5
-                    ? '10M'
-                    : rodIndex === 4
-                    ? '100M'
-                    : rodIndex === 3
-                    ? '1B'
-                    : rodIndex === 2
-                    ? '10B'
-                    : rodIndex === 1
-                    ? '100B'
-                    : '1T'}
-                </div>
               </div>
             ))}
           </div>

@@ -9,7 +9,7 @@ import { useAuthStore } from '@store/authStore';
 import {
   HOME_PAGE,
   LOGIN_PAGE,
-  PROFILE_PAGE,
+  STUDENT_PROFILE_PAGE,
   STUDENT_DASHBOARD,
   STUDENT_PROGRESS,
 } from '@constants/routes';
@@ -43,7 +43,7 @@ const StudentNavBar: FC<StudentNavBarProps> = () => {
                 <NavBarLink type="desktop" href={LOGIN_PAGE} onclick={logout}>
                   Log out
                 </NavBarLink>
-                <NavBarLink type="desktop" href={PROFILE_PAGE}>
+                <NavBarLink type="desktop" href={STUDENT_PROFILE_PAGE}>
                   <ProfileIcon
                     text={user.name.first.charAt(0) + user.name.last.charAt(0)}
                   />
@@ -96,7 +96,7 @@ const StudentNavBar: FC<StudentNavBarProps> = () => {
                     Log out
                   </NavBarLink>
 
-                  <NavBarLink type="mobile" href={PROFILE_PAGE}>
+                  <NavBarLink type="mobile" href={STUDENT_PROFILE_PAGE}>
                     <ProfileIcon
                       text={
                         user.name.first.charAt(0) + user.name.last.charAt(0)

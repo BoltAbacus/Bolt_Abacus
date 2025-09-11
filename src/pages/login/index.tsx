@@ -38,7 +38,7 @@ const LoginPage: FC<LoginPageProps> = () => {
       )}
       <SeoComponent title="Login" href="login" />
       <div
-        className={`${styles.formSection} flex items-center justify-center px-2 desktop:pt-3`}
+        className={`${styles.formSection} flex items-center justify-center px-2 desktop:pt-3 bg-black`}
       >
         <div className="desktop:ml-6 tablet:h-full desktop:w-[30%] desktop:px-20 desktop:pt-12 tablet:flex tablet:items-center">
           <LoginForm />

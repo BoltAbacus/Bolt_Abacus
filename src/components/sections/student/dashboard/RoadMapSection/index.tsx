@@ -58,7 +58,7 @@ const RoadmapSection: FC<RoadmapSectionProps> = ({
 
   return (
     <div className="px-6 tablet:p-10 desktop:px-24">
-      <p className="font-medium text-md desktop:text-lg">Roadmap</p>
+      <p className="font-medium text-md desktop:text-lg" style={{ color: '#ffffff' }}>Roadmap</p>
       <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 desktop:grid-cols-3">
         {classCards}
       </div>

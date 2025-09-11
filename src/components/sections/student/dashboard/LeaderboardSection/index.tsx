@@ -21,10 +21,7 @@ const LeaderboardSection: FC<LeaderboardSectionProps> = ({ className = '' }) => 
   const currentUser = { rank: 15, name: 'You', xp: 1850, avatar: 'YO' };
 
   return (
-    <div className={`bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-6 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden ${className}`}>
-      {/* Animated background elements */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-lightGold/5 animate-pulse"></div>
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-gold"></div>
+    <div className={`text-white p-6 rounded-2xl transition-colors relative overflow-hidden ${className}`} style={{ backgroundColor: '#161618' }}>
       <h2 className="text-2xl font-bold mb-6 flex items-center">
         <span className="mr-2">⚡</span>
         Lightning Leaderboard
@@ -32,39 +29,78 @@ const LeaderboardSection: FC<LeaderboardSectionProps> = ({ className = '' }) => 
       
       <div className="space-y-3 mb-6">
         {leaderboard.map((student, index) => (
-          <div key={student.rank} className="flex items-center space-x-3 p-3 bg-[#080808]/80 hover:bg-[#191919] rounded-xl border border-gold/30 ring-1 ring-white/5 shadow-lg hover:shadow-[0_0_20px_rgba(255,186,8,0.15)] hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-[#080808]/80 text-white border border-gold/30 ring-1 ring-white/5 shadow-lg">
+          <div 
+            key={student.rank} 
+            className="flex items-center space-x-3 p-3 rounded-xl hover:scale-105 transition-all duration-300 relative overflow-hidden cursor-pointer group" 
+            style={{ 
+              backgroundColor: '#212124',
+              boxShadow: '0 0 0 rgba(255,186,8,0)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(255,186,8,0.4), 0 0 40px rgba(255,186,8,0.2), 0 0 60px rgba(255,186,8,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+            }}
+          >
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: '#000000' }}>
               {student.rank}
             </div>
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg border border-white/10">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#161618' }}>
               {student.avatar}
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-white">{student.name}</p>
-              <p className="text-xs text-gold">{student.xp.toLocaleString()} XP</p>
+              <p className="text-xs" style={{ color: '#818181' }}>{student.xp.toLocaleString()} XP</p>
             </div>
           </div>
         ))}
       </div>
       
       {/* Current User */}
-      <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-500/30">
+      <div 
+        className="p-3 rounded-lg hover:scale-105 transition-all duration-300 cursor-pointer" 
+        style={{ 
+          backgroundColor: '#212124',
+          boxShadow: '0 0 0 rgba(255,186,8,0)',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(255,186,8,0.4), 0 0 40px rgba(255,186,8,0.2), 0 0 60px rgba(255,186,8,0.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+        }}
+      >
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: '#000000' }}>
             {currentUser.rank}
           </div>
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#161618' }}>
             {currentUser.avatar}
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-white">{currentUser.name}</p>
-            <p className="text-xs text-gray-300">{currentUser.xp.toLocaleString()} XP</p>
+            <p className="text-xs" style={{ color: '#818181' }}>{currentUser.xp.toLocaleString()} XP</p>
           </div>
         </div>
       </div>
       
       <div className="mt-6 text-center">
-        <button className="bg-gradient-to-r from-gold to-lightGold hover:from-lightGold hover:to-gold text-black px-6 py-2 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[0_0_20px_rgba(255,186,8,0.40)]">
+        <button 
+          className="bg-gradient-to-r from-gold to-lightGold hover:from-lightGold hover:to-gold text-black px-6 py-2 rounded-xl font-bold transition-all duration-300 transform hover:scale-110"
+          style={{
+            boxShadow: '0 0 0 rgba(255,186,8,0)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 25px rgba(255,186,8,0.6), 0 0 50px rgba(255,186,8,0.4), 0 0 75px rgba(255,186,8,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+          }}
+        >
           View Full Leaderboard
         </button>
       </div>

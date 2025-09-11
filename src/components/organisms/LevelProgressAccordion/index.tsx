@@ -21,7 +21,13 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
   // Calculate level completion status
   const levelStats = useMemo(() => {
     const totalClasses = levelProgress.classes.length;
-    const completedClasses = levelProgress.classes.filter(cls => cls.Test > 0).length;
+    const completedClasses = levelProgress.classes.filter(cls => {
+      // A class is completed if it has a test score OR if it has any topic progress
+      if (cls.Test > 0) return true;
+      
+      // Check if any topics have classwork or homework completed
+      return cls.topics.some(topic => topic.Classwork > 0 || topic.Homework > 0);
+    }).length;
     const classProgress = (completedClasses / totalClasses) * 100;
     
     const isLevelCompleted = levelProgress.FinalTest > 0 && levelProgress.OralTest > 0;

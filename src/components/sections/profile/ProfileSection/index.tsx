@@ -63,15 +63,15 @@ const ProfileSection: FC<ProfileSectionProps> = ({ user }) => {
   };
 
   return (
-    <div className="flex items-center gap-4 py-2 justify-evenly">
-      <div className="flex flex-col gap-8 px-6 py-10 bg-darkBlack tablet:px-16 rounded-xl shadow-boxWhite">
+    <div className="flex items-center gap-4 py-2 justify-center h-full">
+      <div className="flex flex-col gap-6 px-6 py-6 bg-darkBlack tablet:px-12 tablet:py-8 rounded-xl shadow-boxWhite max-w-md w-full">
         <div className="flex items-center justify-center p-4">
           <ProfileIcon
             text={user.name.first.charAt(0) + user.name.last.charAt(0)}
             size="large"
           />
         </div>
-        <div className="flex flex-col gap-6 tablet:text-lg">
+        <div className="flex flex-col gap-4 tablet:text-lg">
           <div className="flex items-center gap-2">
             <div className="font-semibold text-gold/75">Name: </div>
             <div className="">
@@ -94,21 +94,28 @@ const ProfileSection: FC<ProfileSectionProps> = ({ user }) => {
             <div className="font-semibold text-gold/75">Organization: </div>
             <div className="">{user.organizationName}</div>
           </div>
-          <div className="w-full pt-4">
+          <div className="w-full pt-4 space-y-4">
             <Link to={RESET_PASSWORD_PAGE}>
               <Button type="secondary" text="Reset Password" />
             </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full px-3 py-2 font-semibold text-center rounded-lg text-md bg-gold disabled:bg-gold/30 text-black hover:shadow-golden transition-all duration-200"
+            >
+              Logout
+            </button>
+            <button
+              type="button"
+              className="w-full px-3 py-2 font-semibold text-center rounded-lg text-md bg-gold disabled:bg-gold/30 text-black hover:shadow-golden transition-all duration-200"
+              onClick={() => deleteAccount()}
+              data-tooltip-id="unlock-class-tooltip"
+              data-tooltip-content="Unlock Class"
+              data-tooltip-place="bottom"
+            >
+              Delete Account
+            </button>
           </div>
-          <button
-            type="button"
-            className="w-full px-3 py-2 font-semibold text-center rounded-lg text-md bg-gold disabled:bg-gold/30 text-black hover:shadow-golden"
-            onClick={() => deleteAccount()}
-            data-tooltip-id="unlock-class-tooltip"
-            data-tooltip-content="Unlock Class"
-            data-tooltip-place="bottom"
-          >
-            Delete Account
-          </button>
         </div>
       </div>
     </div>

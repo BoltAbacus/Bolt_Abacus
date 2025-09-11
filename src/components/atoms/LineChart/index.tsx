@@ -7,6 +7,7 @@ export interface LineChartProps {
   height?: number;
   stroke?: string;
   fill?: string;
+  gradientColors?: { start: string; end: string };
   minValue?: number;
   maxValue?: number;
   valueFormatter?: (v: number) => string;
@@ -22,6 +23,7 @@ const LineChart: FC<LineChartProps> = ({
   height = 90,
   stroke = '#60a5fa', // blue-400
   fill = 'rgba(96,165,250,0.15)',
+  gradientColors,
   minValue,
   maxValue,
   valueFormatter,
@@ -73,6 +75,9 @@ const LineChart: FC<LineChartProps> = ({
 
   const valueFmt = (v: number) => (valueFormatter ? valueFormatter(v) : String(v));
 
+  // Generate unique gradient ID
+  const gradientId = useMemo(() => `gradient-${Math.random().toString(36).substr(2, 9)}`, []);
+
   return (
     <div ref={containerRef} className="relative">
       <svg
@@ -82,6 +87,15 @@ const LineChart: FC<LineChartProps> = ({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleLeave}
       >
+        {/* Gradient definition */}
+        {gradientColors && (
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={gradientColors.start} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={gradientColors.end} stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+        )}
         {/* Grid */}
         {yTicks?.map((t, idx) => {
           const y = height - ((t - min) / range) * height;
@@ -92,7 +106,7 @@ const LineChart: FC<LineChartProps> = ({
             </g>
           );
         })}
-        <path d={areaPath} fill={fill} stroke="none" />
+        <path d={areaPath} fill={gradientColors ? `url(#${gradientId})` : fill} stroke="none" />
         <polyline
           points={points}
           fill="none"

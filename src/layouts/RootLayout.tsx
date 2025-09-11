@@ -11,7 +11,7 @@ export interface RootLayoutProps {
 
 const RootLayout: FC<RootLayoutProps> = ({ withNavBar, withFooter }) => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-black">
       {withNavBar && <NavBar />}
       <div className="flex-1">
         <Outlet />

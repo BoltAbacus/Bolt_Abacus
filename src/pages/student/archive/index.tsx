@@ -119,34 +119,34 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
               <SeoComponent title="Archive" />
               <div className="px-6 pt-2 tablet:p-10 desktop:px-24 space-y-6">
                 {/* Header */}
-                <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
-                  <h1 className="text-3xl font-bold mb-4 flex items-center">
+                <div className="bg-darkBlack text-white p-6 rounded-xl shadow-boxWhite border border-gold/20">
+                  <h1 className="text-3xl font-bold mb-4 flex items-center text-gold">
                     <span className="mr-2">📚</span>
                     Activity Archive
                   </h1>
-                  <p className="text-gray-300">
+                  <p className="text-white/80">
                     View your learning history and track your progress over time.
                   </p>
                 </div>
 
                 {/* Activity List */}
-                <div className="bg-[#1b1b1b] text-white p-6 rounded-lg border border-gray-800">
+                <div className="bg-darkBlack text-white p-6 rounded-xl shadow-boxWhite border border-gold/20">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold flex items-center">
+                    <h2 className="text-2xl font-bold flex items-center text-gold">
                       <span className="mr-2">🕒</span>
                       Recent Activity
                     </h2>
                     <div className="flex space-x-2">
                       <button
                         onClick={refreshActivities}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        className="bg-gold hover:shadow-golden text-black px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                       >
                         🔄 Refresh
                       </button>
                       {activities.length > 0 && (
                         <button
                           onClick={() => setShowClearConfirm(true)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                          className="bg-gold hover:shadow-golden text-black px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                         >
                           🗑️ Clear All
                         </button>
@@ -158,12 +158,12 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
                     {activities.length === 0 ? (
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">📚</div>
-                        <h3 className="text-xl font-semibold text-gray-300 mb-2">No Activities Yet</h3>
-                        <p className="text-gray-400">Start practicing, taking tests, or playing PvP to see your activity history here!</p>
+                        <h3 className="text-xl font-semibold text-gold mb-2">No Activities Yet</h3>
+                        <p className="text-white/70">Start practicing, taking tests, or playing PvP to see your activity history here!</p>
                       </div>
                     ) : (
                       activities.map((activity) => (
-                        <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group">
+                        <div key={activity.id} className="flex items-center space-x-4 p-4 bg-[#212124] rounded-lg hover:bg-gold/10 transition-all duration-200 group border border-gold/10">
                           <div className="text-2xl">
                             {activity.type === 'practice' ? '📚' : activity.type === 'pvp' ? '⚔️' : activity.type === 'streak' ? '🔥' : activity.type === 'level' ? '🎯' : activity.type === 'test' ? '✅' : activity.type === 'classwork' ? '🏫' : activity.type === 'homework' ? '📝' : '📌'}
                           </div>
@@ -179,7 +179,7 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
                                 </span>
                                 <button
                                   onClick={() => setDeleteConfirmId(activity.id)}
-                                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all duration-200 p-1"
+                                  className="opacity-0 group-hover:opacity-100 text-gold hover:text-gold/80 transition-all duration-200 p-1"
                                   title="Delete activity"
                                 >
                                   🗑️
@@ -197,19 +197,19 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
                 {/* Confirmation Modals */}
                 {showClearConfirm && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-[#1b1b1b] border border-gray-800 rounded-lg p-6 max-w-md mx-4">
-                      <h3 className="text-xl font-bold text-white mb-4">Clear All Activities?</h3>
-                      <p className="text-gray-300 mb-6">This will permanently delete all your activity history. This action cannot be undone.</p>
+                    <div className="bg-darkBlack border border-gold/20 rounded-xl p-6 max-w-md mx-4 shadow-boxWhite">
+                      <h3 className="text-xl font-bold text-gold mb-4">Clear All Activities?</h3>
+                      <p className="text-white/80 mb-6">This will permanently delete all your activity history. This action cannot be undone.</p>
                       <div className="flex space-x-3">
                         <button
                           onClick={handleClearAll}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          className="bg-gold hover:shadow-golden text-black px-4 py-2 rounded-lg font-medium transition-all duration-200"
                         >
                           Yes, Clear All
                         </button>
                         <button
                           onClick={() => setShowClearConfirm(false)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          className="bg-[#212124] hover:bg-[#2a2a2a] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-gold/20"
                         >
                           Cancel
                         </button>
@@ -220,19 +220,19 @@ const StudentArchivePage: FC<StudentArchivePageProps> = () => {
 
                 {deleteConfirmId && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-[#1b1b1b] border border-gray-800 rounded-lg p-6 max-w-md mx-4">
-                      <h3 className="text-xl font-bold text-white mb-4">Delete Activity?</h3>
-                      <p className="text-gray-300 mb-6">This will permanently delete this activity from your history.</p>
+                    <div className="bg-darkBlack border border-gold/20 rounded-xl p-6 max-w-md mx-4 shadow-boxWhite">
+                      <h3 className="text-xl font-bold text-gold mb-4">Delete Activity?</h3>
+                      <p className="text-white/80 mb-6">This will permanently delete this activity from your history.</p>
                       <div className="flex space-x-3">
                         <button
                           onClick={() => handleDeleteActivity(deleteConfirmId)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          className="bg-gold hover:shadow-golden text-black px-4 py-2 rounded-lg font-medium transition-all duration-200"
                         >
                           Yes, Delete
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(null)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          className="bg-[#212124] hover:bg-[#2a2a2a] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-gold/20"
                         >
                           Cancel
                         </button>

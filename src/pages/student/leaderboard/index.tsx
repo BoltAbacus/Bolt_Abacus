@@ -276,27 +276,24 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
           ) : (
             <>
               <SeoComponent title="Leaderboard" />
-              <div className="px-6 pt-2 tablet:p-10 desktop:px-24">
-                <div className="grid grid-cols-1 desktop:grid-cols-3 gap-6">
+              <div>
+                <div className="grid grid-cols-1 desktop:grid-cols-3 gap-4 tablet:gap-6">
                   {/* Main Content */}
-                  <div className="desktop:col-span-2 space-y-6">
+                  <div className="desktop:col-span-2 space-y-4 tablet:space-y-6">
                     {/* Header */}
-                    <div className="bg-black hover:bg-[#191919] transition-colors text-white p-6 rounded-2xl border border-gold/50 ring-1 ring-white/5 backdrop-blur-xl">
-                      <h1 className="text-3xl font-bold mb-4 flex items-center">
+                    <div className="text-white p-4 tablet:p-6 rounded-2xl transition-colors" style={{ backgroundColor: '#161618' }}>
+                      <h1 className="text-2xl tablet:text-3xl font-bold mb-4 flex items-center">
                         <span className="mr-2">🏆</span>
                         Lightning Leaderboard
                       </h1>
-                      <p className="text-gray-300">
+                      <p style={{ color: '#818181' }} className="text-sm tablet:text-base">
                         Compete with other students and climb the rankings!
                       </p>
                     </div>
 
                     {/* Leaderboard */}
-                    <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-                      {/* Animated background elements */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-lightGold/5 animate-pulse"></div>
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-gold"></div>
-                      <h2 className="text-2xl font-bold mb-6 flex items-center">
+                    <div className="text-white p-4 tablet:p-8 rounded-2xl transition-colors relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+                      <h2 className="text-xl tablet:text-2xl font-bold mb-6 flex items-center">
                         <span className="mr-2">⚡</span>
                         Top Students
                       </h2>
@@ -306,12 +303,22 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                           <div className="text-center py-12">
                             <div className="text-6xl mb-4">🏆</div>
                             <h3 className="text-2xl font-bold text-white mb-2">No Rankings Yet</h3>
-                            <p className="text-gray-400 mb-6">
+                            <p className="mb-6" style={{ color: '#818181' }}>
                               Start playing PvP battles to earn experience points and climb the leaderboard!
                             </p>
                             <button
                               onClick={() => navigate('/student/practice/pvp')}
-                              className="bg-gradient-to-r from-gold to-lightGold text-black px-6 py-3 rounded-xl font-bold hover:scale-105 transition-all duration-300"
+                              className="bg-gradient-to-r from-gold to-lightGold text-black px-6 py-3 rounded-xl font-bold hover:scale-110 transition-all duration-300"
+                              style={{
+                                boxShadow: '0 0 0 rgba(255,186,8,0)',
+                                transition: 'all 0.3s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 25px rgba(255,186,8,0.6), 0 0 50px rgba(255,186,8,0.4), 0 0 75px rgba(255,186,8,0.2)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+                              }}
                             >
                               Start Playing PvP
                             </button>
@@ -320,33 +327,41 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                           pageSlice.map((student) => (
                             <div 
                               key={student.rank} 
-                              className={`flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                                student.name === 'You' 
-                                  ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.25)]' 
-                                  : 'bg-[#080808]/80 hover:bg-[#191919] border border-gold/30 ring-1 ring-white/5 shadow-lg hover:shadow-[0_0_20px_rgba(255,186,8,0.15)] hover:scale-[1.02]'
-                              }`}
+                              className="flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 relative overflow-hidden hover:scale-105 cursor-pointer"
+                              style={{ 
+                                backgroundColor: student.name === 'You' ? '#212124' : '#212124',
+                                boxShadow: '0 0 0 rgba(255,186,8,0)',
+                                transition: 'all 0.3s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 20px rgba(255,186,8,0.4), 0 0 40px rgba(255,186,8,0.2), 0 0 60px rgba(255,186,8,0.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+                              }}
                             >
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankBadgeColor(student.rank)}`}>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: '#000000' }}>
                                 {student.rank}
                               </div>
-                              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg border border-white/10">
+                              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#161618' }}>
                                 {student.avatar || student.name?.charAt(0) || 'U'}
                               </div>
                               <div className="flex-1">
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <button
-                                      className={`text-sm font-medium underline-offset-2 hover:underline ${student.name === 'You' ? 'text-blue-300' : 'text-white'}`}
+                                      className="text-sm font-medium underline-offset-2 hover:underline"
+                                      style={{ color: '#ffffff' }}
                                       onClick={() => { setSelectedStudent(student); setIsStudentModalOpen(true); }}
                                     >
                                       {student.name}
                                     </button>
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs" style={{ color: '#818181' }}>
                                       Level {student.level} • {student.streak || 0} Day Streak
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm font-semibold text-gold">
+                                    <p className="text-sm font-semibold" style={{ color: '#818181' }}>
                                       {student.xp.toLocaleString()} XP
                                     </p>
                                   </div>
@@ -361,7 +376,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                       {leaderboard.length > 0 && totalPages > 1 && (
                         <div className="mt-6 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-300">
+                            <span className="text-sm" style={{ color: '#818181' }}>
                               Page {currentPage} of {totalPages} • {totalStudents} players
                             </span>
                           </div>
@@ -411,31 +426,31 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                   </div>
 
                   {/* Right Sidebar */}
-                  <aside className="space-y-6">
+                  <aside className="space-y-4 tablet:space-y-6">
                     {/* User Stats */}
-                    <div className="bg-black text-white p-6 rounded-2xl border border-gold/50 ring-1 ring-white/5">
-                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <div className="text-white p-4 tablet:p-6 rounded-2xl" style={{ backgroundColor: '#161618' }}>
+                      <h3 className="text-base tablet:text-lg font-semibold mb-4 flex items-center">
                         <span className="mr-2">👤</span>
                         Your Stats
                       </h3>
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-300">Total XP</span>
-                          <span className="text-xl font-bold text-gold">{userStats.totalXP.toLocaleString()}</span>
+                          <span className="text-sm" style={{ color: '#818181' }}>Total XP</span>
+                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>{userStats.totalXP.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-300">Level</span>
-                          <span className="text-xl font-bold text-blue-400">{userStats.level}</span>
+                          <span className="text-sm" style={{ color: '#818181' }}>Level</span>
+                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>{userStats.level}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-300">Rank</span>
-                          <span className="text-xl font-bold text-purple-400">
+                          <span className="text-sm" style={{ color: '#818181' }}>Rank</span>
+                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>
                             {leaderboard.length > 0 && userStats.rank > 0 ? `#${userStats.rank}` : 'Unranked'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-300">Next Level</span>
-                          <span className="text-lg font-bold text-green-400">
+                          <span className="text-sm" style={{ color: '#818181' }}>Next Level</span>
+                          <span className="text-lg font-bold" style={{ color: '#ffffff' }}>
                             {userStats.nextLevelXP} XP needed
                           </span>
                         </div>

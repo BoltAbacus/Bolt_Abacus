@@ -479,9 +479,9 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col tablet:flex-row tablet:justify-between tablet:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gold mb-2">Your Learning Journey</h1>
-            <p className="text-lg text-gray-300">
-              <span className="font-medium text-grey">Batch: </span>
+            <h1 className="text-3xl font-bold text-[#facb25] mb-2">Your Learning Journey</h1>
+            <p className="text-lg text-white">
+              <span className="font-medium text-[#818181]">Batch: </span>
               {batchName}
             </p>
           </div>
@@ -494,59 +494,59 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
       {/* Progress Overview Dashboard (moved to top) */}
       <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <FaFire className="text-white" />
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+              <FaFire className="text-[#000000]" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{currentLevelStats.levelProgress}%</p>
-              <p className="text-sm text-gray-300">Overall Progress</p>
+              <p className="text-sm text-white">Overall Progress</p>
               {currentLevelStats.currentLevel > 0 && (
-                <p className="text-xs text-gray-400">for Level {currentLevelStats.currentLevel}</p>
+                <p className="text-xs text-[#818181]">for Level {currentLevelStats.currentLevel}</p>
               )}
             </div>
           </div>
           <ProgressBar percentage={currentLevelStats.levelProgress} type="blue" />
         </div>
 
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-              <FaTrophy className="text-white" />
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+              <FaTrophy className="text-[#000000]" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{progressStats.completedLevels}/{progressStats.totalLevels}</p>
-              <p className="text-sm text-gray-300">Levels Completed</p>
+              <p className="text-sm text-white">Levels Completed</p>
             </div>
           </div>
           <ProgressBar percentage={(progressStats.completedLevels / progressStats.totalLevels) * 100} type="green" />
         </div>
 
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
-              <FaStar className="text-white" />
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+              <FaStar className="text-[#000000]" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{currentLevelStats.levelAverageScore}%</p>
-              <p className="text-sm text-gray-300">Average Score</p>
+              <p className="text-sm text-white">Average Score</p>
               {currentLevelStats.currentLevel > 0 && (
-                <p className="text-xs text-gray-400">for Level {currentLevelStats.currentLevel}</p>
+                <p className="text-xs text-[#818181]">for Level {currentLevelStats.currentLevel}</p>
               )}
             </div>
           </div>
           <ProgressBar percentage={currentLevelStats.levelAverageScore} type="yellow" />
         </div>
 
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <FaMedal className="text-white" />
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+              <FaMedal className="text-[#000000]" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{progressStats.completedClasses}/{progressStats.totalClasses}</p>
-              <p className="text-sm text-gray-300">Classes Completed</p>
+              <p className="text-sm text-white">Classes Completed</p>
             </div>
           </div>
           <ProgressBar percentage={(progressStats.completedClasses / progressStats.totalClasses) * 100} type="purple" />
@@ -576,7 +576,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
       {/* Motivational Message */}
       <div 
-        className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 rounded-lg border border-blue-500/30 cursor-pointer hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300"
+        className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 cursor-pointer hover:bg-[#2a2a2d] transition-all duration-300"
         onClick={() => navigate(STUDENT_ROADMAP)}
       >
         <div className="text-center">
@@ -588,7 +588,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
       {/* Achievements Section */}
       {/* {achievements.length > 0 && (
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <h3 className="text-xl font-bold text-gold mb-4">Achievements Unlocked</h3>
           <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-4">
             {achievements.map((achievement) => (
@@ -609,31 +609,31 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       {/* Trend Cards (line charts) */}
       <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
         {/* Accuracy Trend */}
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-xl font-bold text-gold">Accuracy Trend</h3>
+              <h3 className="text-xl font-bold text-[#facb25]">Accuracy Trend</h3>
               {isUsingFallbackData.accuracy && (
                 <p className="text-xs text-yellow-400 mt-1">📊 Calculated from your completed work</p>
               )}
               {accuracyTrend.currentAccuracy === 0 && (
-                <p className="text-xs text-gray-400 mt-1">Complete some classwork to see your progress!</p>
+                <p className="text-xs text-[#818181] mt-1">Complete some classwork to see your progress!</p>
               )}
             </div>
             <div className="text-right">
               <div className="text-2xl font-extrabold text-green-400">{accuracyTrend.currentAccuracy}%</div>
-              <div className="text-xs text-gray-400">Current Accuracy</div>
+              <div className="text-xs text-[#818181]">Current Accuracy</div>
             </div>
           </div>
           <LineChart
             data={accuracyTrend.dailyAccuracy}
             labels={accuracyTrend.labels}
-            stroke="#f59e0b"
-            fill="rgba(245,158,11,0.12)"
+            stroke="#facb25"
+            gradientColors={{ start: "#facb25", end: "#d4a017" }}
             yTicks={accuracyTrend.dailyAccuracy}
             valueFormatter={(v) => `${v}% Accuracy`}
           />
-          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+          <div className="flex justify-between text-[10px] text-[#818181] mt-1">
             <span>7d ago</span>
             <span>Today</span>
           </div>
@@ -641,34 +641,34 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
             <div className="text-sm text-green-300 font-semibold">
               Weekly Progress <span className="text-white">{accuracyTrend.weeklyProgress >= 0 ? '+' : ''}{accuracyTrend.weeklyProgress}%</span>
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-[#818181]">
               {accuracyTrend.dailyAccuracy.filter(acc => acc > 0).length} active days
             </div>
           </div>
         </div>
 
         {/* Speed Trend */}
-        <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-xl font-bold text-gold">Speed Trend</h3>
+              <h3 className="text-xl font-bold text-[#facb25]">Speed Trend</h3>
               {isUsingFallbackData.speed && (
                 <p className="text-xs text-yellow-400 mt-1">📊 Calculated from your completed work</p>
               )}
               {speedTrend.currentSpeed === 0 && (
-                <p className="text-xs text-gray-400 mt-1">Complete some classwork to see your speed!</p>
+                <p className="text-xs text-[#818181] mt-1">Complete some classwork to see your speed!</p>
               )}
             </div>
             <div className="text-right">
               <div className="text-2xl font-extrabold text-blue-400">{speedTrend.currentSpeed}</div>
-              <div className="text-xs text-gray-400">Problems/Minute</div>
+              <div className="text-xs text-[#818181]">Problems/Minute</div>
             </div>
           </div>
           <LineChart
             data={speedTrend.dailySpeed}
             labels={speedTrend.labels}
-            stroke="#f59e0b"
-            fill="rgba(245,158,11,0.12)"
+            stroke="#facb25"
+            gradientColors={{ start: "#facb25", end: "#d4a017" }}
             yTicks={speedTrend.dailySpeed}
             valueFormatter={(v) => `${v}`}
           />

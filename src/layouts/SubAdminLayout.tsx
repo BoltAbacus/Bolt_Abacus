@@ -29,7 +29,7 @@ const SubAdminLayout: FC<SubAdminLayoutProps> = ({ withLinkBar = true }) => {
           <Navigate to={LOGIN_PAGE} />
         </>
       )}
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-black">
         <SubAdminNavBar />
         <div className="flex justify-center flex-1">
           {withLinkBar && <SubAdminLinkBar />}

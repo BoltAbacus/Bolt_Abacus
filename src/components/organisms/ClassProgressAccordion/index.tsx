@@ -23,7 +23,7 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
     ).length;
     const topicProgress = (completedTopics / totalTopics) * 100;
     
-    const isClassCompleted = classProgress.Test > 0;
+    const isClassCompleted = classProgress.Test > 0 || completedTopics > 0;
     const averageTopicScore = classProgress.topics.reduce((sum, topic) => {
       const topicScore = topic.Classwork > 0 ? topic.Classwork : topic.Homework;
       return sum + topicScore;

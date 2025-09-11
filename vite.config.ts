@@ -19,6 +19,51 @@ export default ({ mode }) => {
         },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Vendor chunks
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'ui-vendor': ['framer-motion', 'react-helmet-async', 'react-icons'],
+            'utils-vendor': ['axios', 'moment', 'zod', 'zustand'],
+            'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+            
+            // Feature chunks
+            'auth': [
+              './src/pages/login',
+              './src/pages/forgot-password',
+              './src/pages/reset-password',
+              './src/pages/reset-password-v2',
+            ],
+            'student': [
+              './src/pages/student/dashboard',
+              './src/pages/student/leaderboard',
+              './src/pages/student/progress',
+              './src/pages/student/practice-mode',
+            ],
+            'admin': [
+              './src/pages/admin/dashboard',
+              './src/pages/admin/add-student',
+              './src/pages/admin/add-teacher',
+              './src/pages/admin/leaderboard',
+            ],
+            'teacher': [
+              './src/pages/teacher/dashboard',
+              './src/pages/teacher/leaderboard',
+              './src/pages/teacher/students',
+            ],
+            'components': [
+              './src/components/atoms',
+              './src/components/molecules',
+              './src/components/organisms',
+            ],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000,
+      sourcemap: mode === 'development',
+    },
     resolve: {
       alias: {
         './runtimeConfig': './runtimeConfig.browser',
@@ -34,6 +79,7 @@ export default ({ mode }) => {
         '@routes': path.resolve(__dirname, './src/routes'),
         '@interfaces': path.resolve(__dirname, './src/interfaces'),
         '@validations': path.resolve(__dirname, './src/validations'),
+        '@types': path.resolve(__dirname, './src/types'),
       },
     },
     plugins: [react(), svgr()],

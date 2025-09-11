@@ -32,7 +32,7 @@ import {
   STUDENT_LEADERBOARD,
   STUDENT_ARCHIVE,
   STUDENT_PVP,
-  PROFILE_PAGE,
+  STUDENT_PROFILE_PAGE,
 } from '@constants/routes';
 
 export interface LeftNavigationProps {
@@ -42,6 +42,7 @@ export interface LeftNavigationProps {
 
 const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAbacusWidget, setShowAbacusWidget] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -101,169 +102,290 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
     onCollapseChange?.(newCollapsedState);
   };
 
+  const handleMobileMenuToggle = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className={`fixed left-0 top-0 h-full bg-[#1a1a1a] text-white transition-all duration-300 z-50 backdrop-blur-md bg-opacity-95 border-r border-gray-800 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
-             {/* Header */}
-       <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-opacity-50 backdrop-blur-sm">
-        {!isCollapsed ? (
-          <div className="flex items-center space-x-2">
-            <BrandLogo link="/" />
-          </div>
-        ) : (
-          <div className="flex items-center justify-center w-full">
-            <Link to="/">
-              <img
-                src="/logo.png"
-                alt="BoltAbacus logo"
-                width={40}
-                height={40}
-                className="cursor-pointer"
+    <>
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={handleMobileMenuToggle}
+        className="fixed top-4 left-4 z-[60] tablet:hidden p-2 rounded-lg bg-[#161618] text-white hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 border border-[#212124]"
+      >
+        <AiOutlineMenu size={20} />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[55] tablet:hidden"
+          onClick={closeMobileMenu}
+        />
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className={`hidden tablet:block fixed left-0 top-0 h-full bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] ${
+        isCollapsed ? 'w-16' : 'w-64'
+      }`}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[#212124]">
+          {!isCollapsed ? (
+            <div className="flex items-center space-x-2">
+              <BrandLogo link="/" />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center w-full">
+              <Link to="/">
+                <img
+                  src="/logo.png"
+                  alt="BoltAbacus logo"
+                  width={40}
+                  height={40}
+                  className="cursor-pointer"
+                />
+              </Link>
+            </div>
+          )}
+          <button
+            onClick={handleCollapseToggle}
+            className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
+          >
+            {isCollapsed ? <AiOutlineMenu size={20} /> : <AiOutlineClose size={20} />}
+          </button>
+        </div>
+
+        {/* User Info & Streak */}
+        <div className="p-4 border-b border-[#212124]">
+          {!isCollapsed && (
+            <Link
+              to={STUDENT_PROFILE_PAGE}
+              className="flex items-center space-x-3 mb-4 -ml-2 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
+            >
+              <ProfileIcon
+                text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
+              />
+              <div>
+                <p className="font-medium text-sm group-hover:text-[#000000]">
+                  {user?.name.first || ''} {user?.name.last || ''}
+                </p>
+                <p className="text-xs text-white group-hover:text-[#000000]">Student</p>
+              </div>
+            </Link>
+          )}
+          {isCollapsed && (
+            <Link
+              to={STUDENT_PROFILE_PAGE}
+              className="flex items-center justify-center mb-4 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
+            >
+              <ProfileIcon
+                text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
               />
             </Link>
+          )}
+          
+          {/* Streak and Join Class Section */}
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+            <div className="flex items-center justify-center w-8 h-8 bg-[#facb25] rounded-full relative shadow-lg">
+              <AiOutlineFire size={16} className="text-[#000000]" />
+              {isCollapsed && currentStreak > 0 && (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  {currentStreak}
+                </div>
+              )}
+            </div>
+            {!isCollapsed && (
+              <div className="flex-1">
+                <p className="text-sm font-medium">
+                  {currentStreak === 1 ? '1 Day Streak' : `${currentStreak} Days Streak`}
+                </p>
+                <p className="text-xs text-white">
+                  {currentStreak === 0 ? 'Start your streak!' : 'Keep it up!'}
+                </p>
+              </div>
+            )}
+            {!isCollapsed && classLink && (
+              <a 
+                href={classLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-[#facb25] hover:bg-[#facb25]/80 text-[#000000] text-xs font-medium py-1 px-2 rounded transition-all duration-200 flex items-center space-x-1 shadow-md"
+              >
+                <AiOutlineVideoCamera size={12} />
+                <span>Join</span>
+              </a>
+            )}
           </div>
-        )}
-                 <button
-           onClick={handleCollapseToggle}
-           className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#1a1a1a] transition-all duration-200"
-         >
-          {isCollapsed ? <AiOutlineMenu size={20} /> : <AiOutlineClose size={20} />}
-        </button>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.name} className="relative">
+                  <Link
+                    to={item.href}
+                    className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 group ${
+                      isActive(item.href)
+                        ? 'bg-[#facb25] text-[#000000] shadow-lg'
+                        : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
+                    }`}
+                  >
+                    <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
+                    {!isCollapsed && (
+                      <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
+                    )}
+                  </Link>
+                  {!isCollapsed && item.name === 'Virtual Abacus' && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowAbacusWidget(true);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-[#212124] text-white bg-[#212124] hover:bg-[#facb25] hover:text-[#000000]"
+                      title="Open mini abacus"
+                    >
+                      Mini
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-[#212124]">
+          <ul className="space-y-2">
+            <li>
+              <Link
+                to={STUDENT_ARCHIVE}
+                className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
+              >
+                <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
+                {!isCollapsed && (
+                  <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
+                )}
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
 
-             {/* User Info & Streak */}
-       <div className="p-4 border-b border-gray-800 bg-opacity-30 backdrop-blur-sm">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-3 mb-4">
+      {/* Mobile Menu */}
+      <div className={`fixed left-0 top-0 h-full w-80 bg-[#161618] text-white transition-all duration-300 z-[60] tablet:hidden ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[#212124]">
+          <BrandLogo link="/" />
+          <button
+            onClick={closeMobileMenu}
+            className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
+          >
+            <AiOutlineClose size={20} />
+          </button>
+        </div>
+
+        {/* Mobile User Info */}
+        <div className="p-4 border-b border-[#212124]">
+          <Link
+            to={STUDENT_PROFILE_PAGE}
+            onClick={closeMobileMenu}
+            className="flex items-center space-x-3 mb-4 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
+          >
             <ProfileIcon
               text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
             />
             <div>
-              <p className="font-medium text-sm">
+              <p className="font-medium text-sm group-hover:text-[#000000]">
                 {user?.name.first || ''} {user?.name.last || ''}
               </p>
-              <p className="text-xs text-gray-400">Student</p>
+              <p className="text-xs text-white group-hover:text-[#000000]">Student</p>
             </div>
+          </Link>
+          
+          {/* Mobile Streak */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-[#facb25] rounded-full relative shadow-lg">
+              <AiOutlineFire size={16} className="text-[#000000]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {currentStreak === 1 ? '1 Day Streak' : `${currentStreak} Days Streak`}
+              </p>
+              <p className="text-xs text-white">
+                {currentStreak === 0 ? 'Start your streak!' : 'Keep it up!'}
+              </p>
+            </div>
+            {classLink && (
+              <a 
+                href={classLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-[#facb25] hover:bg-[#facb25]/80 text-[#000000] text-xs font-medium py-1 px-2 rounded transition-all duration-200 flex items-center space-x-1 shadow-md"
+              >
+                <AiOutlineVideoCamera size={12} />
+                <span>Join</span>
+              </a>
+            )}
           </div>
-        )}
-        
-                 {/* Streak and Join Class Section */}
-         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-           <div className="flex items-center justify-center w-8 h-8 bg-[#facb25] rounded-full relative shadow-lg">
-             <AiOutlineFire size={16} className="text-[#1a1a1a]" />
-             {isCollapsed && currentStreak > 0 && (
-               <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                 {currentStreak}
-               </div>
-             )}
-           </div>
-           {!isCollapsed && (
-             <div className="flex-1">
-               <p className="text-sm font-medium">
-                 {currentStreak === 1 ? '1 Day Streak' : `${currentStreak} Days Streak`}
-               </p>
-               <p className="text-xs text-gray-400">
-                 {currentStreak === 0 ? 'Start your streak!' : 'Keep it up!'}
-               </p>
-             </div>
-           )}
-                        {!isCollapsed && classLink && (
-               <a 
-                 href={classLink} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="bg-[#facb25] hover:bg-[#facb25]/80 text-[#1a1a1a] text-xs font-medium py-1 px-2 rounded transition-all duration-200 flex items-center space-x-1 shadow-md"
-               >
-               <AiOutlineVideoCamera size={12} />
-               <span>Join</span>
-             </a>
-           )}
-         </div>
-      </div>
+        </div>
 
-             {/* Navigation Items */}
-       <nav className="flex-1 p-4 bg-opacity-20 backdrop-blur-sm">
-        <ul className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <li key={item.name} className="relative">
-                <Link
-                  to={item.href}
-                  className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 ${
-                    isActive(item.href)
-                      ? 'bg-[#facb25] text-[#1a1a1a] shadow-lg'
-                      : 'text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md'
-                  }`}
-                >
-                  <Icon size={20} />
-                  {!isCollapsed && (
-                    <span className="ml-3 text-sm font-medium">{item.name}</span>
-                  )}
-                </Link>
-                {!isCollapsed && item.name === 'Virtual Abacus' && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowAbacusWidget(true);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-gray-700 text-gray-200 bg-[#0f0f0f] hover:bg-[#facb25] hover:text-[#1a1a1a]"
-                    title="Open mini abacus"
+        {/* Mobile Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.name}>
+                  <Link
+                    to={item.href}
+                    onClick={closeMobileMenu}
+                    className={`flex items-center p-3 rounded-lg transition-all duration-200 group ${
+                      isActive(item.href)
+                        ? 'bg-[#facb25] text-[#000000] shadow-lg'
+                        : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
+                    }`}
                   >
-                    Mini
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                    <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
+                    <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-             {/* Bottom Actions */}
-       <div className="p-4 border-t border-gray-800 bg-opacity-30 backdrop-blur-sm">
-        <ul className="space-y-2">
-                    <li>
-            <Link
-              to={PROFILE_PAGE}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md`}
-            >
-              <AiOutlineUser size={20} />
-              {!isCollapsed && (
-                <span className="ml-3 text-sm font-medium">Profile</span>
-              )}
-            </Link>
-          </li>
-          <li>
-            <Link
-              to={STUDENT_ARCHIVE}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md`}
-            >
-              <AiOutlineHistory size={20} />
-              {!isCollapsed && (
-                <span className="ml-3 text-sm font-medium">Archive</span>
-              )}
-            </Link>
-          </li>
-          <li>
-            <button
-              onClick={logout}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : ''} w-full p-3 rounded-lg transition-all duration-200 text-gray-300 hover:bg-[#facb25] hover:text-[#1a1a1a] hover:shadow-md`}
-            >
-              <AiOutlineLogout size={20} />
-              {!isCollapsed && (
-                <span className="ml-3 text-sm font-medium">Logout</span>
-              )}
-            </button>
-          </li>
-        </ul>
+        {/* Mobile Bottom Actions */}
+        <div className="p-4 border-t border-[#212124]">
+          <ul className="space-y-2">
+            <li>
+              <Link
+                to={STUDENT_ARCHIVE}
+                onClick={closeMobileMenu}
+                className="flex items-center p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group"
+              >
+                <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
+                <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
+
       {showAbacusWidget && createPortal(
         <AbacusWidget onClose={() => setShowAbacusWidget(false)} />,
         document.body
       )}
-    </div>
+    </>
   );
 };
 

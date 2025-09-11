@@ -27,9 +27,8 @@ const LevelCard: FC<LevelCardProps> = ({
 }) => {
   return (
     <div
-      className={`relative p-6 rounded-lg border-2 
-      ${type !== 'locked' && 'border-gold'} 
-      ${styles.levelCard}`}
+      className="relative p-6 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,186,8,0.4),0_0_40px_rgba(255,186,8,0.2),0_0_60px_rgba(255,186,8,0.1)] hover:shadow-gold/30"
+      style={{ backgroundColor: '#161618' }}
     >
       <div className="flex items-center justify-between">
         {type === 'locked' && (
@@ -37,22 +36,22 @@ const LevelCard: FC<LevelCardProps> = ({
             <LockIcon />
           </div>
         )}
-        <p className="text-sm font-semibold desktop:text-md">{getLevelName(level)}</p>
+        <p className="text-sm font-semibold desktop:text-md" style={{ color: '#ffffff' }}>{getLevelName(level)}</p>
         {type === 'finished' && (
-          <div className="flex items-center gap-1 text-sm font-medium text-green desktop:text-md">
+          <div className="flex items-center gap-1 text-sm font-medium desktop:text-md" style={{ color: '#818181' }}>
             <p>Finished</p>
             <BsCheckCircleFill className="text-sm desktop:text-md" />
           </div>
         )}
         {type === 'inprogress' && (
-          <div className="flex items-center gap-1 text-sm font-medium desktop:text-md">
+          <div className="flex items-center gap-1 text-sm font-medium desktop:text-md" style={{ color: '#818181' }}>
             <p>In Progress</p>
-            <LuCircleDashed className="text-sm desktop:text-md text-gold" />
+            <LuCircleDashed className="text-sm desktop:text-md" style={{ color: '#818181' }} />
           </div>
         )}
       </div>
       <div className="">
-        <p className="py-2 font-medium text-md desktop:text-lg">
+        <p className="py-2 font-medium text-md desktop:text-lg" style={{ color: '#818181' }}>
           {description}
         </p>
         {type === 'finished' && (

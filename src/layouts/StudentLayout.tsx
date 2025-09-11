@@ -29,7 +29,7 @@ const StudentLayout: FC<StudentLayoutProps> = ({ withNavBar, withFooter }) => {
           <Navigate to={LOGIN_PAGE} />
         </>
       )}
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-black">
         {withNavBar && <StudentNavBar />}
         <div className="flex flex-col justify-center flex-1">
           <Outlet />

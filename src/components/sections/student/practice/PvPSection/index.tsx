@@ -170,30 +170,24 @@ const PvPSection: FC<PvPSectionProps> = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="px-6 pt-2 tablet:p-10 desktop:px-24 space-y-6 bg-black min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
+      <div className="space-y-4 tablet:space-y-6 min-h-screen" style={{ backgroundColor: '#000000' }}>
         {/* 🔝 HEADER AREA */}
-        <div className="bg-black hover:bg-[#191919] transition-colors text-white p-8 rounded-2xl border border-gold/50 ring-1 ring-white/5 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.65)] relative overflow-hidden">
-          {/* Subtle gold glow overlays */}
-          <div className="pointer-events-none absolute -inset-14 bg-[radial-gradient(circle_at_top_left,rgba(255,186,8,0.08),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(250,163,7,0.06),transparent_45%)]"></div>
-          {/* Glass highlight lines */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/10"></div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-black/40"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-gold"></div>
+         <div className="transition-colors text-white p-4 tablet:p-8 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.65)] relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
           
           <div className="relative z-10 text-center">
-            <h1 className="text-5xl font-black text-gold mb-4">
+            <h1 className="text-3xl tablet:text-5xl font-black text-gold mb-4">
               ⚔️ PVP ARENA ⚔️
           </h1>
-            <div className="flex justify-center items-center gap-4 mb-6">
-              <div className="bg-gold text-black px-4 py-2 rounded-full font-bold">
+            <div className="flex flex-col tablet:flex-row justify-center items-center gap-2 tablet:gap-4 mb-6">
+              <div className="bg-gold text-black px-3 tablet:px-4 py-2 rounded-full font-bold text-sm tablet:text-base">
                 🏆 CHALLENGE FRIENDS
               </div>
-              <div className="bg-purple text-white px-4 py-2 rounded-full font-bold">
+              <div className="bg-purple text-white px-3 tablet:px-4 py-2 rounded-full font-bold text-sm tablet:text-base">
                 ⚡ REAL-TIME BATTLES
               </div>
         </div>
-            <p className="text-white text-lg max-w-3xl mx-auto">
+            <p className="text-white text-sm tablet:text-lg max-w-3xl mx-auto">
               Challenge your friends in epic math battles! Create rooms, join battles, and climb the leaderboard.
               <span className="font-bold text-gold"> Ready to battle? 🚀</span>
             </p>
@@ -202,21 +196,16 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
 
       {/* Tab Navigation */}
-        <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-6 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-          {/* Background elements */}
-          <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-purple/5"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-purple"></div>
+         <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
           
           <div className="relative z-10 text-center mb-6">
-            <h2 className="text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-4">
+            <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-4">
               🎮 PVP ACTIONS 🎮
             </h2>
-            <div className="text-sm text-gray-400 mb-2">
-              Current Tab: <span className="text-gold font-bold">{activeTab}</span>
-            </div>
+
           </div>
           
-          <div className="flex flex-col tablet:flex-row justify-center gap-4 relative z-20">
+          <div className="flex flex-col tablet:flex-row justify-center gap-3 tablet:gap-4 relative z-20">
             {[
               { id: 'create', label: 'Create Room', icon: AiOutlinePlus },
               { id: 'join', label: 'Join Room', icon: AiOutlineEnter }
@@ -237,12 +226,13 @@ const PvPSection: FC<PvPSectionProps> = () => {
                     e.preventDefault();
                     console.log('Mouse down on tab:', tab.id);
                   }}
-                  className={`group flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold transition-all duration-300 cursor-pointer select-none ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg transform scale-105'
-                      : 'bg-black/60 text-white hover:bg-gold/20 hover:text-gold border border-gold/30'
-                  }`}
+                   className={`group flex items-center justify-center gap-2 tablet:gap-3 px-6 tablet:px-8 py-3 tablet:py-4 rounded-xl font-bold transition-all duration-300 cursor-pointer select-none text-sm tablet:text-base ${
+                     activeTab === tab.id
+                       ? 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg transform scale-105'
+                       : 'text-white hover:bg-gold/20 hover:text-gold'
+                   }`}
                   style={{ 
+                    backgroundColor: activeTab === tab.id ? undefined : '#212124',
                     pointerEvents: 'auto',
                     zIndex: 30,
                     position: 'relative'
@@ -257,38 +247,36 @@ const PvPSection: FC<PvPSectionProps> = () => {
       </div>
 
         {/* Error/Success Messages */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-400/50 rounded-2xl p-4 text-red-200 text-center backdrop-blur-xl">
-            ❌ {error}
-              </div>
-        )}
+         {error && (
+           <div className="rounded-2xl p-4 text-red-200 text-center" style={{ backgroundColor: '#212124' }}>
+             ❌ {error}
+               </div>
+         )}
 
-        {success && (
-          <div className="bg-green-500/10 border border-green-400/50 rounded-2xl p-4 text-green-200 text-center backdrop-blur-xl">
-            ✅ {success}
-            </div>
-        )}
+         {success && (
+           <div className="rounded-2xl p-4 text-green-200 text-center" style={{ backgroundColor: '#212124' }}>
+             ✅ {success}
+             </div>
+         )}
 
         {/* Create Room Tab */}
         {activeTab === 'create' && (
-          <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-purple/5"></div>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-purple"></div>
+          <div className="transition-colors text-white p-4 tablet:p-8 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
                   
                   <div className="relative z-10">
-              <h2 className="text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
+              <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
                 🎮 CREATE BATTLE ROOM 🎮
               </h2>
             
-              <div className="space-y-6">
+              <div className="space-y-4 tablet:space-y-6">
               {/* Max Players */}
                         <div>
-                <label className="block text-yellow-200 font-bold text-lg mb-2">👥 Max Players</label>
+                <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">👥 Max Players</label>
                           <select
                   value={roomForm.max_players}
                   onChange={(e) => updateRoomForm('max_players', parseInt(e.target.value))}
-                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                   className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                  style={{ backgroundColor: '#212124' }}
                 >
                   <option value={2}>2 Players - Duel</option>
                   <option value={3}>3 Players - Trio</option>
@@ -298,11 +286,12 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
               {/* Number of Questions */}
                         <div>
-                <label className="block text-yellow-200 font-bold text-lg mb-2">❓ Number of Questions</label>
+                <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">❓ Number of Questions</label>
                           <select
                   value={roomForm.number_of_questions}
                   onChange={(e) => updateRoomForm('number_of_questions', parseInt(e.target.value))}
-                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                   className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                  style={{ backgroundColor: '#212124' }}
                 >
                   <option value={5}>5 Questions - Quick Battle</option>
                   <option value={10}>10 Questions - Standard</option>
@@ -313,11 +302,12 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
               {/* Time per Question */}
                         <div>
-                <label className="block text-yellow-200 font-bold text-lg mb-2">⏱️ Time per Question</label>
+                <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">⏱️ Time per Question</label>
                           <select
                   value={roomForm.time_per_question}
                   onChange={(e) => updateRoomForm('time_per_question', parseInt(e.target.value))}
-                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                   className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                  style={{ backgroundColor: '#212124' }}
                 >
                   <option value={15}>15 seconds - Lightning Fast</option>
                   <option value={30}>30 seconds - Quick</option>
@@ -328,11 +318,12 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
               {/* Number of Digits */}
                         <div>
-                <label className="block text-yellow-200 font-bold text-lg mb-2">🔢 Number of Digits</label>
+                <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">🔢 Number of Digits</label>
                           <select
                   value={roomForm.number_of_digits}
                   onChange={(e) => updateRoomForm('number_of_digits', parseInt(e.target.value))}
-                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                   className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                  style={{ backgroundColor: '#212124' }}
                 >
                   <option value={1}>1 Digit - Simple</option>
                   <option value={2}>2 Digits - Easy</option>
@@ -354,11 +345,12 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
               {/* Difficulty Level */}
                         <div>
-                <label className="block text-yellow-200 font-bold text-lg mb-2">🎯 Difficulty Level</label>
+                <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">🎯 Difficulty Level</label>
                           <select
                   value={roomForm.difficulty_level}
                   onChange={(e) => updateRoomForm('difficulty_level', e.target.value)}
-                  className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none font-semibold text-white"
+                   className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                  style={{ backgroundColor: '#212124' }}
                 >
                   <option value="easy">🟢 Easy - Addition & Subtraction</option>
                   <option value="medium">🟡 Medium - Add, Sub, Multiply</option>
@@ -370,7 +362,7 @@ const PvPSection: FC<PvPSectionProps> = () => {
               <button
                 onClick={handleCreateRoom}
                 disabled={loading}
-                className={`w-full py-4 px-8 rounded-2xl font-black text-lg transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full py-3 tablet:py-4 px-6 tablet:px-8 rounded-2xl font-black text-base tablet:text-lg transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                   loading
                     ? 'bg-gray-500 text-gray-300'
                     : 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-2xl hover:shadow-green-400/50'
@@ -385,19 +377,16 @@ const PvPSection: FC<PvPSectionProps> = () => {
 
         {/* Join Room Tab */}
         {activeTab === 'join' && (
-          <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-purple/5"></div>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-purple"></div>
+          <div className="transition-colors text-white p-4 tablet:p-8 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
             
             <div className="relative z-10">
-              <h2 className="text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
+              <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
                 🔗 JOIN BATTLE ROOM 🔗
               </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-4 tablet:space-y-6">
                 <div>
-                  <label className="block text-gold font-bold text-lg mb-2">🎮 Room Code</label>
+                  <label className="block text-gold font-bold text-base tablet:text-lg mb-2">🎮 Room Code</label>
                     <input
                       type="text"
                     value={joinRoomCode}
@@ -411,10 +400,11 @@ const PvPSection: FC<PvPSectionProps> = () => {
                     }}
                     placeholder="Enter 6-digit room code"
                       maxLength={6}
-                    className="w-full text-center text-2xl font-black tracking-wider bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-gold/30 focus:border-gold focus:outline-none placeholder-white/40 text-white"
+                     className="w-full text-center text-lg tablet:text-2xl font-black tracking-wider rounded-xl p-3 tablet:p-4 focus:outline-none placeholder-white/40 text-white"
+                    style={{ backgroundColor: '#212124' }}
                     />
                     <div className="text-center mt-2">
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm" style={{ color: '#818181' }}>
                         Code: "{joinRoomCode}" ({joinRoomCode.length}/6)
                       </span>
                     </div>
@@ -423,7 +413,7 @@ const PvPSection: FC<PvPSectionProps> = () => {
                   <button
                   onClick={handleJoinRoom}
                   disabled={loading || joinRoomCode.trim().length === 0}
-                  className={`w-full py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full py-3 tablet:py-4 px-6 tablet:px-8 rounded-xl font-bold text-base tablet:text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                     loading || joinRoomCode.trim().length === 0
                       ? 'bg-gray-500 text-gray-300'
                       : 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg hover:shadow-gold/50'

@@ -62,7 +62,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-1 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors text-sm"
+          className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-1 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm"
         >
           <AiOutlinePlus size={14} />
         </button>
@@ -70,7 +70,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
       
       {/* Add Goal Form */}
       {showAddForm && (
-        <div className="mb-4 p-3 bg-[#080808]/50 rounded-lg border border-gold/20">
+        <div className="mb-4 p-3 bg-[#080808]/30 rounded-lg border border-gold/30">
           <div className="flex space-x-2">
             <input
               type="text"
@@ -78,7 +78,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
               onChange={(e) => setNewGoal(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Add a new goal..."
-              className="flex-1 bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-white/5 focus:outline-none focus:border-gold/70 backdrop-blur-sm transition-colors text-sm"
+              className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
             />
             <button
               onClick={handleAddGoal}
@@ -91,7 +91,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                 setShowAddForm(false);
                 setNewGoal('');
               }}
-              className="bg-[#080808]/80 hover:bg-[#191919] text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-white/5 backdrop-blur-sm transition-colors text-sm"
+              className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm"
             >
               Cancel
             </button>
@@ -113,7 +113,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
               <div key={todo.id} className={`p-3 rounded-lg border backdrop-blur-sm transition-all duration-200 ${
                 todo.completed 
                   ? 'bg-green-500/10 border-green-400/30' 
-                  : 'bg-[#080808]/50 hover:bg-[#191919] border-gold/20'
+                  : 'bg-[#080808]/30 hover:bg-[#191919]/30 border-gold/30'
               }`}>
                 <div className="flex items-start space-x-3">
                   <input
@@ -158,7 +158,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
           </div>
           
           {/* Summary */}
-          <div className="mt-4 pt-4 border-t border-gold/20">
+          <div className="mt-4 pt-4 border-t border-gold/30">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-400">
                 {completed_todos} of {total_todos} goals completed

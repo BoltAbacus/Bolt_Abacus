@@ -23,7 +23,7 @@ const config: Config = {
       lightGreen: '#7AE191',
       purple: '#E678EF',
       blue: '#2B65ED',
-      lightBlue: '#78D2EF',
+      lightBlue: '#facb25',
       // Transparent background accents for icons
       boxGold: 'rgba(255, 186, 8, 0.15)',
       boxPurple: 'rgba(247, 168, 254, 0.13)',

@@ -17,6 +17,11 @@ const StudentLayoutWithSidebar: FC<StudentLayoutWithSidebarProps> = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [classLink, setClassLink] = useState<string>();
 
+  // Create margin classes based on sidebar state
+  const marginClasses = isSidebarCollapsed 
+    ? 'tablet:ml-16 desktop:ml-16' 
+    : 'tablet:ml-64 desktop:ml-64';
+
   useEffect(() => {
     const getDashboardData = async () => {
       if (authToken) {
@@ -46,8 +51,8 @@ const StudentLayoutWithSidebar: FC<StudentLayoutWithSidebarProps> = () => {
       )}
       <div className="flex min-h-screen bg-black text-white">
         <LeftNavigation onCollapseChange={setIsSidebarCollapsed} classLink={classLink} />
-        <div className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-          <main className="p-6">
+        <div className={`flex-1 transition-all duration-300 ${marginClasses}`}>
+          <main className="p-4 tablet:p-6">
             <Outlet />
           </main>
         </div>

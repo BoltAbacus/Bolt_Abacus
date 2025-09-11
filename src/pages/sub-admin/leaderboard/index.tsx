@@ -1,81 +1,120 @@
 import { FC, useEffect, useMemo, useState } from 'react';
-// ...existing code...
+import { isAxiosError } from 'axios';
 import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import StudentDetailsModal from '@components/organisms/StudentDetailsModal';
-// ...existing code...
+import { dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
+import { useStreakStore } from '@store/streakStore';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, SUB_ADMIN_DASHBOARD } from '@constants/routes';
+import axios from '@helpers/axios';
+import { getStreakByUserId } from '@services/streak';
 
 export interface SubAdminLeaderboardPageProps {}
 
 const SubAdminLeaderboardPage: FC<SubAdminLeaderboardPageProps> = () => {
+  // Sub-admin leaderboard - no user stats needed
   const authToken = useAuthStore((state) => state.authToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [fallBackLink, setFallBackLink] = useState<string>(SUB_ADMIN_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
+  const { updateStreak } = useStreakStore();
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
   const [selectedStudent, setSelectedStudent] = useState<typeof leaderboard[number] | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
-  const pageSize = 10;
   const [page, setPage] = useState<number>(1);
-  const [period, setPeriod] = useState<'Daily'|'Weekly'|'Monthly'|'All Time'>('All Time');
-  const [scope, setScope] = useState<'Global'|'Country'|'School'>('Global');
-  const [selectedBatch, setSelectedBatch] = useState<string>('All Batches');
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('All Teachers');
-  const [selectedOrganization, setSelectedOrganization] = useState<string>('All Organizations');
+  const pageSize = 10; // Fixed page size of 10
 
   const totalStudents = leaderboard.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalStudents / pageSize)), [totalStudents, pageSize]);
   const currentPage = Math.min(page, totalPages);
-  // ...existing code...
+  const pageSlice = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return leaderboard.slice(start, end);
+  }, [leaderboard, currentPage, pageSize]);
 
-  const getOrdinal = (n: number) => {
-    const j = n % 10, k = n % 100;
-    if (j === 1 && k !== 11) return `${n}st`;
-    if (j === 2 && k !== 12) return `${n}nd`;
-    if (j === 3 && k !== 13) return `${n}rd`;
-    return `${n}th`;
-  };
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        // Use the PVP backend leaderboard API
+        const res = await axios.post('/getPVPLeaderboard/', {}, {
+          headers: { 'AUTH-TOKEN': authToken },
+        });
+        if (res.status === 200 && res.data.success && res.data.data.leaderboard) {
+          // Transform PVP leaderboard data to match expected format
+          const leaderboardData = res.data.data.leaderboard.map((player: any) => ({
+            rank: player.rank,
+            name: player.name,
+            xp: player.experience_points,
+            level: player.level,
+            // Streak is resolved later if the player is the logged-in user; others default 0
+            streak: 0,
+            userId: player.user_id
+          }));
+          // Fetch streaks for all students in parallel
+          try {
+            const streaks = await Promise.allSettled(
+              leaderboardData.map((p: any) => getStreakByUserId(p.userId))
+            );
+            const withStreaks = leaderboardData.map((p: any, idx: number) => {
+              const r = streaks[idx];
+              const s = r.status === 'fulfilled' ? (r.value as any) : null;
+              const val = s?.currentStreak ?? s?.data?.currentStreak ?? 0;
+              return { ...p, streak: val };
+            });
+            setLeaderboard(withStreaks);
+          } catch {
+            setLeaderboard(leaderboardData);
+          }
+          setApiError(null);
+        } else {
+          // No data available - show empty leaderboard
+          setLeaderboard([]);
+          setApiError(null);
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        // Show empty leaderboard on error
+        setLeaderboard([]);
+        setApiError(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchLeaderboard();
+    } else {
+      // Use fallback data if not authenticated
+      setLeaderboard([]);
+      setLoading(false);
+    }
+  }, [authToken, isAuthenticated]);
+
+  useEffect(() => {
+    const getDashboardData = async () => {
       if (isAuthenticated) {
         try {
-          const res = await fetch('/leaderboard/', {
-            headers: { 'AUTH-TOKEN': authToken! },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.leaderboard) {
-              setLeaderboard(
-                data.leaderboard.map((student: any) => ({
-                  ...student,
-                  avatar: student.name
-                    .split(' ')
-                    .map((n: string) => n[0])
-                    .join('')
-                    .toUpperCase(),
-                  batch: student.batch || 'N/A',
-                  teacher: student.teacher || 'N/A',
-                  organization: student.organization || 'N/A',
-                }))
-              );
-              setApiError(null);
-            } else {
-              setApiError('No leaderboard data found.');
-            }
-          } else {
-            setApiError('Failed to fetch leaderboard.');
+          const res = await dashboardRequestV2(authToken!);
+          if (res.status === 200) {
+            setApiError(null);
+            updateStreak();
           }
         } catch (error) {
-          setApiError('Failed to fetch leaderboard.');
+          if (isAxiosError(error)) {
+            setApiError(error.response?.data?.message || ERRORS.SERVER_ERROR);
+          } else {
+            setApiError(ERRORS.SERVER_ERROR);
+          }
         } finally {
           setLoading(false);
         }
@@ -86,52 +125,12 @@ const SubAdminLeaderboardPage: FC<SubAdminLeaderboardPageProps> = () => {
         setFallBackAction(MESSAGES.GO_LOGIN);
       }
     };
-    fetchLeaderboard();
-  }, [authToken, isAuthenticated]);
+    getDashboardData();
+  }, [authToken, isAuthenticated, updateStreak]);
 
-  const getRankBadgeColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold';
-    if (rank === 2) return 'bg-gradient-to-r from-gray-300 to-gray-500 text-black font-bold';
-    if (rank === 3) return 'bg-gradient-to-r from-amber-600 to-amber-800 text-white font-bold';
-    return 'bg-[#080808]/80 text-white font-bold border border-gold/30 ring-1 ring-white/5 shadow-lg';
-  };
-
-  const handleStudentClick = (student: typeof leaderboard[number]) => {
-    setSelectedStudent(student);
-    setIsStudentModalOpen(true);
-  };
-
-  const uniqueBatches = useMemo(() => {
-    const batches = new Set(leaderboard.map(student => student.batch));
-    return ['All Batches', ...Array.from(batches).sort()];
-  }, [leaderboard]);
-
-  const uniqueTeachers = useMemo(() => {
-    const teachers = new Set(leaderboard.map(student => student.teacher));
-    return ['All Teachers', ...Array.from(teachers).sort()];
-  }, [leaderboard]);
-
-  const uniqueOrganizations = useMemo(() => {
-    const organizations = new Set(leaderboard.map(student => student.organization));
-    return ['All Organizations', ...Array.from(organizations).sort()];
-  }, [leaderboard]);
-
-  const filteredLeaderboard = useMemo(() => {
-    let filtered = leaderboard;
-    if (selectedBatch !== 'All Batches') {
-      filtered = filtered.filter(student => student.batch === selectedBatch);
-    }
-    if (selectedTeacher !== 'All Teachers') {
-      filtered = filtered.filter(student => student.teacher === selectedTeacher);
-    }
-    if (selectedOrganization !== 'All Organizations') {
-      filtered = filtered.filter(student => student.organization === selectedOrganization);
-    }
-    return filtered;
-  }, [leaderboard, selectedBatch, selectedTeacher, selectedOrganization]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a]">
+    <div className="min-h-screen">
       {loading ? (
         <>
           <SeoComponent title="Loading" />
@@ -142,159 +141,148 @@ const SubAdminLeaderboardPage: FC<SubAdminLeaderboardPageProps> = () => {
           {apiError ? (
             <>
               <SeoComponent title="Error" />
-              <ErrorBox
-                errorMessage={apiError}
-                link={fallBackLink}
-                buttonText={fallBackAction}
+              <ErrorBox 
+                errorMessage={apiError} 
+                link={fallBackLink} 
+                buttonText={fallBackAction} 
               />
             </>
           ) : (
             <>
               <SeoComponent title="Students Leaderboard" />
-              <div className="container mx-auto px-4 py-8">
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-bold text-white mb-4">
-                    Students Leaderboard
-                  </h1>
-                  <p className="text-gray-300 text-lg">
-                    Monitor students' progress and achievements in your organization
-                  </p>
-                </div>
-
-                {/* Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                  <div className="flex flex-col">
-                    <label className="text-white text-sm mb-2">Time Period</label>
-                    <select
-                      value={period}
-                      onChange={(e) => setPeriod(e.target.value as any)}
-                      className="bg-[#1a1a1a] text-white border border-gold/30 rounded-lg px-4 py-2 focus:outline-none focus:border-gold"
-                    >
-                      <option value="Daily">Daily</option>
-                      <option value="Weekly">Weekly</option>
-                      <option value="Monthly">Monthly</option>
-                      <option value="All Time">All Time</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-white text-sm mb-2">Scope</label>
-                    <select
-                      value={scope}
-                      onChange={(e) => setScope(e.target.value as any)}
-                      className="bg-[#1a1a1a] text-white border border-gold/30 rounded-lg px-4 py-2 focus:outline-none focus:border-gold"
-                    >
-                      <option value="Global">Global</option>
-                      <option value="Country">Country</option>
-                      <option value="School">School</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-white text-sm mb-2">Batch</label>
-                    <select
-                      value={selectedBatch}
-                      onChange={(e) => setSelectedBatch(e.target.value)}
-                      className="bg-[#1a1a1a] text-white border border-gold/30 rounded-lg px-4 py-2 focus:outline-none focus:border-gold"
-                    >
-                      {uniqueBatches.map(batch => (
-                        <option key={batch} value={batch}>{batch}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-white text-sm mb-2">Teacher</label>
-                    <select
-                      value={selectedTeacher}
-                      onChange={(e) => setSelectedTeacher(e.target.value)}
-                      className="bg-[#1a1a1a] text-white border border-gold/30 rounded-lg px-4 py-2 focus:outline-none focus:border-gold"
-                    >
-                      {uniqueTeachers.map(teacher => (
-                        <option key={teacher} value={teacher}>{teacher}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-white text-sm mb-2">Organization</label>
-                    <select
-                      value={selectedOrganization}
-                      onChange={(e) => setSelectedOrganization(e.target.value)}
-                      className="bg-[#1a1a1a] text-white border border-gold/30 rounded-lg px-4 py-2 focus:outline-none focus:border-gold"
-                    >
-                      {uniqueOrganizations.map(org => (
-                        <option key={org} value={org}>{org}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Leaderboard */}
-                <div className="bg-[#080808] rounded-2xl border border-gold/30 shadow-2xl overflow-hidden">
-                  <div className="p-6">
-                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-                      <span className="mr-2">🏆</span>
-                      Top Students
-                    </h2>
-                    
-                    <div className="space-y-3">
-                      {filteredLeaderboard.slice(0, pageSize).map((student) => (
-                        <div 
-                          key={student.rank} 
-                          className="flex items-center space-x-4 p-4 bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-xl border border-gold/20 transition-all duration-300 cursor-pointer"
-                          onClick={() => handleStudentClick(student)}
-                        >
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${getRankBadgeColor(student.rank)}`}>
-                            {student.rank}
-                          </div>
-                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg border border-white/10">
-                            {student.avatar}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-lg font-semibold text-white">{student.name}</p>
-                            <p className="text-sm text-gray-300">Level {student.level} • {student.streak} day streak</p>
-                            <p className="text-xs text-gold">{student.batch} • {student.teacher}</p>
-                            <p className="text-xs text-gray-400">{student.organization}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-bold text-gold">{student.xp.toLocaleString()} XP</p>
-                            <p className="text-sm text-gray-400">{getOrdinal(student.rank)}</p>
-                          </div>
-                        </div>
-                      ))}
+              <div className="container mx-auto px-4 py-6 max-w-6xl">
+                <div className="grid grid-cols-1 gap-4 tablet:gap-6">
+                  {/* Main Content */}
+                  <div className="space-y-4 tablet:space-y-6">
+                    {/* Header */}
+                    <div className="text-white p-4 tablet:p-6 rounded-2xl transition-colors" style={{ backgroundColor: '#161618' }}>
+                      <h1 className="text-xl tablet:text-2xl font-bold mb-2 flex items-center">
+                        <span className="mr-2">🏆</span>
+                        Students Leaderboard
+                      </h1>
+                      <p style={{ color: '#818181' }} className="text-sm">
+                        Monitor students' progress and achievements in your organization
+                      </p>
                     </div>
 
-                    {/* Pagination */}
-                    <div className="flex justify-center mt-8">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setPage(Math.max(1, page - 1))}
-                          disabled={page === 1}
-                          className="px-4 py-2 bg-[#1a1a1a] text-white border border-gold/30 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2a2a2a] transition-colors"
-                        >
-                          Previous
-                        </button>
-                        <span className="px-4 py-2 text-white">
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                          onClick={() => setPage(Math.min(totalPages, page + 1))}
-                          disabled={page === totalPages}
-                          className="px-4 py-2 bg-[#1a1a1a] text-white border border-gold/30 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2a2a2a] transition-colors"
-                        >
-                          Next
-                        </button>
+                    {/* Leaderboard */}
+                    <div className="text-white p-4 tablet:p-6 rounded-2xl transition-colors relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+                      <h2 className="text-lg tablet:text-xl font-bold mb-4 flex items-center">
+                        <span className="mr-2">⚡</span>
+                        Top Students
+                      </h2>
+                      
+                       <div className="space-y-2">
+                        {leaderboard.length === 0 ? (
+                          <div className="text-center py-8">
+                            <div className="text-4xl mb-3">🏆</div>
+                            <h3 className="text-lg font-bold text-white mb-2">No Rankings Yet</h3>
+                            <p className="text-sm" style={{ color: '#818181' }}>
+                              Students need to play PvP battles to earn experience points and climb the leaderboard!
+                            </p>
+                          </div>
+                        ) : (
+                          pageSlice.map((student) => (
+                            <div 
+                              key={student.rank} 
+                              className="flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 relative overflow-hidden hover:bg-[#2a2a2a] cursor-pointer"
+                              style={{ 
+                                backgroundColor: student.name === 'You' ? '#212124' : '#212124',
+                                boxShadow: '0 0 0 rgba(255,186,8,0)',
+                                transition: 'all 0.3s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 20px rgba(255,186,8,0.4), 0 0 40px rgba(255,186,8,0.2), 0 0 60px rgba(255,186,8,0.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+                              }}
+                            >
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#000000' }}>
+                                {student.rank}
+                              </div>
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#161618' }}>
+                                {student.avatar || student.name?.charAt(0) || 'U'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <button
+                                      className="text-sm font-medium underline-offset-2 hover:underline"
+                                      style={{ color: '#ffffff' }}
+                                      onClick={() => { setSelectedStudent(student); setIsStudentModalOpen(true); }}
+                                    >
+                                      {student.name}
+                                    </button>
+                                    <p className="text-xs" style={{ color: '#818181' }}>
+                                      Level {student.level} • {student.streak || 0} Day Streak
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold" style={{ color: '#818181' }}>
+                                      {student.xp.toLocaleString()} XP
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
+
+                      {/* Pagination controls */}
+                      {leaderboard.length > 0 && totalPages > 1 && (
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm" style={{ color: '#818181' }}>
+                              Page {currentPage} of {totalPages} • {totalStudents} players
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              onClick={() => setPage(1)}
+                              disabled={currentPage === 1}
+                              title="First page"
+                            >
+                              ⏮
+                            </button>
+                            <button
+                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              onClick={() => setPage((p) => Math.max(1, p - 1))}
+                              disabled={currentPage === 1}
+                              title="Previous"
+                            >
+                              ◀
+                            </button>
+                            <span className="px-4 py-2 text-white font-semibold">
+                              {currentPage}
+                            </span>
+                            <button
+                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                              disabled={currentPage === totalPages}
+                              title="Next"
+                            >
+                              ▶
+                            </button>
+                            <button
+                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              onClick={() => setPage(totalPages)}
+                              disabled={currentPage === totalPages}
+                              title="Last page"
+                            >
+                              ⏭
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Student Details Modal */}
-              {selectedStudent && (
-                <StudentDetailsModal
-                  isOpen={isStudentModalOpen}
-                  onClose={() => setIsStudentModalOpen(false)}
-                  student={selectedStudent}
-                />
-              )}
+              <StudentDetailsModal isOpen={isStudentModalOpen} onClose={() => setIsStudentModalOpen(false)} student={selectedStudent} />
             </>
           )}
         </div>

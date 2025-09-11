@@ -5,6 +5,7 @@ export const SERVICES_SECTION = '/#pricing';
 export const CONTACT_SECTION = '/#footer';
 
 export const PROFILE_PAGE = '/profile';
+export const STUDENT_PROFILE_PAGE = '/student/profile';
 export const RESET_PASSWORD_PAGE = '/reset-password';
 export const FORGOT_PASSWORD_PAGE = '/forgot-password';
 export const LOGIN_PAGE = '/login';
