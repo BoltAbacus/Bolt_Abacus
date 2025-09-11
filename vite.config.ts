@@ -28,36 +28,6 @@ export default ({ mode }) => {
             'ui-vendor': ['framer-motion', 'react-helmet-async', 'react-icons'],
             'utils-vendor': ['axios', 'moment', 'zod', 'zustand'],
             'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
-            
-            // Feature chunks
-            'auth': [
-              './src/pages/login',
-              './src/pages/forgot-password',
-              './src/pages/reset-password',
-              './src/pages/reset-password-v2',
-            ],
-            'student': [
-              './src/pages/student/dashboard',
-              './src/pages/student/leaderboard',
-              './src/pages/student/progress',
-              './src/pages/student/practice-mode',
-            ],
-            'admin': [
-              './src/pages/admin/dashboard',
-              './src/pages/admin/add-student',
-              './src/pages/admin/add-teacher',
-              './src/pages/admin/leaderboard',
-            ],
-            'teacher': [
-              './src/pages/teacher/dashboard',
-              './src/pages/teacher/leaderboard',
-              './src/pages/teacher/students',
-            ],
-            'components': [
-              './src/components/atoms',
-              './src/components/molecules',
-              './src/components/organisms',
-            ],
           },
         },
       },
