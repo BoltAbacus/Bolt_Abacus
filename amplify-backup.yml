@@ -1,5 +1,10 @@
 version: 1
 frontend:
+  environment:
+    variables:
+      NODE_VERSION: "18"
+      NPM_CONFIG_PRODUCTION: "false"
+      NODE_ENV: "production"
   phases:
     preBuild:
       commands:
@@ -8,13 +13,26 @@ frontend:
         - node --version
         - echo "NPM version:"
         - npm --version
-        - echo "Using npm install with legacy peer deps..."
-        - npm install --legacy-peer-deps
+        - echo "Setting Node.js version to 18..."
+        - nvm use 18
+        - echo "Clearing npm cache..."
+        - npm cache clean --force
+        - echo "Installing dependencies with npm ci for faster, reliable builds..."
+        - npm ci
     build:
       commands:
         - echo "Building frontend..."
+        - echo "Current working directory:"
+        - pwd
+        - echo "Directory contents:"
+        - ls -la
+        - echo "Starting build process..."
         - npm run build
         - echo "Build completed successfully"
+        - echo "Listing dist directory contents:"
+        - ls -la dist/
+        - echo "Checking dist directory size:"
+        - du -sh dist/
   artifacts:
     baseDirectory: dist
     files:
@@ -22,3 +40,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+      - .npm
