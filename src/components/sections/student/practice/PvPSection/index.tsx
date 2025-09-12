@@ -2,7 +2,11 @@ import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   AiOutlinePlus,
-  AiOutlineEnter
+  AiOutlineEnter,
+  AiOutlinePlayCircle,
+  AiOutlineTrophy,
+  AiOutlineTeam,
+  AiOutlineFire
 } from 'react-icons/ai';
 
 import { useAuthStore } from '@store/authStore';
@@ -26,6 +30,8 @@ const PvPSection: FC<PvPSectionProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { syncWithBackend } = useExperienceStore();
+  const [selectedGameMode, setSelectedGameMode] = useState<string>('flashcards');
+  const [selectedOperation, setSelectedOperation] = useState<string>('addition');
   const [roomForm, setRoomForm] = useState({
     max_players: 2,
     number_of_questions: 10,
@@ -34,7 +40,9 @@ const PvPSection: FC<PvPSectionProps> = () => {
     number_of_digits: 3,
     level_id: 1,
     class_id: 1,
-    topic_id: 1
+    topic_id: 1,
+    game_mode: 'flashcards',
+    operation: 'addition'
   });
   const [joinRoomCode, setJoinRoomCode] = useState('');
 
@@ -194,6 +202,116 @@ const PvPSection: FC<PvPSectionProps> = () => {
           </div>
         </div>
 
+        {/* Operation Selection */}
+        <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+          <div className="relative z-10">
+            <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
+              📚 CHOOSE YOUR OPERATION 📚
+            </h2>
+            <p className="text-white/80 text-center mb-6">
+              Select the mathematical operation for your PvP battle
+            </p>
+
+            <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
+              {[
+                { id: 'addition', label: '➕ Addition & Subtraction', icon: '➕' },
+                { id: 'multiplication', label: '✖️ Multiplication', icon: '✖️' },
+                { id: 'division', label: '➗ Division', icon: '➗' }
+              ].map((op) => (
+                <button
+                  key={op.id}
+                  onClick={() => {
+                    setSelectedOperation(op.id);
+                    updateRoomForm('operation', op.id);
+                  }}
+                  className={`p-6 rounded-xl font-bold transition-all duration-300 ${
+                    selectedOperation === op.id
+                      ? 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg transform scale-105'
+                      : 'bg-gray-800 text-white hover:bg-gold/20 hover:text-gold'
+                  }`}
+                >
+                  <div className="text-4xl mb-3">{op.icon}</div>
+                  <div className="text-lg">{op.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Game Mode Selection - Only show after operation is selected */}
+        {selectedOperation && (
+          <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+            <div className="relative z-10">
+              <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
+                🎮 CHOOSE YOUR GAME MODE 🎮
+              </h2>
+              <p className="text-white/80 text-center mb-6">
+                Select the practice mode for your PvP battle
+              </p>
+
+              <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
+                {[
+                  {
+                    id: 'flashcards',
+                    title: 'Flash Cards',
+                    description: 'Quick memory training with instant feedback!',
+                    icon: '⚡',
+                    color: 'red'
+                  },
+                  {
+                    id: 'norush',
+                    title: 'No Rush Mastery',
+                    description: 'Learn at your own pace without pressure.',
+                    icon: '🐌',
+                    color: 'blue'
+                  },
+                  {
+                    id: 'timeattack',
+                    title: 'Time Attack',
+                    description: 'Race against the clock in this fast-paced challenge!',
+                    icon: '⏰',
+                    color: 'green'
+                  },
+                  {
+                    id: 'custom',
+                    title: 'Custom Challenge',
+                    description: 'Create your own rules and difficulty settings.',
+                    icon: '⚙️',
+                    color: 'pink'
+                  }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => {
+                      setSelectedGameMode(mode.id);
+                      updateRoomForm('game_mode', mode.id);
+                      
+                      // Set default time based on game mode
+                      if (mode.id === 'norush') {
+                        updateRoomForm('time_per_question', 120); // 2 minutes default
+                      } else if (mode.id === 'timeattack') {
+                        updateRoomForm('time_per_question', 15); // 15 seconds default
+                      } else if (mode.id === 'flashcards') {
+                        updateRoomForm('time_per_question', 5); // 5 seconds default for flashcard speed
+                      } else if (mode.id === 'custom') {
+                        updateRoomForm('time_per_question', 30); // 30 seconds default
+                      }
+                    }}
+                    className={`p-4 rounded-xl font-bold transition-all duration-300 text-left ${
+                      selectedGameMode === mode.id
+                        ? 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg transform scale-105'
+                        : 'bg-gray-800 text-white hover:bg-gold/20 hover:text-gold'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{mode.icon}</div>
+                    <div className="text-lg font-bold mb-2">{mode.title}</div>
+                    <div className="text-sm opacity-80">{mode.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Tab Navigation */}
          <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
@@ -259,14 +377,32 @@ const PvPSection: FC<PvPSectionProps> = () => {
              </div>
          )}
 
-        {/* Create Room Tab */}
-        {activeTab === 'create' && (
+        {/* Create Room Tab - Only show when both operation and game mode are selected */}
+        {activeTab === 'create' && selectedOperation && selectedGameMode && (
           <div className="transition-colors text-white p-4 tablet:p-8 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
                   
                   <div className="relative z-10">
               <h2 className="text-2xl tablet:text-3xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-6 text-center">
                 🎮 CREATE BATTLE ROOM 🎮
               </h2>
+              
+              {/* Selected Mode Display */}
+              <div className="bg-gradient-to-r from-gold/20 to-lightGold/20 rounded-xl p-4 mb-6 border border-gold/30">
+                <div className="text-center">
+                  <div className="text-gold font-bold text-lg mb-2">Selected Battle Configuration</div>
+                  <div className="flex flex-col tablet:flex-row justify-center items-center gap-4">
+                    <div className="bg-gold text-black px-3 py-1 rounded-full font-bold text-sm">
+                      {selectedOperation === 'addition' ? '➕ Addition & Subtraction' : 
+                       selectedOperation === 'multiplication' ? '✖️ Multiplication' : '➗ Division'}
+                    </div>
+                    <div className="bg-lightGold text-black px-3 py-1 rounded-full font-bold text-sm">
+                      {selectedGameMode === 'flashcards' ? '⚡ Flash Cards' :
+                       selectedGameMode === 'norush' ? '🐌 No Rush Mastery' :
+                       selectedGameMode === 'timeattack' ? '⏰ Time Attack' : '⚙️ Custom Challenge'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             
               <div className="space-y-4 tablet:space-y-6">
               {/* Max Players */}
@@ -300,7 +436,8 @@ const PvPSection: FC<PvPSectionProps> = () => {
                           </select>
                         </div>
 
-              {/* Time per Question */}
+              {/* Time per Question - Only show for custom mode */}
+              {selectedGameMode === 'custom' && (
                         <div>
                 <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">⏱️ Time per Question</label>
                           <select
@@ -309,12 +446,17 @@ const PvPSection: FC<PvPSectionProps> = () => {
                    className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
                   style={{ backgroundColor: '#212124' }}
                 >
-                  <option value={15}>15 seconds - Lightning Fast</option>
-                  <option value={30}>30 seconds - Quick</option>
-                  <option value={45}>45 seconds - Balanced</option>
-                  <option value={60}>60 seconds - Thoughtful</option>
+                    <option value={5}>5 seconds - Lightning</option>
+                    <option value={10}>10 seconds - Very Fast</option>
+                    <option value={15}>15 seconds - Fast</option>
+                    <option value={20}>20 seconds - Quick</option>
+                    <option value={30}>30 seconds - Normal</option>
+                    <option value={45}>45 seconds - Relaxed</option>
+                    <option value={60}>60 seconds - Slow</option>
+                    <option value={120}>2 minutes - Very Slow</option>
                           </select>
                         </div>
+              )}
 
               {/* Number of Digits */}
                         <div>
@@ -343,7 +485,8 @@ const PvPSection: FC<PvPSectionProps> = () => {
                           </select>
                         </div>
 
-              {/* Difficulty Level */}
+              {/* Difficulty Level - Only show for custom mode */}
+              {selectedGameMode === 'custom' && (
                         <div>
                 <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">🎯 Difficulty Level</label>
                           <select
@@ -352,12 +495,64 @@ const PvPSection: FC<PvPSectionProps> = () => {
                    className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
                   style={{ backgroundColor: '#212124' }}
                 >
-                  <option value="easy">🟢 Easy - Addition & Subtraction</option>
-                  <option value="medium">🟡 Medium - Add, Sub, Multiply</option>
-                  <option value="hard">🟠 Hard - Add, Sub, Multiply, Divide</option>
-                  <option value="expert">🔴 Expert - All + Square, Root, Cube</option>
+                    <option value="easy">🟢 Easy - Simple and even numbers</option>
+                    <option value="medium">🟡 Medium - Mixed difficulty</option>
+                    <option value="hard">🟠 Hard - Complex calculations</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Game Mode Specific Settings */}
+              {selectedGameMode === 'flashcards' && (
+                <div>
+                  <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">⚡ Flash Card Speed</label>
+                  <select
+                    value={roomForm.time_per_question}
+                    onChange={(e) => updateRoomForm('time_per_question', parseInt(e.target.value))}
+                    className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                    style={{ backgroundColor: '#212124' }}
+                  >
+                    <option value={5}>5 seconds - Lightning Fast</option>
+                    <option value={10}>10 seconds - Quick</option>
+                    <option value={15}>15 seconds - Normal</option>
+                    <option value={20}>20 seconds - Relaxed</option>
+                  </select>
+                </div>
+              )}
+
+              {selectedGameMode === 'norush' && (
+                <div>
+                  <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">🐌 No Rush Settings</label>
+                  <select
+                    value={roomForm.time_per_question}
+                    onChange={(e) => updateRoomForm('time_per_question', parseInt(e.target.value))}
+                    className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                    style={{ backgroundColor: '#212124' }}
+                  >
+                    <option value={120}>2 minutes - Very Relaxed</option>
+                    <option value={180}>3 minutes - Relaxed</option>
+                    <option value={300}>5 minutes - No Pressure</option>
+                    <option value={600}>10 minutes - Take Your Time</option>
+                  </select>
+                </div>
+              )}
+
+              {selectedGameMode === 'timeattack' && (
+                <div>
+                  <label className="block text-yellow-200 font-bold text-base tablet:text-lg mb-2">⏰ Time Attack Settings</label>
+                  <select
+                    value={roomForm.time_per_question}
+                    onChange={(e) => updateRoomForm('time_per_question', parseInt(e.target.value))}
+                    className="w-full rounded-xl p-3 tablet:p-4 focus:outline-none font-semibold text-white text-sm tablet:text-base"
+                    style={{ backgroundColor: '#212124' }}
+                  >
+                    <option value={10}>10 seconds - Extreme Speed</option>
+                    <option value={15}>15 seconds - Very Fast</option>
+                    <option value={20}>20 seconds - Fast</option>
+                    <option value={30}>30 seconds - Quick</option>
                           </select>
                         </div>
+              )}
 
               <button
                 onClick={handleCreateRoom}

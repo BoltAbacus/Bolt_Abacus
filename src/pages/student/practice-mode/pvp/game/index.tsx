@@ -19,6 +19,16 @@ interface GameData {
   questions: Question[];
   total_questions: number;
   time_per_question: number;
+  game_mode?: string;
+  operation?: string;
+  room_settings?: {
+    flashcard_speed?: number;
+  };
+}
+
+interface FlashCardState {
+  currentStep: 'operand1' | 'operator' | 'operand2' | 'input';
+  flashCardSpeed: number;
 }
 
 const StudentPvPGamePage: FC = () => {
@@ -39,6 +49,12 @@ const StudentPvPGamePage: FC = () => {
   const [loading, setLoading] = useState(false);
   const [waitingForOthers, setWaitingForOthers] = useState(false);
   const [gameResult, setGameResult] = useState<any>(null);
+  
+  // Flashcard state
+  const [flashCardState, setFlashCardState] = useState<FlashCardState>({
+    currentStep: 'operand1',
+    flashCardSpeed: 5000 // Default 5 seconds
+  });
 
   const currentQuestion = gameData?.questions[currentQuestionIndex];
   
@@ -130,7 +146,9 @@ const StudentPvPGamePage: FC = () => {
                 const gameData: GameData = {
                   questions: response.data.data.questions,
                   total_questions: response.data.data.total_questions,
-                  time_per_question: response.data.data.time_per_question
+                  time_per_question: response.data.data.time_per_question,
+                  game_mode: response.data.data.game_mode || 'flashcards',
+                  operation: response.data.data.operation || 'addition'
                 };
                 
                 console.log('Setting game data:', gameData);
@@ -229,7 +247,9 @@ const StudentPvPGamePage: FC = () => {
         const gameData: GameData = {
           questions: response.data.data.questions,
           total_questions: response.data.data.total_questions,
-          time_per_question: response.data.data.time_per_question
+          time_per_question: response.data.data.time_per_question,
+          game_mode: response.data.data.game_mode || 'flashcards',
+          operation: response.data.data.operation || 'addition'
         };
         
         console.log('Setting participant game data:', gameData);
@@ -331,14 +351,69 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
+  // Flashcard logic - handle step progression
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded) {
+      // Reset flashcard state for new question
+      // Use flashcard_speed from room settings, not time_per_question
+      const flashcardSpeed = gameData.room_settings?.flashcard_speed || 5; // Default 5 seconds
+      setFlashCardState({
+        currentStep: 'operand1',
+        flashCardSpeed: flashcardSpeed * 1000 // Convert to milliseconds
+      });
+    }
+  }, [currentQuestion, gameData?.game_mode, gameEnded]);
+
+  // Flashcard timing effect - progress through steps
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded && flashCardState.currentStep !== 'input') {
+      const timer = setTimeout(() => {
+        setFlashCardState(prev => {
+          switch (prev.currentStep) {
+            case 'operand1':
+              return { ...prev, currentStep: 'operand2' };
+            case 'operand2':
+              return { ...prev, currentStep: 'input' };
+            default:
+              return prev;
+          }
+        });
+      }, flashCardState.flashCardSpeed);
+
+      return () => clearTimeout(timer);
+    }
+  }, [flashCardState.currentStep, currentQuestion, gameData?.game_mode, gameEnded, flashCardState.flashCardSpeed]);
+
+  // Auto-advance for flashcards when time runs out
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && flashCardState.currentStep === 'input' && timeLeft === 0 && !gameEnded && currentQuestion) {
+      console.log('Flashcard time up, auto-submitting');
+      handleAnswerSubmit();
+    }
+  }, [gameData?.game_mode, flashCardState.currentStep, timeLeft, gameEnded, currentQuestion]);
+
   const handleAnswerSubmit = async () => {
-    if (!roomId || !authToken || !currentQuestion || !userAnswer.trim()) return;
+    if (!roomId || !authToken || !currentQuestion) return;
+    
+    // For flashcards, allow empty answers (score 0)
+    if (gameData?.game_mode === 'flashcards' && !userAnswer.trim()) {
+      console.log('Flashcard empty answer - scoring 0');
+    } else if (!userAnswer.trim()) {
+      return; // For other modes, require an answer
+    }
     
     setLoading(true);
     try {
-      const answer = parseFloat(userAnswer.trim());
-      const isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
+      let isCorrect = false;
       const timeTaken = gameData?.time_per_question - timeLeft || 0;
+      
+      if (userAnswer.trim()) {
+        const answer = parseFloat(userAnswer.trim());
+        isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
+      } else {
+        // Empty answer for flashcards - score 0
+        isCorrect = false;
+      }
       
       if (isCorrect) {
         setScore(score + 10); // 10 points per correct answer
@@ -649,69 +724,144 @@ const StudentPvPGamePage: FC = () => {
           <div className="text-center">
             {/* Math Problem Display */}
             <div className="flex items-center justify-center gap-8 mb-10">
-              {/* Left side - Operands stacked vertically */}
-              <div className="flex flex-col items-end">
-                {currentQuestion?.operands.map((operand, index) => (
-                  <div key={index} className="text-6xl md:text-7xl font-extrabold text-white mb-2 text-right">
-                    {operand}
+              {gameData?.game_mode === 'flashcards' ? (
+                /* Flashcard Mode - Clean horizontal layout like practice mode */
+                <div className="flex items-center justify-center gap-8">
+                  {/* Left side - Flashcard */}
+                  <div className="border-2 border-gold rounded-lg font-bold text-gold p-4 min-w-[120px] min-h-[80px] flex items-center justify-center">
+                    <div className="text-6xl md:text-7xl font-extrabold text-gold">
+                      {flashCardState.currentStep === 'operand1' && currentQuestion?.operands[0]}
+                      {flashCardState.currentStep === 'operand2' && currentQuestion?.operands[1]}
+                      {flashCardState.currentStep === 'input' && '?'}
+                    </div>
                   </div>
-                ))}
-              </div>
-              
-              {/* Operator */}
-              <div className="text-6xl md:text-7xl font-extrabold text-white">
-                {currentQuestion?.operator}
-              </div>
-              
-              {/* Equals sign */}
-              <div className="text-6xl md:text-7xl font-extrabold text-white">
-                =
-              </div>
-              
-              {/* Answer input */}
-              <div>
-                <input
-                  type="number"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAnswerSubmit();
-                    }
-                  }}
-                  className="w-32 h-20 text-4xl font-extrabold text-center bg-transparent border-2 border-white rounded-lg text-white focus:outline-none focus:border-gold"
-                  placeholder="?"
-                  autoFocus
-                />
-              </div>
+                  
+                  {/* Middle - Operation (always visible) */}
+                  <div className="text-6xl md:text-7xl font-extrabold text-white">
+                    {currentQuestion?.operator}
+                  </div>
+                  
+                  {/* Right side - Equals and Input */}
+                  <div className="flex items-center gap-4">
+                    <div className="text-6xl md:text-7xl font-extrabold text-white">
+                      =
+                    </div>
+                    <input
+                      type="number"
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAnswerSubmit();
+                        }
+                      }}
+                      className="w-32 h-20 text-4xl font-extrabold text-center bg-transparent border-2 border-white rounded-lg text-white focus:outline-none focus:border-gold"
+                      placeholder="?"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Regular Mode - Show all operands at once */
+                <>
+                  {/* Left side - Operands stacked vertically */}
+                  <div className="flex flex-col items-end">
+                    {currentQuestion?.operands.map((operand, index) => (
+                      <div key={index} className="text-6xl md:text-7xl font-extrabold text-white mb-2 text-right">
+                        {operand}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Operator */}
+                  <div className="text-6xl md:text-7xl font-extrabold text-white">
+                    {currentQuestion?.operator}
+                  </div>
+                  
+                  {/* Equals sign */}
+                  <div className="text-6xl md:text-7xl font-extrabold text-white">
+                    =
+                  </div>
+                  
+                  {/* Answer input */}
+                  <div>
+                    <input
+                      type="number"
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAnswerSubmit();
+                        }
+                      }}
+                      className="w-32 h-20 text-4xl font-extrabold text-center bg-transparent border-2 border-white rounded-lg text-white focus:outline-none focus:border-gold"
+                      placeholder="?"
+                      autoFocus
+                    />
+                  </div>
+                </>
+              )}
             </div>
             
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
-              <button
-                onClick={() => {
-                  setUserAnswer('');
-                  // Move to next question without submitting
-                  if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
-                    setCurrentQuestionIndex(currentQuestionIndex + 1);
-                    setTimeLeft(gameData?.time_per_question || 30);
-                  } else {
-                    handleAnswerSubmit();
-                  }
-                }}
-                disabled={loading}
-                className="bg-gray-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 disabled:opacity-50"
-              >
-                Skip
-              </button>
-              
-              <button
-                onClick={handleAnswerSubmit}
-                disabled={loading || !userAnswer.trim()}
-                className="bg-gold text-black px-8 py-3 rounded-xl font-bold text-lg hover:bg-lightGold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Submitting...' : 'Next'}
-              </button>
+              {gameData?.game_mode === 'flashcards' ? (
+                /* Flashcard Mode Buttons - Always show */
+                <>
+                  <button
+                    onClick={() => {
+                      setUserAnswer('');
+                      // Move to next question without submitting (skip with 0 score)
+                      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                        setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        setTimeLeft(gameData?.time_per_question || 30);
+                      } else {
+                        handleAnswerSubmit();
+                      }
+                    }}
+                    disabled={loading}
+                    className="bg-gray-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 disabled:opacity-50"
+                  >
+                    Skip
+                  </button>
+                  
+                  <button
+                    onClick={handleAnswerSubmit}
+                    disabled={loading || !userAnswer.trim()}
+                    className="bg-gold text-black px-8 py-3 rounded-xl font-bold text-lg hover:bg-lightGold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Submitting...' : 'Next'}
+                  </button>
+                </>
+              ) : (
+                /* Regular Mode Buttons */
+                <>
+                  <button
+                    onClick={() => {
+                      setUserAnswer('');
+                      // Move to next question without submitting
+                      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                        setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        setTimeLeft(gameData?.time_per_question || 30);
+                      } else {
+                        handleAnswerSubmit();
+                      }
+                    }}
+                    disabled={loading}
+                    className="bg-gray-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 disabled:opacity-50"
+                  >
+                    Skip
+                  </button>
+                  
+                  <button
+                    onClick={handleAnswerSubmit}
+                    disabled={loading || !userAnswer.trim()}
+                    className="bg-gold text-black px-8 py-3 rounded-xl font-bold text-lg hover:bg-lightGold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Submitting...' : 'Next'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -720,4 +870,4 @@ const StudentPvPGamePage: FC = () => {
   );
 };
 
-export default StudentPvPGamePage;
+export default StudentPvPGamePage;  
