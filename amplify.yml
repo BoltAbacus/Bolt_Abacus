@@ -5,10 +5,15 @@ frontend:
       commands:
         - echo "Installing frontend dependencies..."
         - npm ci
+        - echo "Node version:"
+        - node --version
+        - echo "NPM version:"
+        - npm --version
     build:
       commands:
         - echo "Building frontend..."
         - npm run build
+        - echo "Build completed successfully"
   artifacts:
     baseDirectory: dist
     files:
@@ -16,3 +21,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+      - .npm
