@@ -11,7 +11,8 @@ import {
   AiOutlineHistory,
   AiOutlineCalculator,
   AiOutlineTrophy,
-  AiOutlineTeam
+  AiOutlineTeam,
+  AiOutlineBook
 } from 'react-icons/ai';
 import AbacusWidget from '@components/organisms/AbacusWidget';
 
@@ -24,6 +25,7 @@ import {
   STUDENT_DASHBOARD,
   STUDENT_PROGRESS,
   STUDENT_ROADMAP,
+  STUDENT_PRACTICE,
   STUDENT_VIRTUAL_ABACUS,
   STUDENT_LEADERBOARD,
   STUDENT_ARCHIVE,

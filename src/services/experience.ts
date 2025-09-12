@@ -1,7 +1,5 @@
 import axios from '@helpers/axios';
-import {
-  GET_USER_EXPERIENCE_ENDPOINT,
-} from '@constants/routes';
+import { GET_USER_EXPERIENCE_ENDPOINT } from '@constants/routes';
 
 export interface ExperienceData {
   user_id: string;
@@ -15,9 +13,15 @@ export interface ExperienceResponse {
   data: ExperienceData;
 }
 
-export const getUserExperience = async (token: string): Promise<ExperienceResponse> => {
-  const response = await axios.post(GET_USER_EXPERIENCE_ENDPOINT, {}, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+export const getUserExperience = async (
+  token: string
+): Promise<ExperienceResponse> => {
+  const response = await axios.post(
+    GET_USER_EXPERIENCE_ENDPOINT,
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
   return response.data;
 };

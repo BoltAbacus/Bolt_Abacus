@@ -1,4 +1,5 @@
 import { FC, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   AiOutlinePlus,
   AiOutlineEnter
@@ -18,6 +19,7 @@ export interface PvPSectionProps {}
 
 
 const PvPSection: FC<PvPSectionProps> = () => {
+  const navigate = useNavigate();
   const { authToken } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [loading, setLoading] = useState(false);

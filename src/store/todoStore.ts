@@ -22,9 +22,24 @@ export const useTodoStore = create<TodoState>()(
   persist(
     (set, get) => ({
       todos: [
-        { id: 1, text: 'Complete Lightning Realm quiz', completed: false, createdAt: new Date() },
-        { id: 2, text: 'Practice addition for 30 minutes', completed: false, createdAt: new Date() },
-        { id: 3, text: 'Review yesterday\'s lessons', completed: true, createdAt: new Date() },
+        {
+          id: 1,
+          text: 'Complete Lightning Realm quiz',
+          completed: false,
+          createdAt: new Date(),
+        },
+        {
+          id: 2,
+          text: 'Practice addition for 30 minutes',
+          completed: false,
+          createdAt: new Date(),
+        },
+        {
+          id: 3,
+          text: "Review yesterday's lessons",
+          completed: true,
+          createdAt: new Date(),
+        },
       ],
 
       addTodo: (text: string) => {
@@ -41,7 +56,7 @@ export const useTodoStore = create<TodoState>()(
       toggleTodo: (id: number) => {
         const { todos } = get();
         set({
-          todos: todos.map(todo =>
+          todos: todos.map((todo) =>
             todo.id === id ? { ...todo, completed: !todo.completed } : todo
           ),
         });
@@ -49,17 +64,17 @@ export const useTodoStore = create<TodoState>()(
 
       deleteTodo: (id: number) => {
         const { todos } = get();
-        set({ todos: todos.filter(todo => todo.id !== id) });
+        set({ todos: todos.filter((todo) => todo.id !== id) });
       },
 
       clearCompleted: () => {
         const { todos } = get();
-        set({ todos: todos.filter(todo => !todo.completed) });
+        set({ todos: todos.filter((todo) => !todo.completed) });
       },
 
       getCompletedCount: () => {
         const { todos } = get();
-        return todos.filter(todo => todo.completed).length;
+        return todos.filter((todo) => todo.completed).length;
       },
 
       getTotalCount: () => {
@@ -72,4 +87,4 @@ export const useTodoStore = create<TodoState>()(
       partialize: (state) => ({ todos: state.todos }),
     }
   )
-); 
+);

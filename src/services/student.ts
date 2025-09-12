@@ -209,7 +209,6 @@ export const reportRequest = async (
 };
 
 export const getProgressRequest = async (token: string) => {
-  console.log('📡 [Student Service] Making POST request to:', STUDENT_PROGRESS_ENDPOINT);
   const response = await axios.post(
     STUDENT_PROGRESS_ENDPOINT,
     {},
@@ -221,11 +220,6 @@ export const getProgressRequest = async (token: string) => {
       timeout: 20000,
     }
   );
-  console.log('✅ [Student Service] Progress response received:', {
-    status: response.status,
-    dataKeys: Object.keys(response.data || {}),
-    timestamp: new Date().toISOString()
-  });
   return response;
 };
 
@@ -327,7 +321,6 @@ export const getPracticeProgressRequest = async (
 };
 
 export const getAccuracyTrendRequest = async (token: string) => {
-  console.log('📡 [Student Service] Making POST request to: /accuracyTrend/');
   const response = await axios.post(
     '/accuracyTrend/',
     {},
@@ -335,16 +328,10 @@ export const getAccuracyTrendRequest = async (token: string) => {
       headers: { 'AUTH-TOKEN': token },
     }
   );
-  console.log('✅ [Student Service] Accuracy trend response:', {
-    status: response.status,
-    dataKeys: Object.keys(response.data || {}),
-    timestamp: new Date().toISOString()
-  });
   return response;
 };
 
 export const getSpeedTrendRequest = async (token: string) => {
-  console.log('📡 [Student Service] Making POST request to: /speedTrend/');
   const response = await axios.post(
     '/speedTrend/',
     {},
@@ -352,10 +339,5 @@ export const getSpeedTrendRequest = async (token: string) => {
       headers: { 'AUTH-TOKEN': token },
     }
   );
-  console.log('✅ [Student Service] Speed trend response:', {
-    status: response.status,
-    dataKeys: Object.keys(response.data || {}),
-    timestamp: new Date().toISOString()
-  });
   return response;
 };

@@ -11,7 +11,7 @@ interface WeeklyStatsState {
   time_spent_formatted: string;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchWeeklyStats: () => Promise<void>;
   setWeeklyStats: (statsData: WeeklyStatsData) => void;
@@ -20,7 +20,7 @@ interface WeeklyStatsState {
 
 export const useWeeklyStatsStore = create<WeeklyStatsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       sessions: 0,
       accuracy: 0,
       time_spent_hours: 0,
@@ -30,7 +30,7 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
       error: null,
 
       fetchWeeklyStats: async () => {
-        const authToken = useAuthStore.getState().authToken;
+        const { authToken } = useAuthStore.getState();
         if (!authToken) {
           set({ error: 'No authentication token' });
           return;
@@ -56,10 +56,12 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
             });
           }
         } catch (error) {
-          console.error('Error fetching weekly stats:', error);
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to fetch weekly stats',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to fetch weekly stats',
           });
         }
       },

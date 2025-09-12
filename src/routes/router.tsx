@@ -5,7 +5,9 @@ import { withLazyLoad } from '@helpers/lazyLoad';
 const DefaultLayout = withLazyLoad(() => import('@layouts/DefaultLayout'));
 const RootLayout = withLazyLoad(() => import('@layouts/RootLayout'));
 const StudentLayout = withLazyLoad(() => import('@layouts/StudentLayout'));
-const StudentLayoutWithSidebar = withLazyLoad(() => import('@layouts/StudentLayoutWithSidebar'));
+const StudentLayoutWithSidebar = withLazyLoad(
+  () => import('@layouts/StudentLayoutWithSidebar')
+);
 const AdminLayout = withLazyLoad(() => import('@layouts/AdminLayout'));
 const SubAdminLayout = withLazyLoad(() => import('@layouts/SubAdminLayout'));
 const TeacherLayout = withLazyLoad(() => import('@layouts/TeacherLayout'));
@@ -16,78 +18,186 @@ const Custom404Page = withLazyLoad(() => import('@pages/not-found'));
 const ProfilePage = withLazyLoad(() => import('@pages/profile'));
 const LoginPage = withLazyLoad(() => import('@pages/login'));
 const ResetPasswordPage = withLazyLoad(() => import('@pages/reset-password'));
-const ResetPasswordPageV2 = withLazyLoad(() => import('@pages/reset-password-v2'));
+const ResetPasswordPageV2 = withLazyLoad(
+  () => import('@pages/reset-password-v2')
+);
 const ForgotPasswordPage = withLazyLoad(() => import('@pages/forgot-password'));
 
 // Lazy load student pages
-const StudentDashboardPage = withLazyLoad(() => import('@pages/student/dashboard'));
+const StudentDashboardPage = withLazyLoad(
+  () => import('@pages/student/dashboard')
+);
 const StudentRoadmapPage = withLazyLoad(() => import('@pages/student/roadmap'));
 const StudentArchivePage = withLazyLoad(() => import('@pages/student/archive'));
-const StudentVirtualAbacusPage = withLazyLoad(() => import('@pages/student/virtual-abacus'));
-const StudentLeaderboardPage = withLazyLoad(() => import('@pages/student/leaderboard'));
+const StudentVirtualAbacusPage = withLazyLoad(
+  () => import('@pages/student/virtual-abacus')
+);
+const StudentLeaderboardPage = withLazyLoad(
+  () => import('@pages/student/leaderboard')
+);
 const StudentLevelPage = withLazyLoad(() => import('@pages/student/level'));
 const StudentQuizPage = withLazyLoad(() => import('@pages/student/quiz'));
-const StudentOralTestPage = withLazyLoad(() => import('@pages/student/oral-test'));
-const StudentFinalTestPage = withLazyLoad(() => import('@pages/student/final-test'));
+const StudentOralTestPage = withLazyLoad(
+  () => import('@pages/student/oral-test')
+);
+const StudentFinalTestPage = withLazyLoad(
+  () => import('@pages/student/final-test')
+);
 const StudentTestPage = withLazyLoad(() => import('@pages/student/test'));
 const StudentReportPage = withLazyLoad(() => import('@pages/student/report'));
-const StudentProgressPage = withLazyLoad(() => import('@pages/student/student-progress'));
-const StudentPracticePage = withLazyLoad(() => import('@pages/student/practice-mode'));
-const StudentPvPPage = withLazyLoad(() => import('@pages/student/practice-mode/pvp'));
-const StudentPvPRoomPage = withLazyLoad(() => import('@pages/student/practice-mode/pvp/room'));
-const StudentPvPGamePage = withLazyLoad(() => import('@pages/student/practice-mode/pvp/game'));
-const StudentTimedPracticePage = withLazyLoad(() => import('@pages/student/practice-test/timed'));
-const StudentUntimedPracticePage = withLazyLoad(() => import('@pages/student/practice-test/untimed'));
-const StudentFlashCardPracticePage = withLazyLoad(() => import('@pages/student/practice-test/flashcards'));
-const StudentSetPracticePage = withLazyLoad(() => import('@pages/student/practice-test/set'));
+const StudentProgressPage = withLazyLoad(
+  () => import('@pages/student/student-progress')
+);
+const StudentPracticePage = withLazyLoad(
+  () => import('@pages/student/practice-mode')
+);
+const StudentPvPPage = withLazyLoad(
+  () => import('@pages/student/practice-mode/pvp')
+);
+const StudentPvPRoomPage = withLazyLoad(
+  () => import('@pages/student/practice-mode/pvp/room')
+);
+const StudentPvPGamePage = withLazyLoad(
+  () => import('@pages/student/practice-mode/pvp/game')
+);
+const StudentTimedPracticePage = withLazyLoad(
+  () => import('@pages/student/practice-test/timed')
+);
+const StudentUntimedPracticePage = withLazyLoad(
+  () => import('@pages/student/practice-test/untimed')
+);
+const StudentFlashCardPracticePage = withLazyLoad(
+  () => import('@pages/student/practice-test/flashcards')
+);
+const StudentSetPracticePage = withLazyLoad(
+  () => import('@pages/student/practice-test/set')
+);
 
 // Lazy load admin pages
 const AdminDashboardPage = withLazyLoad(() => import('@pages/admin/dashboard'));
-const AdminViewAllTeachersPage = withLazyLoad(() => import('@pages/admin/all-teachers'));
-const AdminAddTeacherPage = withLazyLoad(() => import('@pages/admin/add-teacher'));
-const AdminAddSubAdminPage = withLazyLoad(() => import('@pages/admin/add-sub-admin'));
-const AdminAddStudentPage = withLazyLoad(() => import('@pages/admin/add-student'));
-const AdminBatchViewStudentsPage = withLazyLoad(() => import('@pages/admin/batch-all-students'));
-const AdminBulkAddStudentPage = withLazyLoad(() => import('@pages/admin/bulk-add-student'));
-const AdminSearchStudentsPage = withLazyLoad(() => import('@pages/admin/search-students'));
-const AdminStudentProgressPage = withLazyLoad(() => import('@pages/admin/student-progress'));
-const AdminViewAllBatchesPage = withLazyLoad(() => import('@pages/admin/all-batches'));
-const AdminEditBatchPage = withLazyLoad(() => import('@pages/admin/edit-batch'));
+const AdminViewAllTeachersPage = withLazyLoad(
+  () => import('@pages/admin/all-teachers')
+);
+const AdminAddTeacherPage = withLazyLoad(
+  () => import('@pages/admin/add-teacher')
+);
+const AdminAddSubAdminPage = withLazyLoad(
+  () => import('@pages/admin/add-sub-admin')
+);
+const AdminAddStudentPage = withLazyLoad(
+  () => import('@pages/admin/add-student')
+);
+const AdminBatchViewStudentsPage = withLazyLoad(
+  () => import('@pages/admin/batch-all-students')
+);
+const AdminBulkAddStudentPage = withLazyLoad(
+  () => import('@pages/admin/bulk-add-student')
+);
+const AdminSearchStudentsPage = withLazyLoad(
+  () => import('@pages/admin/search-students')
+);
+const AdminStudentProgressPage = withLazyLoad(
+  () => import('@pages/admin/student-progress')
+);
+const AdminViewAllBatchesPage = withLazyLoad(
+  () => import('@pages/admin/all-batches')
+);
+const AdminEditBatchPage = withLazyLoad(
+  () => import('@pages/admin/edit-batch')
+);
 const AdminAddBatchPage = withLazyLoad(() => import('@pages/admin/add-batch'));
-const AdminAddQuestionPage = withLazyLoad(() => import('@pages/admin/add-question'));
-const AdminBulkAddQuestionsPage = withLazyLoad(() => import('@pages/admin/bulk-add-questions'));
-const AdminEditQuestionPage = withLazyLoad(() => import('@pages/admin/edit-question'));
+const AdminAddQuestionPage = withLazyLoad(
+  () => import('@pages/admin/add-question')
+);
+const AdminBulkAddQuestionsPage = withLazyLoad(
+  () => import('@pages/admin/bulk-add-questions')
+);
+const AdminEditQuestionPage = withLazyLoad(
+  () => import('@pages/admin/edit-question')
+);
 const AdminViewQuizPage = withLazyLoad(() => import('@pages/admin/view-quiz'));
-const AdminAddOrganizationPage = withLazyLoad(() => import('@pages/admin/add-organization'));
-const AdminViewOrganizationPage = withLazyLoad(() => import('@pages/admin/view-organization'));
-const AdminEditOrganizationPage = withLazyLoad(() => import('@pages/admin/edit-organization'));
-const AdminLeaderboardPage = withLazyLoad(() => import('@pages/admin/leaderboard'));
+const AdminAddOrganizationPage = withLazyLoad(
+  () => import('@pages/admin/add-organization')
+);
+const AdminViewOrganizationPage = withLazyLoad(
+  () => import('@pages/admin/view-organization')
+);
+const AdminEditOrganizationPage = withLazyLoad(
+  () => import('@pages/admin/edit-organization')
+);
+const AdminLeaderboardPage = withLazyLoad(
+  () => import('@pages/admin/leaderboard')
+);
 
 // Lazy load sub-admin pages
-const SubAdminDashboardPage = withLazyLoad(() => import('@pages/sub-admin/dashboard'));
-const SubAdminAddBatchPage = withLazyLoad(() => import('@pages/sub-admin/add-batch'));
-const SubAdminAddStudentPage = withLazyLoad(() => import('@pages/sub-admin/add-student'));
-const SubAdminBulkAddStudentPage = withLazyLoad(() => import('@pages/sub-admin/bulk-add-student'));
-const SubAdminSearchStudentsPage = withLazyLoad(() => import('@pages/sub-admin/search-students'));
-const SubAdminStudentProgressPage = withLazyLoad(() => import('@pages/sub-admin/student-progress'));
-const SubAdminViewAllTeachersPage = withLazyLoad(() => import('@pages/sub-admin/all-teachers'));
-const SubAdminAddTeacherPage = withLazyLoad(() => import('@pages/sub-admin/add-teacher'));
-const SubAdminViewAllBatchesPage = withLazyLoad(() => import('@pages/sub-admin/all-batches'));
-const SubAdminBatchViewStudentsPage = withLazyLoad(() => import('@pages/sub-admin/batch-all-students'));
-const SubAdminEditBatchPage = withLazyLoad(() => import('@pages/sub-admin/edit-batch'));
-const SubAdminUpdateStudentBatchPage = withLazyLoad(() => import('@pages/sub-admin/update-student-batch'));
-const SubAdminUpdateBatchTeacherPage = withLazyLoad(() => import('@pages/sub-admin/update-batch-teacher'));
-const SubAdminLeaderboardPage = withLazyLoad(() => import('@pages/sub-admin/leaderboard'));
+const SubAdminDashboardPage = withLazyLoad(
+  () => import('@pages/sub-admin/dashboard')
+);
+const SubAdminAddBatchPage = withLazyLoad(
+  () => import('@pages/sub-admin/add-batch')
+);
+const SubAdminAddStudentPage = withLazyLoad(
+  () => import('@pages/sub-admin/add-student')
+);
+const SubAdminBulkAddStudentPage = withLazyLoad(
+  () => import('@pages/sub-admin/bulk-add-student')
+);
+const SubAdminSearchStudentsPage = withLazyLoad(
+  () => import('@pages/sub-admin/search-students')
+);
+const SubAdminStudentProgressPage = withLazyLoad(
+  () => import('@pages/sub-admin/student-progress')
+);
+const SubAdminViewAllTeachersPage = withLazyLoad(
+  () => import('@pages/sub-admin/all-teachers')
+);
+const SubAdminAddTeacherPage = withLazyLoad(
+  () => import('@pages/sub-admin/add-teacher')
+);
+const SubAdminViewAllBatchesPage = withLazyLoad(
+  () => import('@pages/sub-admin/all-batches')
+);
+const SubAdminBatchViewStudentsPage = withLazyLoad(
+  () => import('@pages/sub-admin/batch-all-students')
+);
+const SubAdminEditBatchPage = withLazyLoad(
+  () => import('@pages/sub-admin/edit-batch')
+);
+const SubAdminUpdateStudentBatchPage = withLazyLoad(
+  () => import('@pages/sub-admin/update-student-batch')
+);
+const SubAdminUpdateBatchTeacherPage = withLazyLoad(
+  () => import('@pages/sub-admin/update-batch-teacher')
+);
+const SubAdminLeaderboardPage = withLazyLoad(
+  () => import('@pages/sub-admin/leaderboard')
+);
 
 // Lazy load teacher pages
-const TeacherDashboardPage = withLazyLoad(() => import('@pages/teacher/dashboard'));
-const TeacherUpdateLinkPage = withLazyLoad(() => import('@pages/teacher/update-link'));
-const TeacherBatchReportPage = withLazyLoad(() => import('@pages/teacher/report'));
-const TeacherSearchStudentsPage = withLazyLoad(() => import('@pages/teacher/search-students'));
-const TeacherStudentProgressPage = withLazyLoad(() => import('@pages/teacher/student-progress'));
-const TeacherViewStudentsPage = withLazyLoad(() => import('@pages/teacher/students'));
-const TeacherOralTestPage = withLazyLoad(() => import('@pages/teacher/oral-test'));
-const TeacherLeaderboardPage = withLazyLoad(() => import('@pages/teacher/leaderboard'));
+const TeacherDashboardPage = withLazyLoad(
+  () => import('@pages/teacher/dashboard')
+);
+const TeacherUpdateLinkPage = withLazyLoad(
+  () => import('@pages/teacher/update-link')
+);
+const TeacherBatchReportPage = withLazyLoad(
+  () => import('@pages/teacher/report')
+);
+const TeacherSearchStudentsPage = withLazyLoad(
+  () => import('@pages/teacher/search-students')
+);
+const TeacherStudentProgressPage = withLazyLoad(
+  () => import('@pages/teacher/student-progress')
+);
+const TeacherViewStudentsPage = withLazyLoad(
+  () => import('@pages/teacher/students')
+);
+const TeacherOralTestPage = withLazyLoad(
+  () => import('@pages/teacher/oral-test')
+);
+const TeacherLeaderboardPage = withLazyLoad(
+  () => import('@pages/teacher/leaderboard')
+);
 
 export const router = createBrowserRouter([
   {

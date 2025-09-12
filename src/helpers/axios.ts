@@ -1,10 +1,5 @@
 import axios from 'axios';
 import { useAuthStore } from '@store/authStore';
-import { apiCache } from './cacheManager';
-
-// Request deduplication cache
-const requestCache = new Map<string, Promise<any>>();
-const CACHE_DURATION = 5000; // 5 seconds
 
 const customAxios = axios.create({
   baseURL: (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://api2.boltabacus.com',
@@ -34,24 +29,6 @@ function safeStringify(value: unknown): string {
   }
 }
 
-// Helper function to create cache key
-function createCacheKey(config: any): string {
-  const { method, url, params, data } = config;
-  return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`;
-}
-
-// Helper function to check if request should be deduplicated
-function shouldDeduplicate(config: any): boolean {
-  // Only deduplicate GET requests
-  return config.method?.toLowerCase() === 'get';
-}
-
-// Helper function to check if request should be cached
-function shouldCache(config: any): boolean {
-  // Only cache GET requests
-  return config.method?.toLowerCase() === 'get';
-}
-
 customAxios.interceptors.request.use(
   (config) => {
     try {
@@ -60,42 +37,6 @@ customAxios.interceptors.request.use(
         params: config.params,
         hasData: !!config.data,
       });
-
-      // Check cache for GET requests
-      if (shouldCache(config)) {
-        const cacheKey = createCacheKey(config);
-        const cachedResponse = apiCache.get(cacheKey);
-        
-        if (cachedResponse) {
-          console.log('💾 [Axios] Using cached response:', cacheKey);
-          // Return a promise that resolves with cached data
-          return Promise.resolve({
-            ...config,
-            cached: true,
-            data: cachedResponse,
-          });
-        }
-      }
-
-      // Request deduplication for GET requests
-      if (shouldDeduplicate(config)) {
-        const cacheKey = createCacheKey(config);
-        const cachedRequest = requestCache.get(cacheKey);
-        
-        if (cachedRequest) {
-          console.log('🔄 [Axios] Deduplicating request:', cacheKey);
-          return cachedRequest;
-        }
-
-        // Create new request and cache it
-        const requestPromise = Promise.resolve(config);
-        requestCache.set(cacheKey, requestPromise);
-        
-        // Remove from cache after duration
-        setTimeout(() => {
-          requestCache.delete(cacheKey);
-        }, CACHE_DURATION);
-      }
     } catch {}
     return config;
   },
@@ -110,15 +51,7 @@ customAxios.interceptors.response.use(
     try {
       console.log('📥 [Axios] Response ←', response.status, response.config.url, {
         data: response.data,
-        cached: response.config.cached,
       });
-
-      // Cache successful GET responses
-      if (shouldCache(response.config) && response.status === 200 && !response.config.cached) {
-        const cacheKey = createCacheKey(response.config);
-        apiCache.set(cacheKey, response.data, 5 * 60 * 1000); // 5 minutes
-        console.log('💾 [Axios] Cached response:', cacheKey);
-      }
     } catch {}
     return response;
   },

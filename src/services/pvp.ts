@@ -105,37 +105,60 @@ export interface PVPGameResult {
 }
 
 // API Functions
-export const createPVPRoom = async (settings: PVPRoomSettings, token: string) => {
+export const createPVPRoom = async (
+  settings: PVPRoomSettings,
+  token: string
+) => {
   return axios.post(CREATE_PVP_ROOM_ENDPOINT, settings, {
     headers: { 'AUTH-TOKEN': token },
   });
 };
 
 export const joinPVPRoom = async (roomId: string, token: string) => {
-  return axios.post(JOIN_PVP_ROOM_ENDPOINT, { room_code: roomId }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    JOIN_PVP_ROOM_ENDPOINT,
+    { room_code: roomId },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const getPVPRoomDetails = async (roomId: string, token: string) => {
-  return axios.post(GET_PVP_ROOM_DETAILS_ENDPOINT, { room_id: roomId }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    GET_PVP_ROOM_DETAILS_ENDPOINT,
+    { room_id: roomId },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
-export const setPlayerReady = async (roomId: string, isReady: boolean, token: string) => {
-  return axios.post(SET_PLAYER_READY_ENDPOINT, { 
-    room_id: roomId, 
-    is_ready: isReady 
-  }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+export const setPlayerReady = async (
+  roomId: string,
+  isReady: boolean,
+  token: string
+) => {
+  return axios.post(
+    SET_PLAYER_READY_ENDPOINT,
+    {
+      room_id: roomId,
+      is_ready: isReady,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const startPVPGame = async (roomId: string, token: string) => {
-  return axios.post(START_PVP_GAME_ENDPOINT, { room_id: roomId }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    START_PVP_GAME_ENDPOINT,
+    { room_id: roomId },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const submitPVPGameResult = async (
@@ -145,28 +168,40 @@ export const submitPVPGameResult = async (
   totalTime: number,
   token: string
 ) => {
-  return axios.post(SUBMIT_PVP_GAME_RESULT_ENDPOINT, {
-    room_id: roomId,
-    score: score,
-    correct_answers: correctAnswers,
-    total_time: totalTime
-  }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    SUBMIT_PVP_GAME_RESULT_ENDPOINT,
+    {
+      room_id: roomId,
+      score,
+      correct_answers: correctAnswers,
+      total_time: totalTime,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const getPVPGameQuestions = async (roomId: string, token: string) => {
-  return axios.post('/getPVPGameQuestions/', {
-    room_id: roomId
-  }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    '/getPVPGameQuestions/',
+    {
+      room_id: roomId,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const getPVPGameResult = async (roomId: string, token: string) => {
-  return axios.post(GET_PVP_GAME_RESULT_ENDPOINT, { room_id: roomId }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    GET_PVP_GAME_RESULT_ENDPOINT,
+    { room_id: roomId },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const updatePlayerProgress = async (
@@ -176,18 +211,26 @@ export const updatePlayerProgress = async (
   timeTaken: number,
   token: string
 ) => {
-  return axios.post(UPDATE_PLAYER_PROGRESS_ENDPOINT, {
-    room_id: roomId,
-    question_id: questionId,
-    answer: answer,
-    time_taken: timeTaken
-  }, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    UPDATE_PLAYER_PROGRESS_ENDPOINT,
+    {
+      room_id: roomId,
+      question_id: questionId,
+      answer,
+      time_taken: timeTaken,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };
 
 export const getPVPLeaderboard = async (token: string) => {
-  return axios.post(GET_PVP_LEADERBOARD_ENDPOINT, {}, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+  return axios.post(
+    GET_PVP_LEADERBOARD_ENDPOINT,
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
 };

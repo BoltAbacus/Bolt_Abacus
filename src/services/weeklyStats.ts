@@ -14,9 +14,15 @@ export interface WeeklyStatsResponse {
   data: WeeklyStatsData;
 }
 
-export const getWeeklyStats = async (token: string): Promise<WeeklyStatsResponse> => {
-  const response = await axios.post(GET_WEEKLY_STATS_ENDPOINT, {}, {
-    headers: { 'AUTH-TOKEN': token },
-  });
+export const getWeeklyStats = async (
+  token: string
+): Promise<WeeklyStatsResponse> => {
+  const response = await axios.post(
+    GET_WEEKLY_STATS_ENDPOINT,
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
   return response.data;
 };

@@ -1,5 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 
 import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
@@ -13,10 +14,11 @@ import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid'
 import WeeklyStatsSection from '@components/sections/student/dashboard/WeeklyStatsSection';
 import SplitText from '@components/atoms/SplitText';
 import CountUp from '@components/atoms/CountUp';
+import JoinClassButton from '@components/atoms/JoinClassButton';
 // import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
 // import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
-import { getPracticeProgressRequest, getProgressRequest } from '@services/student';
+import { getPracticeProgressRequest, getProgressRequest, dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
 import { useExperienceStore } from '@store/experienceStore';
@@ -24,12 +26,13 @@ import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
 import { useTodoListStore } from '@store/todoListStore';
 import { getActivities, ActivityItem } from '@helpers/activity';
 import axios from '@helpers/axios';
-import { STUDENT_LEADERBOARD } from '@constants/routes';
+import { STUDENT_LEADERBOARD, LOGIN_PAGE } from '@constants/routes';
 // import StreakTest from '@components/atoms/StreakTest';
-import { MESSAGES } from '@constants/app';
+import { MESSAGES, ERRORS } from '@constants/app';
 import { STUDENT_DASHBOARD } from '@constants/routes';
 import {
   LevelsPercentage,
+  DashboardResponseV2,
 } from '@interfaces/apis/student';
 
 export interface StudentDashboardPageProps {}
@@ -37,12 +40,18 @@ export interface StudentDashboardPageProps {}
 const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const authToken = useAuthStore((state) => state.authToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<LevelsPercentage>({});
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [currentLevelProgressPct, setCurrentLevelProgressPct] = useState<number>(0);
-  const { currentStreak, fetchStreak } = useStreakStore();
+  const [currentLevel, setCurrentLevel] = useState<number>(1);
+  const [classLink, setClassLink] = useState<string>('');
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
+  const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
+  const { currentStreak, fetchStreak, updateStreak } = useStreakStore();
   const { experience_points, level, syncWithBackend } = useExperienceStore();
   const { sessions, accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
   const [computedSessions, setComputedSessions] = useState<number>(0);

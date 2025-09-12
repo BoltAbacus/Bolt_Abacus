@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { AiFillInstagram, AiFillLinkedin } from 'react-icons/ai';
 
 import BrandLogo from '@components/atoms/BrandLogo';
-
 import { HOME_PAGE } from '@constants/routes';
 
 export interface FooterProps {}

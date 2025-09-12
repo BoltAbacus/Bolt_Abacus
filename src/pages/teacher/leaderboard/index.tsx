@@ -3,16 +3,10 @@ import { isAxiosError } from 'axios';
 import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
-import LoadingOverlay from '@components/atoms/LoadingOverlay';
-import SkeletonLoader, { SkeletonList } from '@components/atoms/SkeletonLoader';
-import AccessibleButton from '@components/atoms/AccessibleButton';
 import StudentDetailsModal from '@components/organisms/StudentDetailsModal';
 import { dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
-import { useLoadingState } from '@hooks/useLoadingState';
-import { useErrorHandler } from '@hooks/useErrorHandler';
-import { useComponentLifecycle } from '@hooks/useComponentLifecycle';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, TEACHER_DASHBOARD } from '@constants/routes';
 import axios from '@helpers/axios';
@@ -24,29 +18,11 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
   // Teacher leaderboard - no user stats needed
   const authToken = useAuthStore((state) => state.authToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { updateStreak } = useStreakStore();
-  const { handleError } = useErrorHandler();
-  const { isMounted } = useComponentLifecycle({
-    onMount: () => {
-      console.log('Teacher Leaderboard mounted');
-    },
-    onUnmount: () => {
-      console.log('Teacher Leaderboard unmounted');
-    },
-  });
-  
-  // Loading states
-  const leaderboardLoading = useLoadingState({
-    onError: (error) => handleError(error, 'Leaderboard fetch'),
-  });
-  
-  const dashboardLoading = useLoadingState({
-    onError: (error) => handleError(error, 'Dashboard fetch'),
-  });
-  
+  const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [fallBackLink, setFallBackLink] = useState<string>(TEACHER_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
+  const { updateStreak } = useStreakStore();
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
@@ -68,25 +44,12 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      if (!isAuthenticated) {
-        setLeaderboard([]);
-        return;
-      }
-
-      await leaderboardLoading.executeAsync(async () => {
-        if (!isMounted()) return;
-        
-        leaderboardLoading.setProgress(10);
-        
+      setLoading(true);
+      try {
         // Use the PVP backend leaderboard API
         const res = await axios.post('/getPVPLeaderboard/', {}, {
           headers: { 'AUTH-TOKEN': authToken },
         });
-        
-        if (!isMounted()) return;
-        
-        leaderboardLoading.setProgress(50);
-        
         if (res.status === 200 && res.data.success && res.data.data.leaderboard) {
           // Transform PVP leaderboard data to match expected format
           const leaderboardData = res.data.data.leaderboard.map((player: any) => ({
@@ -98,19 +61,11 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
             streak: 0,
             userId: player.user_id
           }));
-          
-          if (!isMounted()) return;
-          
-          leaderboardLoading.setProgress(70);
-          
           // Fetch streaks for all students in parallel
           try {
             const streaks = await Promise.allSettled(
               leaderboardData.map((p: any) => getStreakByUserId(p.userId))
             );
-            
-            if (!isMounted()) return;
-            
             const withStreaks = leaderboardData.map((p: any, idx: number) => {
               const r = streaks[idx];
               const s = r.status === 'fulfilled' ? (r.value as any) : null;
@@ -119,78 +74,78 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
             });
             setLeaderboard(withStreaks);
           } catch {
-            if (isMounted()) {
-              setLeaderboard(leaderboardData);
-            }
+            setLeaderboard(leaderboardData);
           }
           setApiError(null);
         } else {
           // No data available - show empty leaderboard
-          if (isMounted()) {
-            setLeaderboard([]);
-            setApiError(null);
-          }
+          setLeaderboard([]);
+          setApiError(null);
         }
-        
-        if (isMounted()) {
-          leaderboardLoading.setProgress(100);
-        }
-      }, {
-        message: 'Loading leaderboard...',
-        timeout: 15000,
-      });
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        // Show empty leaderboard on error
+        setLeaderboard([]);
+        setApiError(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchLeaderboard();
-  }, [authToken, isAuthenticated, leaderboardLoading]);
+
+    if (isAuthenticated) {
+      fetchLeaderboard();
+    } else {
+      // Use fallback data if not authenticated
+      setLeaderboard([]);
+      setLoading(false);
+    }
+  }, [authToken, isAuthenticated]);
 
   useEffect(() => {
     const getDashboardData = async () => {
-      if (!isAuthenticated) {
+      if (isAuthenticated) {
+        try {
+          const res = await dashboardRequestV2(authToken!);
+          if (res.status === 200) {
+            setApiError(null);
+            updateStreak();
+          }
+        } catch (error) {
+          if (isAxiosError(error)) {
+            setApiError(error.response?.data?.message || ERRORS.SERVER_ERROR);
+          } else {
+            setApiError(ERRORS.SERVER_ERROR);
+          }
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
         setApiError(ERRORS.AUTHENTICATION_ERROR);
         setFallBackLink(LOGIN_PAGE);
         setFallBackAction(MESSAGES.GO_LOGIN);
-        return;
       }
-
-      await dashboardLoading.executeAsync(async () => {
-        if (!isMounted()) return;
-        
-        const res = await dashboardRequestV2(authToken!);
-        
-        if (!isMounted()) return;
-        
-        if (res.status === 200) {
-          setApiError(null);
-          updateStreak();
-        }
-      }, {
-        message: 'Loading dashboard data...',
-        timeout: 10000,
-      });
     };
-    
     getDashboardData();
-  }, [authToken, isAuthenticated, updateStreak, dashboardLoading]);
+  }, [authToken, isAuthenticated, updateStreak]);
 
 
-
-  const isLoading = leaderboardLoading.isLoading || dashboardLoading.isLoading;
-  const hasError = apiError || leaderboardLoading.error || dashboardLoading.error;
 
   return (
     <div className="min-h-screen">
-      <LoadingOverlay 
-        isLoading={isLoading} 
-        message={leaderboardLoading.message || dashboardLoading.message}
-        progress={leaderboardLoading.progress || dashboardLoading.progress}
-      >
+      {loading ? (
+        <>
+          <SeoComponent title="Loading" />
+          <LoadingBox />
+        </>
+      ) : (
         <div>
-          {hasError ? (
+          {apiError ? (
             <>
               <SeoComponent title="Error" />
               <ErrorBox 
-                errorMessage={apiError || leaderboardLoading.error?.message || dashboardLoading.error?.message || 'An error occurred'} 
+                errorMessage={apiError} 
                 link={fallBackLink} 
                 buttonText={fallBackAction} 
               />
@@ -220,10 +175,8 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
                         Top Students
                       </h2>
                       
-                      <div className="space-y-2">
-                        {leaderboardLoading.isLoading ? (
-                          <SkeletonList items={5} />
-                        ) : leaderboard.length === 0 ? (
+                       <div className="space-y-2">
+                        {leaderboard.length === 0 ? (
                           <div className="text-center py-8">
                             <div className="text-4xl mb-3">🏆</div>
                             <h3 className="text-lg font-bold text-white mb-2">No Rankings Yet</h3>
@@ -257,16 +210,13 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
                               <div className="flex-1">
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <AccessibleButton
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-sm font-medium underline-offset-2 hover:underline p-0 h-auto"
+                                    <button
+                                      className="text-sm font-medium underline-offset-2 hover:underline"
                                       style={{ color: '#ffffff' }}
                                       onClick={() => { setSelectedStudent(student); setIsStudentModalOpen(true); }}
-                                      ariaLabel={`View details for ${student.name}`}
                                     >
                                       {student.name}
-                                    </AccessibleButton>
+                                    </button>
                                     <p className="text-xs" style={{ color: '#818181' }}>
                                       Level {student.level} • {student.streak || 0} Day Streak
                                     </p>
@@ -293,53 +243,45 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <AccessibleButton
-                              variant="secondary"
-                              size="sm"
+                            <button
                               className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
                               onClick={() => setPage(1)}
                               disabled={currentPage === 1}
-                              ariaLabel="Go to first page"
+                              title="First page"
                             >
                               ⏮
-                            </AccessibleButton>
-                            <AccessibleButton
-                              variant="secondary"
-                              size="sm"
+                            </button>
+                            <button
                               className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
                               onClick={() => setPage((p) => Math.max(1, p - 1))}
                               disabled={currentPage === 1}
-                              ariaLabel="Go to previous page"
+                              title="Previous"
                             >
                               ◀
-                            </AccessibleButton>
-                            <span className="px-4 py-2 text-white font-semibold" aria-label={`Current page ${currentPage} of ${totalPages}`}>
+                            </button>
+                            <span className="px-4 py-2 text-white font-semibold">
                               {currentPage}
                             </span>
-                            <AccessibleButton
-                              variant="secondary"
-                              size="sm"
+                            <button
                               className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
                               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                               disabled={currentPage === totalPages}
-                              ariaLabel="Go to next page"
+                              title="Next"
                             >
                               ▶
-                            </AccessibleButton>
-                            <AccessibleButton
-                              variant="secondary"
-                              size="sm"
+                            </button>
+                            <button
                               className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
                               onClick={() => setPage(totalPages)}
                               disabled={currentPage === totalPages}
-                              ariaLabel="Go to last page"
+                              title="Last page"
                             >
                               ⏭
-                            </AccessibleButton>
+                            </button>
                           </div>
                         </div>
                       )}
-                    </div>
+                     </div>
                   </div>
                 </div>
               </div>
@@ -347,7 +289,7 @@ const TeacherLeaderboardPage: FC<TeacherLeaderboardPageProps> = () => {
             </>
           )}
         </div>
-      </LoadingOverlay>
+      )}
     </div>
   );
 };

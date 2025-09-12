@@ -33,8 +33,7 @@
       "@store/*": ["./src/store/*"],
       "@routes/*": ["./src/routes/*"],
       "@interfaces/*": ["./src/interfaces/*"],
-      "@validations/*": ["./src/validations/*"],
-      "@types/*": ["./src/types/*"]
+      "@validations/*": ["./src/validations/*"]
     }
   },
   "include": ["src", "eslintrc.cjs"],

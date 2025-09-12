@@ -13,7 +13,7 @@ export interface StudentVirtualAbacusPageProps {}
 
 // Virtual Abacus Component
 const VirtualAbacus: FC = () => {
-  const [, setValue] = useState(0);
+  const [_, setValue] = useState(0);
   const [rodCount, setRodCount] = useState(13);
   
   // Soroban layout constants
@@ -202,7 +202,7 @@ const VirtualAbacus: FC = () => {
 
         {/* Rods and beads */}
         <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8" style={{ zIndex: 5 }}>
-          {abacusState.map((_, rodIndex) => (
+          {abacusState.map((rod, rodIndex) => (
             <div
               key={rodIndex}
               className="relative flex flex-col items-center"
