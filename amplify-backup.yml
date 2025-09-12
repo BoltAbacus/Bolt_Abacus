@@ -8,17 +8,13 @@ frontend:
         - node --version
         - echo "NPM version:"
         - npm --version
-        - echo "Clearing npm cache..."
-        - npm cache clean --force
-        - echo "Installing dependencies with npm install instead of npm ci..."
-        - npm install
+        - echo "Using npm install with legacy peer deps..."
+        - npm install --legacy-peer-deps
     build:
       commands:
         - echo "Building frontend..."
         - npm run build
         - echo "Build completed successfully"
-        - echo "Listing dist directory contents:"
-        - ls -la dist/
   artifacts:
     baseDirectory: dist
     files:
@@ -26,4 +22,3 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      - .npm
