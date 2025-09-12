@@ -3,27 +3,11 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Installing frontend dependencies..."
-        - echo "Node version:"
-        - node --version
-        - echo "NPM version:"
-        - npm --version
-        - echo "Clearing npm cache..."
-        - npm cache clean --force
-        - echo "Installing dependencies..."
         - npm install
     build:
       commands:
-        - echo "Building frontend..."
         - npm run build
-        - echo "Build completed successfully"
-        - echo "Listing dist directory contents:"
-        - ls -la dist/
   artifacts:
     baseDirectory: dist
     files:
       - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .npm
