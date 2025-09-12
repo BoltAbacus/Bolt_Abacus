@@ -2,12 +2,13 @@ import { defineConfig, loadEnv } from 'vite';
 
 import svgr from 'vite-plugin-svgr';
 import react from '@vitejs/plugin-react';
-import path from 'node:path';
+import path from 'path';
 
 export default ({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
 
   return defineConfig({
+    base: '/',
     server: {
       port: parseInt(process.env.VITE_PORT || '5173'),
       proxy: {
@@ -33,6 +34,8 @@ export default ({ mode }) => {
       },
       chunkSizeWarningLimit: 1000,
       sourcemap: mode === 'development',
+      minify: 'esbuild',
+      target: 'es2015',
     },
     resolve: {
       alias: {

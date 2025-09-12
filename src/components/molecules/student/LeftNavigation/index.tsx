@@ -6,9 +6,6 @@ import {
   AiOutlineClose, 
   AiOutlineDashboard,
   AiOutlineBarChart,
-  AiOutlineBook,
-  AiOutlineUser,
-  AiOutlineLogout,
   AiOutlineFire,
   AiOutlineVideoCamera,
   AiOutlineHistory,
@@ -26,7 +23,6 @@ import { useStreakStore } from '@store/streakStore';
 import {
   STUDENT_DASHBOARD,
   STUDENT_PROGRESS,
-  STUDENT_PRACTICE,
   STUDENT_ROADMAP,
   STUDENT_VIRTUAL_ABACUS,
   STUDENT_LEADERBOARD,
@@ -46,7 +42,6 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
   const [showAbacusWidget, setShowAbacusWidget] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   const { currentStreak, fetchStreak } = useStreakStore();
 
   // Fetch streak when component mounts
