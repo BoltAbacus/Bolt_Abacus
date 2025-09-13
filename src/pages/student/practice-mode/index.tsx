@@ -56,7 +56,7 @@ const StudentPracticePage: FC<StudentPracticePageProps> = () => {
             </>
           ) : (
             <div className="flex-1 pt-4">
-              <SeoComponent title="Practice Page" />
+              <SeoComponent title="Solo Training Ground" />
               <PracticeSection />
             </div>
           )}

@@ -1,29 +1,38 @@
-import { FC, useMemo, useState, useEffect } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
+import { useAbacusStore } from '@store/abacusStore';
 
 export interface AbacusWidgetProps {
   onClose: () => void;
 }
 
 const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
-  const ROD_COUNT = 13;
   const FRAME_HEIGHT = 260;
   const FRAME_WIDTH = 520;
-  const BEAM_Y = 105;
+  const BEAM_Y = 85;
   const BEAD_SIZE = 28;
   const ROD_WIDTH = 3;
   const BEAD_SPACING = 30;
+  
+  // Minimum size to prevent bead collision
+  const MIN_WIDTH = 400;
+  const MIN_HEIGHT = 300;
 
-  const initialRods = useMemo(
-    () =>
-      Array.from({ length: ROD_COUNT }, (_, rodIndex) => ({
-        rodIndex,
-        upperBead: { isActive: false },
-        lowerBeads: { count: 0 },
-      })),
-    []
-  );
-
-  const [abacusState, setAbacusState] = useState(initialRods);
+  const { 
+    abacusData, 
+    setAbacusData, 
+    resetAbacus, 
+    position, 
+    setPosition, 
+    size, 
+    setSize 
+  } = useAbacusStore();
+  
+  // Dragging state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   // ESC key handler
   useEffect(() => {
@@ -37,19 +46,62 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
     return () => document.removeEventListener('keydown', handleEscKey);
   }, [onClose]);
 
-  const resetAbacus = () => {
-    setAbacusState(initialRods);
+  // Drag functionality
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
+        
+        // Keep widget within viewport bounds
+        const maxX = window.innerWidth - size.width;
+        const maxY = window.innerHeight - size.height;
+        
+        setPosition({
+          x: Math.max(0, Math.min(newX, maxX)),
+          y: Math.max(0, Math.min(newY, maxY))
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, size]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (headerRef.current && headerRef.current.contains(e.target as Node)) {
+      setIsDragging(true);
+      setDragOffset({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
   };
 
   const toggleUpperBead = (rodIndex: number) => {
-    setAbacusState((prev) =>
-      prev.map((rod, i) => (i === rodIndex ? { ...rod, upperBead: { isActive: !rod.upperBead.isActive } } : rod))
+    setAbacusData(
+      abacusData.map((rod, i) => 
+        i === rodIndex 
+          ? { ...rod, upperBead: { isActive: !rod.upperBead.isActive } } 
+          : rod
+      )
     );
   };
 
   const toggleLowerBeads = (rodIndex: number, targetCount: number) => {
-    setAbacusState((prev) =>
-      prev.map((rod, i) => {
+    setAbacusData(
+      abacusData.map((rod, i) => {
         if (i !== rodIndex) return rod;
         const newCount = rod.lowerBeads.count === targetCount ? 0 : targetCount;
         return { ...rod, lowerBeads: { count: newCount } };
@@ -59,10 +111,24 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[120] bg-[#1c1c1e] text-white rounded-2xl shadow-2xl resize overflow-auto"
-      style={{ width: FRAME_WIDTH + 40, height: FRAME_HEIGHT + 120, minWidth: 360, minHeight: 260, border: 'none' }}
+      ref={widgetRef}
+      className="fixed z-[120] bg-[#1c1c1e] text-white rounded-2xl shadow-2xl overflow-hidden select-none"
+      style={{ 
+        left: position.x, 
+        top: position.y, 
+        width: size.width, 
+        height: size.height, 
+        minWidth: MIN_WIDTH, 
+        minHeight: MIN_HEIGHT, 
+        border: 'none',
+        cursor: isDragging ? 'grabbing' : 'default'
+      }}
+      onMouseDown={handleMouseDown}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2c2c2e]">
+      <div 
+        ref={headerRef}
+        className="flex items-center justify-between px-3 py-2 border-b border-[#2c2c2e] cursor-grab active:cursor-grabbing"
+      >
         <div className="text-sm font-semibold">
           <span className="mr-1">🧮</span> Abacus
         </div>
@@ -86,26 +152,31 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
         </div>
       </div>
 
-      <div className="p-3 pb-8">
+      <div className="p-3 pb-8 h-full overflow-auto flex items-center justify-center">
         <div
           className="relative mx-auto rounded-2xl shadow-2xl"
-          style={{ height: FRAME_HEIGHT, width: FRAME_WIDTH, background: '#1c1c1e', border: '2px solid #FFD700' }}
+          style={{ 
+            height: Math.min(FRAME_HEIGHT, size.height - 100), 
+            width: Math.min(FRAME_WIDTH, size.width - 24), 
+            background: '#1c1c1e', 
+            border: '2px solid #FFD700' 
+          }}
         >
           {/* Horizontal beam */}
           <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: BEAM_Y, height: 9, zIndex: 10 }}>
-            <div
-              className="w-[92%] h-2.5 rounded-full shadow-lg"
-              style={{
-                background: '#FFD700',
-                border: 'none',
-                boxShadow: '0 1px 6px rgba(0,0,0,0.3)',
-              }}
-            />
+             <div
+               className="w-[96%] h-2.5 rounded-full shadow-lg"
+               style={{
+                 background: '#FFD700',
+                 border: 'none',
+                 boxShadow: '0 1px 6px rgba(0,0,0,0.3)',
+               }}
+             />
           </div>
 
           {/* Rods and beads */}
           <div className="absolute left-0 top-0 w-full h-full flex justify-between px-10" style={{ zIndex: 5 }}>
-            {abacusState.map((rod, rodIndex) => (
+            {abacusData.map((rod, rodIndex) => (
               <div key={rodIndex} className="relative flex flex-col items-center" style={{ height: FRAME_HEIGHT, width: BEAD_SIZE + 8 }}>
                 {/* Rod */}
                 <div
@@ -123,7 +194,7 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
                 {/* Upper bead */}
                 <div
-                  className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
+                  className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center ${
                     rod.upperBead.isActive
                       ? 'bg-[#FFD700]'
                       : 'bg-[#48484a] hover:bg-[#636366]'
@@ -156,7 +227,7 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
                   return (
                     <div
                       key={beadIndex}
-                      className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
+                      className={`absolute w-7 h-7 cursor-pointer shadow-lg flex items-center justify-center ${
                         isActive
                           ? 'bg-[#FFD700]'
                           : 'bg-[#48484a] hover:bg-[#636366]'
@@ -182,6 +253,38 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
           </div>
         </div>
       </div>
+      
+      {/* Resize handles */}
+      <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize" 
+           style={{ 
+             background: 'linear-gradient(-45deg, transparent 0%, transparent 30%, #FFD700 30%, #FFD700 40%, transparent 40%, transparent 70%, #FFD700 70%, #FFD700 100%)',
+             borderBottomRightRadius: '8px'
+           }}
+           onMouseDown={(e) => {
+             e.preventDefault();
+             e.stopPropagation();
+             
+             const startX = e.clientX;
+             const startY = e.clientY;
+             const startWidth = size.width;
+             const startHeight = size.height;
+             
+             const handleMouseMove = (e: MouseEvent) => {
+               const newWidth = Math.max(MIN_WIDTH, startWidth + (e.clientX - startX));
+               const newHeight = Math.max(MIN_HEIGHT, startHeight + (e.clientY - startY));
+               
+               setSize({ width: newWidth, height: newHeight });
+             };
+             
+             const handleMouseUp = () => {
+               document.removeEventListener('mousemove', handleMouseMove);
+               document.removeEventListener('mouseup', handleMouseUp);
+             };
+             
+             document.addEventListener('mousemove', handleMouseMove);
+             document.addEventListener('mouseup', handleMouseUp);
+           }}
+      />
     </div>
   );
 };

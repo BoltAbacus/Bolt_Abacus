@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStudentProgressRequest } from '@services/teacher';
 import type { GetStudentProgressResponse, LevelProgress } from '@interfaces/apis/teacher';
 import { getUserStreak, getStreakByUserId } from '@services/streak';
+import { getLevelName } from '@helpers/levelNames';
 
 export interface LeaderboardStudent {
   rank: number;
@@ -180,7 +181,7 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-[#1b1b1b] border border-gold/40">Rank #{student.rank}</div>
             </div>
             <div className="mt-4 text-center">
-              <div className="text-lg font-bold text-gold">Level {student.level}</div>
+              <div className="text-lg font-bold text-gold">{getLevelName(student.level)}</div>
             </div>
           </div>
 

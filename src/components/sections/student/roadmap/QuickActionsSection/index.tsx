@@ -47,7 +47,7 @@ const QuickActionsSection: FC<QuickActionsSectionProps> = ({
         {/* Continue Learning */}
         <div className="text-white p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,186,8,0.4),0_0_40px_rgba(255,186,8,0.2),0_0_60px_rgba(255,186,8,0.1)] hover:shadow-gold/30 text-center" style={{ backgroundColor: '#161618' }}>
           <h3 className="font-semibold mb-2" style={{ color: '#ffffff' }}>Continue Learning</h3>
-          <p className="text-sm mb-4" style={{ color: '#818181' }}>Level {currentLevel} • Class {currentClass}</p>
+          <p className="text-sm mb-4" style={{ color: '#818181' }}>Realm {currentLevel}, Class {currentClass}</p>
           <Link
             to={`${STUDENT_LEVEL}/${currentLevel}`}
             className="inline-block text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,186,8,0.3)]"

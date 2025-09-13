@@ -6,6 +6,11 @@ import { useAuthStore } from '@store/authStore';
 import { useExperienceStore } from '@store/experienceStore';
 import { submitPVPGameResult, startPVPGame, getPVPRoomDetails, getPVPGameQuestions, getPVPGameResult } from '@services/pvp';
 import { logActivity } from '@helpers/activity';
+import { generatePvPQuestions } from '@helpers/questionBuilder';
+
+// Import practice mode components
+import QuizBox from '@components/organisms/QuizBox';
+import FlashCardBox from '@components/organisms/FlashCardBox';
 
 interface Question {
   question_id: number;
@@ -19,6 +24,27 @@ interface GameData {
   questions: Question[];
   total_questions: number;
   time_per_question: number;
+  game_mode?: string;
+  operation?: string;
+  room_settings?: {
+    flashcard_speed?: number;
+    // Practice mode settings
+    numberOfDigitsLeft?: number;
+    numberOfDigitsRight?: number;
+    isZigzag?: boolean;
+    numberOfRows?: number;
+    includeSubtraction?: boolean;
+    persistNumberOfDigits?: boolean;
+    includeDecimals?: boolean;
+    audioMode?: boolean;
+    audioPace?: string;
+    showQuestion?: boolean;
+  };
+}
+
+interface FlashCardState {
+  currentStep: 'operand1' | 'operator' | 'operand2' | 'input';
+  flashCardSpeed: number;
 }
 
 const StudentPvPGamePage: FC = () => {
@@ -39,6 +65,12 @@ const StudentPvPGamePage: FC = () => {
   const [loading, setLoading] = useState(false);
   const [waitingForOthers, setWaitingForOthers] = useState(false);
   const [gameResult, setGameResult] = useState<any>(null);
+  
+  // Flashcard state
+  const [flashCardState, setFlashCardState] = useState<FlashCardState>({
+    currentStep: 'operand1',
+    flashCardSpeed: 5000 // Default 5 seconds
+  });
 
   const currentQuestion = gameData?.questions[currentQuestionIndex];
   
@@ -130,7 +162,22 @@ const StudentPvPGamePage: FC = () => {
                 const gameData: GameData = {
                   questions: response.data.data.questions,
                   total_questions: response.data.data.total_questions,
-                  time_per_question: response.data.data.time_per_question
+                  time_per_question: response.data.data.time_per_question,
+                  game_mode: response.data.data.game_mode || 'flashcards',
+                  operation: response.data.data.operation || 'addition',
+                  room_settings: {
+                    // Include practice mode settings from room data
+                    numberOfDigitsLeft: roomData.numberOfDigitsLeft,
+                    numberOfDigitsRight: roomData.numberOfDigitsRight,
+                    isZigzag: roomData.isZigzag,
+                    numberOfRows: roomData.numberOfRows,
+                    includeSubtraction: roomData.includeSubtraction,
+                    persistNumberOfDigits: roomData.persistNumberOfDigits,
+                    includeDecimals: roomData.includeDecimals,
+                    audioMode: roomData.audioMode,
+                    audioPace: roomData.audioPace,
+                    showQuestion: roomData.showQuestion
+                  }
                 };
                 
                 console.log('Setting game data:', gameData);
@@ -222,6 +269,10 @@ const StudentPvPGamePage: FC = () => {
     console.log('Fetching game questions for participant...');
     
     try {
+      // First get room details to access practice mode settings
+      const roomResponse = await getPVPRoomDetails(roomId, authToken);
+      const roomData = roomResponse.data.success ? roomResponse.data.data : {};
+      
       const response = await getPVPGameQuestions(roomId, authToken);
       console.log('Game questions response:', response.data);
       
@@ -229,7 +280,22 @@ const StudentPvPGamePage: FC = () => {
         const gameData: GameData = {
           questions: response.data.data.questions,
           total_questions: response.data.data.total_questions,
-          time_per_question: response.data.data.time_per_question
+          time_per_question: response.data.data.time_per_question,
+          game_mode: response.data.data.game_mode || 'flashcards',
+          operation: response.data.data.operation || 'addition',
+          room_settings: {
+            // Include practice mode settings from room data
+            numberOfDigitsLeft: roomData.numberOfDigitsLeft,
+            numberOfDigitsRight: roomData.numberOfDigitsRight,
+            isZigzag: roomData.isZigzag,
+            numberOfRows: roomData.numberOfRows,
+            includeSubtraction: roomData.includeSubtraction,
+            persistNumberOfDigits: roomData.persistNumberOfDigits,
+            includeDecimals: roomData.includeDecimals,
+            audioMode: roomData.audioMode,
+            audioPace: roomData.audioPace,
+            showQuestion: roomData.showQuestion
+          }
         };
         
         console.log('Setting participant game data:', gameData);
@@ -239,30 +305,38 @@ const StudentPvPGamePage: FC = () => {
         setCountdown(3);
       } else {
         console.log('Failed to get game questions:', response.data);
-        // Use fallback mock data
-        console.log('Using fallback mock data for participant');
-        const mockGameData: GameData = {
-          questions: [
-            {
-              question_id: 1,
-              operands: [5, 3, 2, 1, 4],
-              operator: '+',
-              correct_answer: 15,
-              question_type: 'basic'
-            },
-            {
-              question_id: 2,
-              operands: [10, 2, 1, 5, 3],
-              operator: '-',
-              correct_answer: 9,
-              question_type: 'basic'
-            }
-          ],
-          total_questions: 2,
-          time_per_question: 30
+        // Use fallback question generation with practice mode settings
+        console.log('Using fallback question generation for participant');
+        
+        // Get room settings from room data (if available) or use defaults
+        const roomSettings = gameData?.room_settings || {};
+        const operation = gameData?.operation || 'addition';
+        const numberOfQuestions = gameData?.total_questions || 10;
+        const timePerQuestion = gameData?.time_per_question || 30;
+        
+        // Generate questions using practice mode settings
+        const generatedQuestions = generatePvPQuestions(
+          operation,
+          roomSettings.numberOfDigitsLeft || 1,
+          roomSettings.numberOfDigitsRight || 1,
+          numberOfQuestions,
+          roomSettings.numberOfRows || 2,
+          roomSettings.isZigzag || false,
+          roomSettings.includeSubtraction || false,
+          roomSettings.persistNumberOfDigits || false,
+          roomSettings.includeDecimals || false
+        );
+        
+        const fallbackGameData: GameData = {
+          questions: generatedQuestions,
+          total_questions: numberOfQuestions,
+          time_per_question: timePerQuestion,
+          game_mode: gameData?.game_mode || 'flashcards',
+          operation: operation,
+          room_settings: roomSettings
         };
         
-        setGameData(mockGameData);
+        setGameData(fallbackGameData);
         setCurrentQuestionIndex(0);
         setCountdown(3);
       }
@@ -270,30 +344,38 @@ const StudentPvPGamePage: FC = () => {
       console.error('Error fetching game data for participant:', err);
       console.error('Error details:', err.response?.data);
       
-      // Use fallback mock data
-      console.log('Using fallback mock data for participant due to error');
-      const mockGameData: GameData = {
-        questions: [
-          {
-            question_id: 1,
-            operands: [5, 3, 2, 1, 4],
-            operator: '+',
-            correct_answer: 15,
-            question_type: 'basic'
-          },
-          {
-            question_id: 2,
-            operands: [10, 2, 1, 5, 3],
-            operator: '-',
-            correct_answer: 9,
-            question_type: 'basic'
-          }
-        ],
-        total_questions: 2,
-        time_per_question: 30
+      // Use fallback question generation with practice mode settings
+      console.log('Using fallback question generation for participant due to error');
+      
+      // Get room settings from room data (if available) or use defaults
+      const roomSettings = gameData?.room_settings || {};
+      const operation = gameData?.operation || 'addition';
+      const numberOfQuestions = gameData?.total_questions || 10;
+      const timePerQuestion = gameData?.time_per_question || 30;
+      
+      // Generate questions using practice mode settings
+      const generatedQuestions = generatePvPQuestions(
+        operation,
+        roomSettings.numberOfDigitsLeft || 1,
+        roomSettings.numberOfDigitsRight || 1,
+        numberOfQuestions,
+        roomSettings.numberOfRows || 2,
+        roomSettings.isZigzag || false,
+        roomSettings.includeSubtraction || false,
+        roomSettings.persistNumberOfDigits || false,
+        roomSettings.includeDecimals || false
+      );
+      
+      const fallbackGameData: GameData = {
+        questions: generatedQuestions,
+        total_questions: numberOfQuestions,
+        time_per_question: timePerQuestion,
+        game_mode: gameData?.game_mode || 'flashcards',
+        operation: operation,
+        room_settings: roomSettings
       };
       
-      setGameData(mockGameData);
+      setGameData(fallbackGameData);
       setCurrentQuestionIndex(0);
       setCountdown(3);
     }
@@ -331,14 +413,69 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
+  // Flashcard logic - handle step progression
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded) {
+      // Reset flashcard state for new question
+      // Use flashcard_speed from room settings, not time_per_question
+      const flashcardSpeed = gameData.room_settings?.flashcard_speed || 5; // Default 5 seconds
+      setFlashCardState({
+        currentStep: 'operand1',
+        flashCardSpeed: flashcardSpeed * 1000 // Convert to milliseconds
+      });
+    }
+  }, [currentQuestion, gameData?.game_mode, gameEnded]);
+
+  // Flashcard timing effect - progress through steps
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded && flashCardState.currentStep !== 'input') {
+      const timer = setTimeout(() => {
+        setFlashCardState(prev => {
+          switch (prev.currentStep) {
+            case 'operand1':
+              return { ...prev, currentStep: 'operand2' };
+            case 'operand2':
+              return { ...prev, currentStep: 'input' };
+            default:
+              return prev;
+          }
+        });
+      }, flashCardState.flashCardSpeed);
+
+      return () => clearTimeout(timer);
+    }
+  }, [flashCardState.currentStep, currentQuestion, gameData?.game_mode, gameEnded, flashCardState.flashCardSpeed]);
+
+  // Auto-advance for flashcards when time runs out
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && flashCardState.currentStep === 'input' && timeLeft === 0 && !gameEnded && currentQuestion) {
+      console.log('Flashcard time up, auto-submitting');
+      handleAnswerSubmit();
+    }
+  }, [gameData?.game_mode, flashCardState.currentStep, timeLeft, gameEnded, currentQuestion]);
+
   const handleAnswerSubmit = async () => {
-    if (!roomId || !authToken || !currentQuestion || !userAnswer.trim()) return;
+    if (!roomId || !authToken || !currentQuestion) return;
+    
+    // For flashcards, allow empty answers (score 0)
+    if (gameData?.game_mode === 'flashcards' && !userAnswer.trim()) {
+      console.log('Flashcard empty answer - scoring 0');
+    } else if (!userAnswer.trim()) {
+      return; // For other modes, require an answer
+    }
     
     setLoading(true);
     try {
-      const answer = parseFloat(userAnswer.trim());
-      const isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
+      let isCorrect = false;
       const timeTaken = gameData?.time_per_question - timeLeft || 0;
+      
+      if (userAnswer.trim()) {
+        const answer = parseFloat(userAnswer.trim());
+        isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
+      } else {
+        // Empty answer for flashcards - score 0
+        isCorrect = false;
+      }
       
       if (isCorrect) {
         setScore(score + 10); // 10 points per correct answer
@@ -616,102 +753,136 @@ const StudentPvPGamePage: FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="px-4 pt-4 tablet:p-6 desktop:px-12 space-y-6 min-h-screen">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000000' }}>
+      <div className="px-4 tablet:p-6 desktop:px-12 space-y-6 w-full max-w-4xl" style={{ backgroundColor: '#000000' }}>
         {/* Game Header */}
-        <div className="rounded-3xl p-6 border-2 border-white">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/10 text-white px-4 py-2 rounded-full font-bold text-lg border border-white">
-                {score}
+        <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-gold text-black px-4 py-2 rounded-full font-bold text-lg">
+                  {score}
+                </div>
+                <div className="text-white font-semibold">
+                  Question {currentQuestionIndex + 1} of {gameData?.total_questions}
+                </div>
               </div>
-              <div className="text-white font-semibold">
-                Question {currentQuestionIndex + 1} of {gameData?.total_questions}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 text-white px-4 py-2 rounded-full border border-white">
+              <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
                 <AiOutlineClockCircle className="text-xl" />
                 <span className="text-2xl font-bold">{timeLeft}s</span>
               </div>
             </div>
-          
-          {/* Progress Bar */}
-          <div className="mt-4 w-full bg-white/20 rounded-full h-3">
-            <div 
-              className="bg-white h-3 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / (gameData?.total_questions || 1)) * 100}%` }}
-            ></div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-700 rounded-full h-3">
+              <div 
+                className="bg-gold h-3 rounded-full transition-all duration-300"
+                style={{ width: `${((currentQuestionIndex + 1) / (gameData?.total_questions || 1)) * 100}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 
-        {/* Question Card */}
-        <div className="rounded-3xl p-8 border-2 border-white">
-          <div className="text-center">
-            {/* Math Problem Display */}
-            <div className="flex items-center justify-center gap-8 mb-10">
-              {/* Left side - Operands stacked vertically */}
-              <div className="flex flex-col items-end">
-                {currentQuestion?.operands.map((operand, index) => (
-                  <div key={index} className="text-6xl md:text-7xl font-extrabold text-white mb-2 text-right">
-                    {operand}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Operator */}
-              <div className="text-6xl md:text-7xl font-extrabold text-white">
-                {currentQuestion?.operator}
-              </div>
-              
-              {/* Equals sign */}
-              <div className="text-6xl md:text-7xl font-extrabold text-white">
-                =
-              </div>
-              
-              {/* Answer input */}
-              <div>
-                <input
-                  type="number"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAnswerSubmit();
-                    }
-                  }}
-                  className="w-32 h-20 text-4xl font-extrabold text-center bg-transparent border-2 border-white rounded-lg text-white focus:outline-none focus:border-gold"
-                  placeholder="?"
-                  autoFocus
-                />
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
+        {/* Question Card - Use Practice Mode Components */}
+        {gameData?.game_mode === 'flashcards' ? (
+          <FlashCardBox
+            speed={gameData?.room_settings?.flashcard_speed || 5000}
+            quizQuestion={{
+              question: {
+                numbers: currentQuestion?.operands || [],
+                operator: currentQuestion?.operator || '+'
+              },
+              correct_answer: currentQuestion?.correct_answer || 0
+            }}
+            answer={userAnswer}
+            setAnswer={setUserAnswer}
+            setDisabled={() => {}}
+            audioMode={gameData?.room_settings?.audioMode || false}
+            showQuestion={gameData?.room_settings?.showQuestion !== false}
+            audioPace={gameData?.room_settings?.audioPace || 'normal'}
+          />
+        ) : (
+          <QuizBox
+            quizQuestion={{
+              question: {
+                numbers: currentQuestion?.operands || [],
+                operator: currentQuestion?.operator || '+'
+              },
+              correct_answer: currentQuestion?.correct_answer || 0
+            }}
+            answer={userAnswer}
+            setAnswer={setUserAnswer}
+            audioMode={gameData?.room_settings?.audioMode || false}
+            showQuestion={gameData?.room_settings?.showQuestion !== false}
+            audioPace={gameData?.room_settings?.audioPace || 'normal'}
+          />
+        )}
+
+        {/* Action Buttons */}
+        <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+          <div className="relative z-10">
             <div className="flex justify-center gap-4">
-              <button
-                onClick={() => {
-                  setUserAnswer('');
-                  // Move to next question without submitting
-                  if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
-                    setCurrentQuestionIndex(currentQuestionIndex + 1);
-                    setTimeLeft(gameData?.time_per_question || 30);
-                  } else {
-                    handleAnswerSubmit();
-                  }
-                }}
-                disabled={loading}
-                className="bg-gray-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 disabled:opacity-50"
-              >
-                Skip
-              </button>
-              
-              <button
-                onClick={handleAnswerSubmit}
-                disabled={loading || !userAnswer.trim()}
-                className="bg-gold text-black px-8 py-3 rounded-xl font-bold text-lg hover:bg-lightGold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Submitting...' : 'Next'}
-              </button>
+              {gameData?.game_mode === 'flashcards' ? (
+                /* Flashcard Mode Buttons - Always show */
+                <>
+                  <button
+                    onClick={() => {
+                      setUserAnswer('');
+                      // Move to next question without submitting (skip with 0 score)
+                      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                        setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        setTimeLeft(gameData?.time_per_question || 30);
+                      } else {
+                        handleAnswerSubmit();
+                      }
+                    }}
+                    disabled={loading}
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50"
+                    style={{ backgroundColor: '#212124', color: '#ffffff' }}
+                  >
+                    Skip
+                  </button>
+                  
+                  <button
+                    onClick={handleAnswerSubmit}
+                    disabled={loading || !userAnswer.trim()}
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: '#ffba08', color: '#000000' }}
+                  >
+                    {loading ? 'Submitting...' : 'Next'}
+                  </button>
+                </>
+              ) : (
+                /* Regular Mode Buttons */
+                <>
+                  <button
+                    onClick={() => {
+                      setUserAnswer('');
+                      // Move to next question without submitting
+                      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                        setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        setTimeLeft(gameData?.time_per_question || 30);
+                      } else {
+                        handleAnswerSubmit();
+                      }
+                    }}
+                    disabled={loading}
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50"
+                    style={{ backgroundColor: '#212124', color: '#ffffff' }}
+                  >
+                    Skip
+                  </button>
+                  
+                  <button
+                    onClick={handleAnswerSubmit}
+                    disabled={loading || !userAnswer.trim()}
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: '#ffba08', color: '#000000' }}
+                  >
+                    {loading ? 'Submitting...' : 'Next'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -720,4 +891,4 @@ const StudentPvPGamePage: FC = () => {
   );
 };
 
-export default StudentPvPGamePage;
+export default StudentPvPGamePage;  

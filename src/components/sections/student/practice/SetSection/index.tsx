@@ -171,6 +171,32 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
   }, [isTimerRunning, totalSeconds]);
 
   const handleStartQuiz = async () => {
+    // Save practice mode settings to localStorage
+    const practiceSettings = {
+      numberOfDigitsLeft,
+      numberOfDigitsRight,
+      isZigzag,
+      numberOfRows,
+      includeSubtraction,
+      persistNumberOfDigits,
+      includeDecimals,
+      audioMode,
+      audioPace,
+      showQuestion,
+      operation,
+      game_mode: 'set',
+      number_of_digits: numberOfDigitsLeft,
+      time_per_question: timeLimit * 60, // Convert minutes to seconds
+      number_of_questions: numberOfQuestions,
+      difficulty_level: 'medium'
+    };
+    
+    try {
+      localStorage.setItem('practiceModeSettings', JSON.stringify(practiceSettings));
+    } catch (error) {
+      console.log('Error saving practice mode settings:', error);
+    }
+
     setLoading(true);
     const questions = await generatePracticeQuestions(
       operation,

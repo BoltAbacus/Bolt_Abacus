@@ -3,17 +3,19 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   AiOutlineMenu, 
-  AiOutlineClose, 
   AiOutlineDashboard,
   AiOutlineBarChart,
   AiOutlineFire,
-  AiOutlineVideoCamera,
   AiOutlineHistory,
   AiOutlineCalculator,
   AiOutlineTrophy,
   AiOutlineTeam,
-  AiOutlineBook
+  AiOutlineBook,
+  AiOutlineVideoCamera,
+  AiOutlineLogout,
+  AiOutlineClose,
 } from 'react-icons/ai';
+import { MdOutlineMap } from 'react-icons/md';
 import AbacusWidget from '@components/organisms/AbacusWidget';
 
 import BrandLogo from '@components/atoms/BrandLogo';
@@ -21,6 +23,7 @@ import ProfileIcon from '@components/atoms/ProfileIcon';
 
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
+import { useAbacusStore } from '@store/abacusStore';
 import {
   STUDENT_DASHBOARD,
   STUDENT_PROGRESS,
@@ -41,15 +44,44 @@ export interface LeftNavigationProps {
 const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showAbacusWidget, setShowAbacusWidget] = useState(false);
+  const [userManuallyToggled, setUserManuallyToggled] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const { currentStreak, fetchStreak } = useStreakStore();
+  const { isOpen: showAbacusWidget, openAbacus, closeAbacus } = useAbacusStore();
 
   // Fetch streak when component mounts
   useEffect(() => {
     fetchStreak();
   }, [fetchStreak]);
+
+  // Auto-collapse sidebar on quiz/test/practice pages (only if user hasn't manually toggled)
+  useEffect(() => {
+    const isQuizTestOrPracticePage = location.pathname.includes('/quiz/') || 
+                                    location.pathname.includes('/test/') || 
+                                    location.pathname.includes('/oral-test/') || 
+                                    location.pathname.includes('/final-test/') ||
+                                    location.pathname.includes('/practice/timed/') ||
+                                    location.pathname.includes('/practice/untimed/') ||
+                                    location.pathname.includes('/practice/set/') ||
+                                    location.pathname.includes('/practice/flashcards');
+    
+    if (isQuizTestOrPracticePage && !isCollapsed && !userManuallyToggled) {
+      // Auto-collapse when entering quiz/test/practice pages
+      setIsCollapsed(true);
+      onCollapseChange?.(true);
+    } else if (!isQuizTestOrPracticePage && isCollapsed && !userManuallyToggled) {
+      // Auto-expand when leaving quiz/test/practice pages
+      setIsCollapsed(false);
+      onCollapseChange?.(false);
+    }
+    
+    // Reset manual toggle flag when navigating away from quiz/test/practice pages
+    if (!isQuizTestOrPracticePage) {
+      setUserManuallyToggled(false);
+    }
+  }, [location.pathname, isCollapsed, onCollapseChange, userManuallyToggled]);
 
   const navigationItems = [
     {
@@ -58,9 +90,9 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       icon: AiOutlineDashboard,
     },
     {
-      name: 'Roadmap',
+      name: 'Path of Conquest',
       href: STUDENT_ROADMAP,
-      icon: AiOutlineBarChart,
+      icon: MdOutlineMap,
     },
     {
       name: 'Progress',
@@ -68,12 +100,12 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       icon: AiOutlineBarChart,
     },
     {
-      name: 'Practice',
+      name: 'Solo Training Ground',
       href: STUDENT_PRACTICE,
       icon: AiOutlineBook,
     },
     {
-      name: 'PvP Battles',
+      name: 'Epic Battle Ground',
       href: STUDENT_PVP,
       icon: AiOutlineTeam,
     },
@@ -83,7 +115,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       icon: AiOutlineCalculator,
     },
     {
-      name: 'Leaderboard',
+      name: 'Hall of Fame',
       href: STUDENT_LEADERBOARD,
       icon: AiOutlineTrophy,
     },
@@ -97,6 +129,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
     const newCollapsedState = !isCollapsed;
     setIsCollapsed(newCollapsedState);
     onCollapseChange?.(newCollapsedState);
+    setUserManuallyToggled(true); // Mark that user manually toggled
   };
 
   const handleMobileMenuToggle = () => {
@@ -126,155 +159,179 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       )}
 
       {/* Desktop Sidebar */}
-      <div className={`hidden tablet:block fixed left-0 top-0 h-full bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#212124]">
-          {!isCollapsed ? (
-            <div className="flex items-center space-x-2">
-              <BrandLogo link="/" />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <Link to="/">
-                <img
-                  src="/logo.png"
-                  alt="BoltAbacus logo"
-                  width={40}
-                  height={40}
-                  className="cursor-pointer"
-                />
-              </Link>
-            </div>
-          )}
+      {isCollapsed && (location.pathname.includes('/quiz/') || 
+                      location.pathname.includes('/test/') || 
+                      location.pathname.includes('/oral-test/') || 
+                      location.pathname.includes('/final-test/') ||
+                      location.pathname.includes('/practice/timed/') ||
+                      location.pathname.includes('/practice/untimed/') ||
+                      location.pathname.includes('/practice/set/') ||
+                      location.pathname.includes('/practice/flashcards')) ? (
+        // Show only floating hamburger icon on quiz/test pages
+        <div className="hidden tablet:block fixed top-4 left-4 z-50">
           <button
             onClick={handleCollapseToggle}
-            className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
+            className="p-3 rounded-lg bg-[#161618] text-white hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 border border-[#212124] shadow-lg"
           >
-            {isCollapsed ? <AiOutlineMenu size={20} /> : <AiOutlineClose size={20} />}
+            <AiOutlineMenu size={20} />
           </button>
         </div>
-
-        {/* User Info & Streak */}
-        <div className="p-4 border-b border-[#212124]">
-          {!isCollapsed && (
-            <Link
-              to={STUDENT_PROFILE_PAGE}
-              className="flex items-center space-x-3 mb-4 -ml-2 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
-            >
-              <ProfileIcon
-                text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
-              />
-              <div>
-                <p className="font-medium text-sm group-hover:text-[#000000]">
-                  {user?.name.first || ''} {user?.name.last || ''}
-                </p>
-                <p className="text-xs text-white group-hover:text-[#000000]">Student</p>
+      ) : (
+        // Show normal sidebar
+        <div className={`hidden tablet:block fixed left-0 top-0 h-full bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] ${
+          isCollapsed ? 'w-16' : 'w-64'
+        }`}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-[#212124]">
+            {!isCollapsed ? (
+              <div className="flex items-center space-x-2">
+                <BrandLogo link="/" />
               </div>
-            </Link>
-          )}
-          {isCollapsed && (
-            <Link
-              to={STUDENT_PROFILE_PAGE}
-              className="flex items-center justify-center mb-4 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
-            >
-              <ProfileIcon
-                text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
-              />
-            </Link>
-          )}
-          
-          {/* Streak and Join Class Section */}
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-            <div className="flex items-center justify-center w-8 h-8 bg-[#facb25] rounded-full relative shadow-lg">
-              <AiOutlineFire size={16} className="text-[#000000]" />
-              {isCollapsed && currentStreak > 0 && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  {currentStreak}
-                </div>
-              )}
-            </div>
-            {!isCollapsed && (
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  {currentStreak === 1 ? '1 Day Streak' : `${currentStreak} Days Streak`}
-                </p>
-                <p className="text-xs text-white">
-                  {currentStreak === 0 ? 'Start your streak!' : 'Keep it up!'}
-                </p>
+            ) : (
+              <div className="flex items-center justify-center w-full">
+                <Link to="/">
+                  <img
+                    src="/logo.png"
+                    alt="BoltAbacus logo"
+                    width={40}
+                    height={40}
+                    className="cursor-pointer"
+                  />
+                </Link>
               </div>
             )}
-            {!isCollapsed && classLink && (
-              <a 
-                href={classLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-[#facb25] hover:bg-[#facb25]/80 text-[#000000] text-xs font-medium py-1 px-2 rounded transition-all duration-200 flex items-center space-x-1 shadow-md"
-              >
-                <AiOutlineVideoCamera size={12} />
-                <span>Join</span>
-              </a>
+            <button
+              onClick={handleCollapseToggle}
+              className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
+            >
+              {isCollapsed ? <AiOutlineMenu size={20} /> : <AiOutlineClose size={20} />}
+            </button>
+          </div>
+
+          {/* User Info & Streak */}
+          <div className="p-4 border-b border-[#212124]">
+            {!isCollapsed && (
+              <div className="flex items-center justify-between mb-4 -ml-2 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group">
+                <Link
+                  to={STUDENT_PROFILE_PAGE}
+                  className="flex items-center space-x-3 cursor-pointer flex-1"
+                >
+                  <ProfileIcon
+                    text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
+                  />
+                  <div>
+                    <p className="font-medium text-sm group-hover:text-[#000000]">
+                      {user?.name.first || ''} {user?.name.last || ''}
+                    </p>
+                    <p className="text-xs text-white group-hover:text-[#000000]">Student</p>
+                  </div>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-md hover:bg-[#e6b422] transition-all duration-200"
+                  title="Logout"
+                >
+                  <AiOutlineLogout size={16} className="text-white group-hover:text-[#000000]" />
+                </button>
+              </div>
+            )}
+            
+            {/* Streak Display with Join Button */}
+            {!isCollapsed ? (
+              <div className="flex items-center justify-between p-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-[#facb25] rounded-full flex items-center justify-center">
+                    <AiOutlineFire className="text-[#000000]" size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {currentStreak || 0} Day Streak
+                    </p>
+                    <p className="text-xs text-[#818181]"></p>
+                  </div>
+                </div>
+                <button className="bg-[#facb25] text-[#000000] px-3 py-1.5 rounded-lg font-medium hover:bg-[#e6b422] transition-all duration-200 flex items-center space-x-1">
+                  <AiOutlineVideoCamera size={14} />
+                  <span className="text-sm">Join</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-center p-2">
+                <div className="w-8 h-8 bg-[#facb25] rounded-full flex items-center justify-center">
+                  <AiOutlineFire className="text-[#000000]" size={16} />
+                </div>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <li key={item.name} className="relative">
-                  <Link
-                    to={item.href}
-                    className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 group ${
-                      isActive(item.href)
-                        ? 'bg-[#facb25] text-[#000000] shadow-lg'
-                        : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
-                    }`}
-                  >
-                    <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
-                    {!isCollapsed && (
-                      <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
-                    )}
-                  </Link>
-                  {!isCollapsed && item.name === 'Virtual Abacus' && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowAbacusWidget(true);
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-[#212124] text-white bg-[#212124] hover:bg-[#facb25] hover:text-[#000000]"
-                      title="Open mini abacus"
+          {/* Navigation */}
+          <nav className="flex-1 p-4">
+            <ul className="space-y-1.5">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.name} className="relative">
+                    <Link
+                      to={item.href}
+                      className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 group ${
+                        isActive(item.href)
+                          ? 'bg-[#facb25] text-[#000000] shadow-lg'
+                          : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
+                      }`}
                     >
-                      Mini
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                      <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
+                      {!isCollapsed && (
+                        <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
+                      )}
+                    </Link>
+                    {!isCollapsed && item.name === 'Virtual Abacus' && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openAbacus();
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-[#212124] text-white bg-[#212124] hover:bg-[#facb25] hover:text-[#000000]"
+                        title="Open mini abacus"
+                      >
+                        Mini
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-[#212124]">
-          <ul className="space-y-2">
-            <li>
-              <Link
-                to={STUDENT_ARCHIVE}
-                className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
-              >
-                <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
-                {!isCollapsed && (
-                  <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
-                )}
-              </Link>
-            </li>
-          </ul>
+          {/* Bottom Actions */}
+          <div className="p-4 border-t border-[#212124]">
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  to={STUDENT_ARCHIVE}
+                  className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
+                >
+                  <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
+                  {!isCollapsed && (
+                    <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
+                  )}
+                </Link>
+              </li>
+              <li>
+                <button
+                  onClick={logout}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
+                >
+                  <AiOutlineLogout size={20} className="text-white group-hover:text-[#000000]" />
+                  {!isCollapsed && (
+                    <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Logout</span>
+                  )}
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile Menu */}
       <div className={`fixed left-0 top-0 h-full w-80 bg-[#161618] text-white transition-all duration-300 z-[60] tablet:hidden ${
@@ -296,7 +353,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           <Link
             to={STUDENT_PROFILE_PAGE}
             onClick={closeMobileMenu}
-            className="flex items-center space-x-3 mb-4 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group cursor-pointer"
+            className="flex items-center space-x-3 mb-4 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group"
           >
             <ProfileIcon
               text={(user?.name.first?.charAt(0) || '') + (user?.name.last?.charAt(0) || '')}
@@ -310,29 +367,14 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           </Link>
           
           {/* Mobile Streak */}
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-[#facb25] rounded-full relative shadow-lg">
-              <AiOutlineFire size={16} className="text-[#000000]" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">
-                {currentStreak === 1 ? '1 Day Streak' : `${currentStreak} Days Streak`}
+          <div className="flex items-center space-x-2 p-2 rounded-lg bg-[#212124]">
+            <AiOutlineFire className="text-[#facb25]" size={20} />
+            <div>
+              <p className="text-sm font-medium text-white">
+                {currentStreak || 0} Day Streak
               </p>
-              <p className="text-xs text-white">
-                {currentStreak === 0 ? 'Start your streak!' : 'Keep it up!'}
-              </p>
+              <p className="text-xs text-[#818181]"></p>
             </div>
-            {classLink && (
-              <a 
-                href={classLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-[#facb25] hover:bg-[#facb25]/80 text-[#000000] text-xs font-medium py-1 px-2 rounded transition-all duration-200 flex items-center space-x-1 shadow-md"
-              >
-                <AiOutlineVideoCamera size={12} />
-                <span>Join</span>
-              </a>
-            )}
           </div>
         </div>
 
@@ -379,11 +421,11 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       </div>
 
       {showAbacusWidget && createPortal(
-        <AbacusWidget onClose={() => setShowAbacusWidget(false)} />,
+        <AbacusWidget onClose={closeAbacus} />,
         document.body
       )}
     </>
   );
 };
 
-export default LeftNavigation; 
+export default LeftNavigation;

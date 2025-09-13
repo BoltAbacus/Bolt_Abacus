@@ -22,6 +22,17 @@ export interface PVPRoomSettings {
   topic_id?: number;
   difficulty?: string;
   operation?: string;
+  // Practice mode settings
+  numberOfDigitsLeft?: number;
+  numberOfDigitsRight?: number;
+  isZigzag?: boolean;
+  numberOfRows?: number;
+  includeSubtraction?: boolean;
+  persistNumberOfDigits?: boolean;
+  includeDecimals?: boolean;
+  audioMode?: boolean;
+  audioPace?: string;
+  showQuestion?: boolean;
 }
 
 export interface PVPRoom {
@@ -40,6 +51,17 @@ export interface PVPRoom {
   topic_id?: number;
   difficulty?: string;
   operation?: string;
+  // Practice mode settings
+  numberOfDigitsLeft?: number;
+  numberOfDigitsRight?: number;
+  isZigzag?: boolean;
+  numberOfRows?: number;
+  includeSubtraction?: boolean;
+  persistNumberOfDigits?: boolean;
+  includeDecimals?: boolean;
+  audioMode?: boolean;
+  audioPace?: string;
+  showQuestion?: boolean;
   status: 'waiting' | 'ready' | 'playing' | 'finished';
   created_at: string;
   players: PVPRoomPlayer[];

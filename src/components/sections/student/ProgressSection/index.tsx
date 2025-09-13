@@ -16,6 +16,7 @@ import { ACHIEVEMENTS } from '@constants/achievements';
 import { STUDENT_ROADMAP } from '@constants/routes';
 import { useAuthStore } from '@store/authStore';
 import { getAccuracyTrendRequest, getSpeedTrendRequest } from '@services/student';
+import { getLevelName, getTierName } from '@helpers/levelNames';
 
 import styles from './index.module.css';
 
@@ -494,62 +495,70 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
       {/* Progress Overview Dashboard (moved to top) */}
       <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4">
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-3 flex-1">
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center flex-shrink-0">
               <FaFire className="text-[#000000]" />
             </div>
-            <div>
+            <div className="flex-1 min-h-[60px] flex flex-col justify-center">
               <p className="text-2xl font-bold text-white">{currentLevelStats.levelProgress}%</p>
               <p className="text-sm text-white">Overall Progress</p>
               {currentLevelStats.currentLevel > 0 && (
-                <p className="text-xs text-[#818181]">for Level {currentLevelStats.currentLevel}</p>
+                <p className="text-xs text-[#818181]">in {getLevelName(currentLevelStats.currentLevel)}</p>
               )}
             </div>
           </div>
-          <ProgressBar percentage={currentLevelStats.levelProgress} type="blue" />
+          <div className="mt-auto">
+            <ProgressBar percentage={currentLevelStats.levelProgress} type="blue" />
+          </div>
         </div>
 
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-3 flex-1">
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center flex-shrink-0">
               <FaTrophy className="text-[#000000]" />
             </div>
-            <div>
+            <div className="flex-1 min-h-[60px] flex flex-col justify-center">
               <p className="text-2xl font-bold text-white">{progressStats.completedLevels}/{progressStats.totalLevels}</p>
-              <p className="text-sm text-white">Levels Completed</p>
+              <p className="text-sm text-white">Realms Mastered</p>
             </div>
           </div>
-          <ProgressBar percentage={(progressStats.completedLevels / progressStats.totalLevels) * 100} type="green" />
+          <div className="mt-auto">
+            <ProgressBar percentage={(progressStats.completedLevels / progressStats.totalLevels) * 100} type="green" />
+          </div>
         </div>
 
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-3 flex-1">
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center flex-shrink-0">
               <FaStar className="text-[#000000]" />
             </div>
-            <div>
+            <div className="flex-1 min-h-[60px] flex flex-col justify-center">
               <p className="text-2xl font-bold text-white">{currentLevelStats.levelAverageScore}%</p>
               <p className="text-sm text-white">Average Score</p>
               {currentLevelStats.currentLevel > 0 && (
-                <p className="text-xs text-[#818181]">for Level {currentLevelStats.currentLevel}</p>
+                <p className="text-xs text-[#818181]">in {getLevelName(currentLevelStats.currentLevel)}</p>
               )}
             </div>
           </div>
-          <ProgressBar percentage={currentLevelStats.levelAverageScore} type="yellow" />
+          <div className="mt-auto">
+            <ProgressBar percentage={currentLevelStats.levelAverageScore} type="yellow" />
+          </div>
         </div>
 
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center">
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-3 flex-1">
+            <div className="w-10 h-10 bg-[#facb25] rounded-full flex items-center justify-center flex-shrink-0">
               <FaMedal className="text-[#000000]" />
             </div>
-            <div>
+            <div className="flex-1 min-h-[60px] flex flex-col justify-center">
               <p className="text-2xl font-bold text-white">{progressStats.completedClasses}/{progressStats.totalClasses}</p>
-              <p className="text-sm text-white">Classes Completed</p>
+              <p className="text-sm text-white">Conquests Completed</p>
             </div>
           </div>
-          <ProgressBar percentage={(progressStats.completedClasses / progressStats.totalClasses) * 100} type="purple" />
+          <div className="mt-auto">
+            <ProgressBar percentage={(progressStats.completedClasses / progressStats.totalClasses) * 100} type="purple" />
+          </div>
         </div>
       </div>
 

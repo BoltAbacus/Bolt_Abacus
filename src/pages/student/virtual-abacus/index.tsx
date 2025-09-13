@@ -224,7 +224,7 @@ const VirtualAbacus: FC = () => {
 
                {/* Upper bead (Heaven bead) */}
                <div
-                 className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
+                 className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
                    rod.upperBead.isActive
                      ? 'bg-[#FFD700]'
                      : 'bg-[#48484a] hover:bg-[#636366]'
@@ -264,7 +264,7 @@ const VirtualAbacus: FC = () => {
                  return (
                    <div
                      key={beadIndex}
-                     className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center transition-all duration-300 ${
+                     className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
                        isActive
                          ? 'bg-[#FFD700]'
                          : 'bg-[#48484a] hover:bg-[#636366]'

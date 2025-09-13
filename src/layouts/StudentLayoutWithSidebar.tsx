@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import LeftNavigation from '@components/molecules/student/LeftNavigation';
 
@@ -16,11 +16,24 @@ const StudentLayoutWithSidebar: FC<StudentLayoutWithSidebarProps> = () => {
   const logout = useAuthStore((state) => state.logout);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [classLink, setClassLink] = useState<string>();
+  const location = useLocation();
+
+  // Check if we're on a quiz/test/practice page
+  const isQuizTestOrPracticePage = location.pathname.includes('/quiz/') || 
+                                  location.pathname.includes('/test/') || 
+                                  location.pathname.includes('/oral-test/') || 
+                                  location.pathname.includes('/final-test/') ||
+                                  location.pathname.includes('/practice/timed/') ||
+                                  location.pathname.includes('/practice/untimed/') ||
+                                  location.pathname.includes('/practice/set/') ||
+                                  location.pathname.includes('/practice/flashcards');
 
   // Create margin classes based on sidebar state
-  const marginClasses = isSidebarCollapsed 
-    ? 'tablet:ml-16 desktop:ml-16' 
-    : 'tablet:ml-64 desktop:ml-64';
+  const marginClasses = (isSidebarCollapsed && isQuizTestOrPracticePage) 
+    ? '' // No margin when collapsed to icon on quiz/test/practice pages
+    : isSidebarCollapsed 
+      ? 'tablet:ml-16 desktop:ml-16' 
+      : 'tablet:ml-64 desktop:ml-64';
 
   useEffect(() => {
     const getDashboardData = async () => {

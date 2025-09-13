@@ -100,13 +100,6 @@ const ProfileSection: FC<ProfileSectionProps> = ({ user }) => {
             </Link>
             <button
               type="button"
-              onClick={logout}
-              className="w-full px-3 py-2 font-semibold text-center rounded-lg text-md bg-gold disabled:bg-gold/30 text-black hover:shadow-golden transition-all duration-200"
-            >
-              Logout
-            </button>
-            <button
-              type="button"
               className="w-full px-3 py-2 font-semibold text-center rounded-lg text-md bg-gold disabled:bg-gold/30 text-black hover:shadow-golden transition-all duration-200"
               onClick={() => deleteAccount()}
               data-tooltip-id="unlock-class-tooltip"

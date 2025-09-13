@@ -8,8 +8,6 @@ import LoadingBox from '@components/organisms/LoadingBox';
 import DebugConsole from '@components/atoms/DebugConsole';
 import SpotlightCard from '@components/atoms/SpotlightCard';
 import TodoListSection from '@components/sections/student/dashboard/TodoListSection';
-import SessionsBar from '@components/atoms/SessionsBar';
-import BoltGoalsSection from '@components/sections/student/dashboard/BoltGoalsSection';
 import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid';
 import WeeklyStatsSection from '@components/sections/student/dashboard/WeeklyStatsSection';
 import SplitText from '@components/atoms/SplitText';
@@ -20,6 +18,7 @@ import JoinClassButton from '@components/atoms/JoinClassButton';
 
 import { getPracticeProgressRequest, getProgressRequest, dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
+import { getLevelName } from '@helpers/levelNames';
 import { useStreakStore } from '@store/streakStore';
 import { useExperienceStore } from '@store/experienceStore';
 import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
@@ -376,7 +375,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               <div className="space-y-4 tablet:space-y-6 bg-black min-h-screen">
                 {/* 🔝 HEADER AREA */}
                  <SpotlightCard className="text-white group" spotlightColor="rgba(255, 186, 8, 0.12)">
-                  {/* Top Row - Greeting with Join Class */}
+                  {/* Top Row - Greeting with Join Class and Stats */}
                   <div className="flex flex-col tablet:flex-row tablet:items-start tablet:justify-between mb-4 space-y-4 tablet:space-y-0">
                     <div className="flex-1">
                        <SplitText
@@ -396,8 +395,10 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                        <p className="text-sm text-[#818181] mb-3">
                          Ready to <span className="text-gold">bolt</span> ahead with your math skills today?
                        </p>
-                      {/* Stats under name */}
-                      <div className="flex flex-col tablet:flex-row tablet:items-center space-y-2 tablet:space-y-0 tablet:space-x-4">
+                    </div>
+                    <div className="flex flex-col tablet:flex-row tablet:items-center space-y-3 tablet:space-y-0 tablet:space-x-3">
+                      {/* Stats beside Join Class */}
+                      <div className="flex flex-col tablet:flex-row tablet:items-center space-y-2 tablet:space-y-0 tablet:space-x-3">
                          <span className="bg-[#212124] hover:bg-[#3a3a3d] group-hover:bg-[#2a2a2d] text-white font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105">
                           <span className="text-lg mr-1">⚡</span>
                           <CountUp 
@@ -412,35 +413,37 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                           <span>{currentStreak} Day Streak</span>
                         </span>
                       </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <JoinClassButton classLink={classLink!} />
+                      <div className="flex-shrink-0">
+                        <JoinClassButton classLink={classLink!} />
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Level/XP and Continue Learning - Full Width */}
-                   <div className="flex flex-col tablet:flex-row tablet:items-center space-y-4 tablet:space-y-0 tablet:space-x-3 bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl mb-6 relative overflow-hidden hover:scale-[1.01]">
-                    <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_left,rgba(107,114,128,0.10),transparent_42%)]"></div>
-                    
-                    <div className="relative z-10 flex items-center justify-center w-12 h-12 tablet:w-16 tablet:h-16 bg-[#2a2a2d] rounded-2xl hover:scale-110 hover:rotate-12 hover:bg-gold transition-all duration-300">
-                      <span className="text-xl tablet:text-2xl hover:scale-125 transition-transform duration-300">📚</span>
-                    </div>
-                    <div className="flex flex-col min-w-0 flex-1 relative z-10">
-                      <span className="text-lg tablet:text-xl font-bold text-gold mb-2">
-                        Class Level {currentLevel}
-                      </span>
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm text-white/80 font-semibold">Progress</span>
-                        <span className="text-sm font-bold text-gold">{currentLevelProgressPct}%</span>
+                  {/* Level/XP and Personal Goals - Side by Side Layout */}
+                  <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4 tablet:gap-6 mb-6">
+                    {/* Class Level Progress */}
+                    <div className="flex flex-col tablet:flex-row tablet:items-center space-y-4 tablet:space-y-0 tablet:space-x-3 bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
+                      <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_left,rgba(107,114,128,0.10),transparent_42%)]"></div>
+                      
+                      <div className="relative z-10 flex items-center justify-center w-12 h-12 tablet:w-16 tablet:h-16 bg-[#2a2a2d] rounded-2xl hover:scale-110 hover:rotate-12 hover:bg-gold transition-all duration-300">
+                        <span className="text-xl tablet:text-2xl hover:scale-125 transition-transform duration-300">📚</span>
                       </div>
-                                              {/* Enhanced Progress Bar */}
-                         <div className="w-full bg-[#0e0e0e]/50 rounded-full h-4 tablet:h-5 shadow-inner mb-3 relative overflow-hidden border border-gold/40 ring-1 ring-gold/20">
+                      <div className="flex flex-col min-w-0 flex-1 relative z-10">
+                        <span className="text-lg tablet:text-xl font-bold text-gold mb-2">
+                          {getLevelName(currentLevel)}, Conquest {dashboardData?.latestClass || 1}
+                        </span>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-sm text-white/80 font-semibold">Progress</span>
+                          <span className="text-sm font-bold text-gold">{currentLevelProgressPct}%</span>
+                        </div>
+                        {/* Enhanced Progress Bar */}
+                        <div className="w-full bg-[#0e0e0e]/50 rounded-full h-4 tablet:h-5 shadow-inner mb-3 relative overflow-hidden border border-gold/40 ring-1 ring-gold/20">
                           <div 
                             className="bg-gold h-4 tablet:h-5 rounded-full transition-all duration-700 shadow-[0_0_16px_rgba(255,186,8,0.30)] relative overflow-hidden"
                             style={{ width: `${currentLevelProgressPct}%` }}
                           />
                         </div>
-                                              <div className="flex flex-col tablet:flex-row tablet:justify-between tablet:items-center space-y-2 tablet:space-y-0">
+                        <div className="flex flex-col tablet:flex-row tablet:justify-between tablet:items-center space-y-2 tablet:space-y-0">
                           <span className="text-sm text-white/70 font-medium">
                             {currentLevelProgressPct}% completed
                           </span>
@@ -451,50 +454,23 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                             ⚡ Resume Learning
                           </Link>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Personal Goals */}
+                    <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
+                      <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_right,rgba(107,114,128,0.10),transparent_42%)]"></div>
+                      <div className="relative z-10">
+                        <TodoListSection />
+                      </div>
                     </div>
                   </div>
                 </SpotlightCard>
                 
                 {/* 🎯 WEEKLY GOALS moved to Progress tab */}
-
-                {/* 🧠 DASHBOARD OVERVIEW */}
-                <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
-                  <div className="relative z-10">
-                     <h2 className="text-xl font-bold mb-8 flex items-center text-white hover:text-gold transition-colors duration-300">
-                       <span className="mr-3 text-xl hover:scale-125 hover:rotate-12 transition-transform duration-300">🧠</span>
-                       Dashboard Overview
-                     </h2>
-                    
-                                         {/* Responsive Grid Layout */}
-                     <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-4 tablet:gap-6">
-                         <div className="bg-[#212124] hover:bg-[#2a2a2d] p-4 tablet:p-6 rounded-2xl transition-all duration-300 hover:scale-105 group relative overflow-hidden">
-                         <div className="relative z-10">
-                           <SessionsBar sessionsCompleted={dashboardData?.practiceStats?.recentSessions || 0} totalSessions={5} />
-                         </div>
-                       </div>
-                         <div className="bg-[#212124] hover:bg-[#2a2a2d] p-4 tablet:p-6 rounded-2xl transition-all duration-300 hover:scale-105 group relative overflow-hidden">
-                         <div className="relative z-10">
-                           <BoltGoalsSection 
-                             sessionsCompleted={dashboardData?.practiceStats?.recentSessions || 0}
-                             totalSessions={5}
-                           />
-                         </div>
-                       </div>
-                         <div className="bg-[#212124] hover:bg-[#2a2a2d] p-4 tablet:p-6 rounded-2xl transition-all duration-300 hover:scale-105 group relative overflow-hidden tablet:col-span-2 desktop:col-span-1">
-                         <div className="relative z-10">
-                           <TodoListSection />
-                         </div>
-                       </div>
-                     </div>
-                  </div>
-                </SpotlightCard>
                 
-                {/* 📂 SHORTCUTS GRID */}
-                <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
-                  <div className="relative z-10">
-                    <ShortcutsGrid />
-                  </div>
-                </SpotlightCard>
+                 {/* 📂 SHORTCUTS GRID */}
+                 <ShortcutsGrid />
                 
                  {/* 🏆 THIS WEEK'S POWER & RECENT ACTIVITY (Responsive Layout) */}
                  <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4 tablet:gap-6">
@@ -577,7 +553,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                                </div>
                                <div>
                                  <span className="text-sm text-white font-medium">{player.name}</span>
-                                 <p className="text-xs text-[#818181]">Level {player.level}</p>
+                                 <p className="text-xs text-[#818181]">{getLevelName(player.level)}</p>
                                </div>
                              </div>
                              <span className="text-sm font-bold text-gold">{player.xp.toLocaleString()} XP</span>
