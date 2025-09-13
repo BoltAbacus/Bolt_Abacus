@@ -12,6 +12,7 @@ import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
 import axios from '@helpers/axios';
 import { getStreakByUserId } from '@services/streak';
+import { getLevelName } from '@helpers/levelNames';
 
 export interface StudentLeaderboardPageProps {}
 
@@ -26,12 +27,6 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
   const { updateStreak } = useStreakStore();
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [communityStats, setCommunityStats] = useState({
-    activePlayers: 0,
-    countries: 0,
-    problemsSolvedToday: 0,
-    averageAccuracy: 0
-  });
   const [userStats, setUserStats] = useState({
     totalXP: 0,
     level: 1,
@@ -91,24 +86,6 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
       }
     };
 
-    const fetchCommunityStats = async () => {
-      try {
-        const res = await axios.get('/community-stats/', {
-          headers: { 'AUTH-TOKEN': authToken },
-        });
-        if (res.status === 200 && res.data.success) {
-          setCommunityStats(res.data.data);
-        }
-      } catch (error) {
-        // Use default values if API fails
-        setCommunityStats({
-          activePlayers: 0,
-          countries: 0,
-          problemsSolvedToday: 0,
-          averageAccuracy: 0
-        });
-      }
-    };
 
     const fetchUserStats = async () => {
       try {
@@ -191,7 +168,6 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
 
     if (isAuthenticated) {
       fetchLeaderboard();
-      fetchCommunityStats();
       fetchUserStats();
     } else {
       // Use fallback data if not authenticated
@@ -215,13 +191,6 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
     return leaderboard.slice(start, end);
   }, [leaderboard, currentPage, pageSize]);
 
-  const getOrdinal = (n: number) => {
-    const j = n % 10, k = n % 100;
-    if (j === 1 && k !== 11) return `${n}st`;
-    if (j === 2 && k !== 12) return `${n}nd`;
-    if (j === 3 && k !== 13) return `${n}rd`;
-    return `${n}th`;
-  };
 
   useEffect(() => {
     const getDashboardData = async () => {
@@ -251,9 +220,6 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
     getDashboardData();
   }, [authToken, isAuthenticated, updateStreak]);
 
-  const getRankBadgeColor = (rank: number) => {
-    return 'bg-[#080808]/80 text-white font-bold border border-gold/30 ring-1 ring-white/5 shadow-lg';
-  };
 
   return (
     <div className="min-h-screen">
@@ -281,22 +247,88 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                   {/* Main Content */}
                   <div className="desktop:col-span-2 space-y-4 tablet:space-y-6">
                     {/* Header */}
-                    <div className="text-white p-4 tablet:p-6 rounded-2xl transition-colors" style={{ backgroundColor: '#161618' }}>
-                      <h1 className="text-2xl tablet:text-3xl font-bold mb-4 flex items-center">
-                        <span className="mr-2">🏆</span>
-                        Lightning Leaderboard
-                      </h1>
-                      <p style={{ color: '#818181' }} className="text-sm tablet:text-base">
-                        Compete with other students and climb the rankings!
-                      </p>
+                    <div 
+                      className="text-white p-4 tablet:p-6 rounded-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-xl border border-white/10"
+                      style={{ 
+                        background: 'linear-gradient(135deg, rgba(22, 22, 24, 0.9) 0%, rgba(33, 33, 36, 0.7) 50%, rgba(22, 22, 24, 0.9) 100%)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 186, 8, 0.2)'
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-gold/15 via-purple-500/10 to-cyan-500/15 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent pointer-events-none"></div>
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h1 className="text-2xl tablet:text-3xl font-bold flex items-center">
+                              <span className="mr-3 text-3xl">🏆</span>
+                              Hall of Fame
+                            </h1>
+                            <p style={{ color: '#818181' }} className="text-sm tablet:text-base mt-2">
+                              Compete with other students and climb the rankings!
+                            </p>
+                          </div>
+                          <div className="hidden tablet:block">
+                            <div className="text-right">
+                              <div className="text-2xl font-bold" style={{ color: '#ffffff' }}>
+                                {leaderboard.length}
+                              </div>
+                              <div className="text-xs" style={{ color: '#818181' }}>
+                                Total Players
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-3 gap-4 mt-4">
+                          <div className="text-center p-3 rounded-lg backdrop-blur-sm border border-yellow-400/30" 
+                               style={{ 
+                                 background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%)',
+                                 boxShadow: '0 4px 16px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                               }}>
+                            <div className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                              {leaderboard.length > 0 ? leaderboard[0]?.xp.toLocaleString() : '0'}
+                            </div>
+                            <div className="text-xs" style={{ color: '#fbbf24' }}>Top Score</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg backdrop-blur-sm border border-purple-400/30" 
+                               style={{ 
+                                 background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                                 boxShadow: '0 4px 16px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                               }}>
+                            <div className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                              {leaderboard.length > 0 ? Math.round(leaderboard.reduce((acc, student) => acc + student.xp, 0) / leaderboard.length).toLocaleString() : '0'}
+                            </div>
+                            <div className="text-xs" style={{ color: '#c084fc' }}>Avg XP</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg backdrop-blur-sm border border-pink-400/30" 
+                               style={{ 
+                                 background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(219, 39, 119, 0.1) 100%)',
+                                 boxShadow: '0 4px 16px rgba(236, 72, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                               }}>
+                            <div className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                              {leaderboard.length > 0 ? Math.max(...leaderboard.map(s => s.level)) : '0'}
+                            </div>
+                            <div className="text-xs" style={{ color: '#f472b6' }}>Max Realm</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Leaderboard */}
-                    <div className="text-white p-4 tablet:p-8 rounded-2xl transition-colors relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
-                      <h2 className="text-xl tablet:text-2xl font-bold mb-6 flex items-center">
-                        <span className="mr-2">⚡</span>
-                        Top Students
-                      </h2>
+                    <div 
+                      className="text-white p-4 tablet:p-8 rounded-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-xl border border-white/10"
+                      style={{ 
+                        background: 'linear-gradient(135deg, rgba(22, 22, 24, 0.8) 0%, rgba(33, 33, 36, 0.6) 50%, rgba(22, 22, 24, 0.8) 100%)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 186, 8, 0.1)'
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-cyan-500/10 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gold/5 to-transparent pointer-events-none"></div>
+                      <div className="relative z-10">
+                        <h2 className="text-xl tablet:text-2xl font-bold mb-6 flex items-center">
+                          <span className="mr-2">⚡</span>
+                          Top Students
+                        </h2>
                       
                        <div className="space-y-3">
                         {leaderboard.length === 0 ? (
@@ -308,62 +340,146 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                             </p>
                             <button
                               onClick={() => navigate('/student/practice/pvp')}
-                              className="bg-gradient-to-r from-gold to-lightGold text-black px-6 py-3 rounded-xl font-bold hover:scale-110 transition-all duration-300"
+                              className="bg-gradient-to-r from-gold to-lightGold text-black px-6 py-3 rounded-xl font-bold hover:scale-105 transition-all duration-300 backdrop-blur-sm border border-gold/30"
                               style={{
-                                boxShadow: '0 0 0 rgba(255,186,8,0)',
-                                transition: 'all 0.3s ease'
+                                boxShadow: '0 4px 16px rgba(255,186,8,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow = '0 0 25px rgba(255,186,8,0.6), 0 0 50px rgba(255,186,8,0.4), 0 0 75px rgba(255,186,8,0.2)';
+                                e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,186,8,0.5), 0 0 20px rgba(255,186,8,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                                e.currentTarget.style.transform = 'scale(1.05)';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,186,8,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                                e.currentTarget.style.transform = 'scale(1)';
                               }}
                             >
-                              Start Playing PvP
+                              Start Epic Battle
                             </button>
                           </div>
                         ) : (
                           pageSlice.map((student) => (
                             <div 
                               key={student.rank} 
-                              className="flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 relative overflow-hidden hover:scale-105 cursor-pointer"
+                              className="flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 relative overflow-hidden hover:scale-[1.02] cursor-pointer backdrop-blur-sm border border-white/10"
                               style={{ 
-                                backgroundColor: student.name === 'You' ? '#212124' : '#212124',
-                                boxShadow: '0 0 0 rgba(255,186,8,0)',
-                                transition: 'all 0.3s ease'
+                                background: student.name === 'You' ? 
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.9) 0%, rgba(255, 186, 8, 0.1) 50%, rgba(33, 33, 36, 0.9) 100%)' :
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.7) 0%, rgba(22, 22, 24, 0.5) 50%, rgba(33, 33, 36, 0.7) 100%)',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 186, 8, 0.1)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow = '0 0 20px rgba(255,186,8,0.4), 0 0 40px rgba(255,186,8,0.2), 0 0 60px rgba(255,186,8,0.1)';
+                                e.currentTarget.style.background = student.name === 'You' ? 
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.95) 0%, rgba(255, 186, 8, 0.2) 50%, rgba(33, 33, 36, 0.95) 100%)' :
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.8) 0%, rgba(22, 22, 24, 0.6) 50%, rgba(33, 33, 36, 0.8) 100%)';
+                                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255,186,8,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 1px rgba(255, 186, 8, 0.3)';
+                                e.currentTarget.style.borderColor = 'rgba(255, 186, 8, 0.4)';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = '0 0 0 rgba(255,186,8,0)';
+                                e.currentTarget.style.background = student.name === 'You' ? 
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.9) 0%, rgba(255, 186, 8, 0.1) 50%, rgba(33, 33, 36, 0.9) 100%)' :
+                                  'linear-gradient(135deg, rgba(33, 33, 36, 0.7) 0%, rgba(22, 22, 24, 0.5) 50%, rgba(33, 33, 36, 0.7) 100%)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 186, 8, 0.1)';
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                               }}
                             >
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: '#000000' }}>
-                                {student.rank}
+                              <div 
+                                className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold backdrop-blur-sm border relative overflow-hidden ${
+                                  student.rank === 1 ? 'border-yellow-400/60' : 
+                                  student.rank === 2 ? 'border-gray-300/60' : 
+                                  student.rank === 3 ? 'border-amber-600/60' : 'border-white/20'
+                                }`}
+                                style={{ 
+                                  background: student.rank === 1 ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 193, 7, 0.2) 50%, rgba(255, 215, 0, 0.3) 100%)' : 
+                                             student.rank === 2 ? 'linear-gradient(135deg, rgba(192, 192, 192, 0.3) 0%, rgba(169, 169, 169, 0.2) 50%, rgba(192, 192, 192, 0.3) 100%)' : 
+                                             student.rank === 3 ? 'linear-gradient(135deg, rgba(205, 127, 50, 0.3) 0%, rgba(184, 115, 51, 0.2) 50%, rgba(205, 127, 50, 0.3) 100%)' : 
+                                             'linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(33, 33, 36, 0.6) 50%, rgba(0, 0, 0, 0.8) 100%)',
+                                  boxShadow: student.rank <= 3 ? 
+                                    `0 6px 20px ${student.rank === 1 ? 'rgba(255, 215, 0, 0.4)' : 
+                                                   student.rank === 2 ? 'rgba(192, 192, 192, 0.4)' : 
+                                                   'rgba(205, 127, 50, 0.4)'}, 0 0 0 1px ${student.rank === 1 ? 'rgba(255, 215, 0, 0.3)' : 
+                                                                                    student.rank === 2 ? 'rgba(192, 192, 192, 0.3)' : 
+                                                                                    'rgba(205, 127, 50, 0.3)'}, inset 0 1px 0 rgba(255, 255, 255, 0.3)` :
+                                    '0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
+                                {student.rank <= 3 && (
+                                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                                )}
+                                <span className="relative z-10 text-white">
+                                  {student.rank === 1 ? '👑' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : student.rank}
+                                </span>
                               </div>
-                              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#161618' }}>
+                              <div 
+                                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm backdrop-blur-sm border border-white/10"
+                                style={{ 
+                                  backgroundColor: 'rgba(22, 22, 24, 0.8)',
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
                                 {student.avatar || student.name?.charAt(0) || 'U'}
                               </div>
                               <div className="flex-1">
-                                <div className="flex justify-between items-center">
-                                  <div>
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
                                     <button
-                                      className="text-sm font-medium underline-offset-2 hover:underline"
+                                      className="text-base font-semibold underline-offset-2 hover:underline transition-all duration-200"
                                       style={{ color: '#ffffff' }}
                                       onClick={() => { setSelectedStudent(student); setIsStudentModalOpen(true); }}
                                     >
                                       {student.name}
                                     </button>
-                                    <p className="text-xs" style={{ color: '#818181' }}>
-                                      Level {student.level} • {student.streak || 0} Day Streak
-                                    </p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm border border-blue-400/40" 
+                                              style={{ 
+                                                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.1) 100%)', 
+                                                color: '#60a5fa',
+                                                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
+                                              }}>
+                                          ⭐ {getLevelName(student.level)}
+                                        </span>
+                                        <span className="text-xs px-3 py-1 rounded-full backdrop-blur-sm border border-orange-400/50" 
+                                              style={{ 
+                                                background: 'linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%)', 
+                                                color: '#ffb347',
+                                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                                              }}>
+                                          🔥 {student.streak || 0} day streak
+                                        </span>
+                                      </div>
+                                    </div>
+                                    {/* XP Progress Bar */}
+                                    <div className="mt-2">
+                                      <div className="flex justify-between items-center mb-1">
+                                        <span className="text-xs" style={{ color: '#818181' }}>Experience</span>
+                                        <span className="text-xs font-semibold" style={{ color: '#ffffff' }}>
+                                          {student.xp.toLocaleString()} XP
+                                        </span>
+                                      </div>
+                                      <div className="w-full h-3 rounded-full backdrop-blur-sm border border-white/10 overflow-hidden"
+                                           style={{ backgroundColor: 'rgba(33, 33, 36, 0.8)' }}>
+                                        <div 
+                                          className="h-full rounded-full transition-all duration-1000 ease-out relative"
+                                          style={{ 
+                                            width: `${Math.min(100, (student.xp / 10000) * 100)}%`,
+                                            background: 'linear-gradient(90deg, #ff6b6b 0%, #ffd700 25%, #4ecdc4 50%, #45b7d1 75%, #96ceb4 100%)',
+                                            boxShadow: '0 0 15px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                                          }}
+                                        >
+                                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-semibold" style={{ color: '#818181' }}>
-                                      {student.xp.toLocaleString()} XP
-                                    </p>
+                                  <div className="text-right ml-4">
+                                    <div className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                                      {student.xp.toLocaleString()}
+                                    </div>
+                                    <div className="text-xs" style={{ color: '#818181' }}>
+                                      XP
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -383,7 +499,11 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
 
                           <div className="flex items-center gap-2">
                             <button
-                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              className="px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 text-white disabled:opacity-40 hover:bg-white/5 transition-all duration-300"
+                              style={{
+                                backgroundColor: 'rgba(33, 33, 36, 0.6)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                              }}
                               onClick={() => setPage(1)}
                               disabled={currentPage === 1}
                               title="First page"
@@ -391,18 +511,32 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                               ⏮
                             </button>
                             <button
-                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              className="px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 text-white disabled:opacity-40 hover:bg-white/5 transition-all duration-300"
+                              style={{
+                                backgroundColor: 'rgba(33, 33, 36, 0.6)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                              }}
                               onClick={() => setPage((p) => Math.max(1, p - 1))}
                               disabled={currentPage === 1}
                               title="Previous"
                             >
                               ◀
                             </button>
-                            <span className="px-4 py-2 text-white font-semibold">
+                            <span 
+                              className="px-4 py-2 text-white font-semibold backdrop-blur-sm border border-white/10 rounded-lg"
+                              style={{
+                                backgroundColor: 'rgba(33, 33, 36, 0.8)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                              }}
+                            >
                               {currentPage}
                             </span>
                             <button
-                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              className="px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 text-white disabled:opacity-40 hover:bg-white/5 transition-all duration-300"
+                              style={{
+                                backgroundColor: 'rgba(33, 33, 36, 0.6)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                              }}
                               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                               disabled={currentPage === totalPages}
                               title="Next"
@@ -410,7 +544,11 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                               ▶
                             </button>
                             <button
-                              className="px-3 py-2 rounded-lg border border-gold/50 text-white disabled:opacity-40 hover:bg-[#191919] transition-colors"
+                              className="px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 text-white disabled:opacity-40 hover:bg-white/5 transition-all duration-300"
+                              style={{
+                                backgroundColor: 'rgba(33, 33, 36, 0.6)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                              }}
                               onClick={() => setPage(totalPages)}
                               disabled={currentPage === totalPages}
                               title="Last page"
@@ -420,6 +558,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                           </div>
                         </div>
                       )}
+                      </div>
                     </div>
 
                     
@@ -428,32 +567,77 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                   {/* Right Sidebar */}
                   <aside className="space-y-4 tablet:space-y-6">
                     {/* User Stats */}
-                    <div className="text-white p-4 tablet:p-6 rounded-2xl" style={{ backgroundColor: '#161618' }}>
-                      <h3 className="text-base tablet:text-lg font-semibold mb-4 flex items-center">
-                        <span className="mr-2">👤</span>
-                        Your Stats
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm" style={{ color: '#818181' }}>Total XP</span>
-                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>{userStats.totalXP.toLocaleString()}</span>
+                    <div 
+                      className="text-white p-4 tablet:p-6 rounded-2xl transition-all duration-300 relative overflow-hidden backdrop-blur-xl border border-white/10"
+                      style={{ 
+                        background: 'linear-gradient(135deg, rgba(22, 22, 24, 0.9) 0%, rgba(33, 33, 36, 0.7) 50%, rgba(22, 22, 24, 0.9) 100%)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 186, 8, 0.2)'
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-cyan-500/10 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gold/5 to-transparent pointer-events-none"></div>
+                      <div className="relative z-10">
+                        <h3 className="text-base tablet:text-lg font-semibold mb-4 flex items-center">
+                          <span className="mr-2">👤</span>
+                          Your Stats
+                        </h3>
+                      <div className="space-y-6">
+                        {/* Total XP Card */}
+                        <div className="p-4 rounded-xl backdrop-blur-sm border border-white/10" 
+                             style={{ 
+                               background: 'linear-gradient(135deg, rgba(33, 33, 36, 0.8) 0%, rgba(22, 22, 24, 0.6) 100%)',
+                               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                             }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium" style={{ color: '#818181' }}>Total XP</span>
+                            <span className="text-2xl font-bold" style={{ color: '#ffffff' }}>{userStats.totalXP.toLocaleString()}</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'rgba(33, 33, 36, 0.8)' }}>
+                            <div className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500" 
+                                 style={{ width: `${Math.min(100, (userStats.totalXP / 50000) * 100)}%` }}></div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm" style={{ color: '#818181' }}>Level</span>
-                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>{userStats.level}</span>
+
+                        {/* Level & Rank Row */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 rounded-xl backdrop-blur-sm border border-blue-400/30 text-center" 
+                               style={{ 
+                                 background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.1) 100%)',
+                                 boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                               }}>
+                            <div className="text-xs font-medium mb-1" style={{ color: '#60a5fa' }}>Level</div>
+                            <div className="text-2xl font-bold" style={{ color: '#ffffff' }}>{userStats.level}</div>
+                          </div>
+                          <div className="p-4 rounded-xl backdrop-blur-sm border border-green-400/30 text-center" 
+                               style={{ 
+                                 background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.1) 100%)',
+                                 boxShadow: '0 4px 16px rgba(34, 197, 94, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                               }}>
+                            <div className="text-xs font-medium mb-1" style={{ color: '#4ade80' }}>Rank</div>
+                            <div className="text-2xl font-bold" style={{ color: '#ffffff' }}>
+                              {leaderboard.length > 0 && userStats.rank > 0 ? `#${userStats.rank}` : '—'}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm" style={{ color: '#818181' }}>Rank</span>
-                          <span className="text-xl font-bold" style={{ color: '#ffffff' }}>
-                            {leaderboard.length > 0 && userStats.rank > 0 ? `#${userStats.rank}` : 'Unranked'}
-                          </span>
+
+                        {/* Next Level Progress */}
+                        <div className="p-4 rounded-xl backdrop-blur-sm border border-cyan-400/30" 
+                             style={{ 
+                               background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(8, 145, 178, 0.1) 100%)',
+                               boxShadow: '0 4px 16px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                             }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium" style={{ color: '#22d3ee' }}>Next Level</span>
+                            <span className="text-sm font-semibold" style={{ color: '#ffffff' }}>
+                              {userStats.nextLevelXP} XP needed
+                            </span>
+                          </div>
+                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'rgba(33, 33, 36, 0.8)' }}>
+                            <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600" 
+                                 style={{ width: `${Math.min(100, ((userStats.totalXP % 1000) / 1000) * 100)}%` }}></div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm" style={{ color: '#818181' }}>Next Level</span>
-                          <span className="text-lg font-bold" style={{ color: '#ffffff' }}>
-                            {userStats.nextLevelXP} XP needed
-                          </span>
-                        </div>
+                      </div>
                       </div>
                     </div>
 

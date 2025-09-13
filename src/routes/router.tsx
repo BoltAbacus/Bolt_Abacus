@@ -321,16 +321,25 @@ export const router = createBrowserRouter([
             element: <StudentProgressPage />,
           },
           {
+            path: 'practice/timed/:operation',
+            element: <StudentTimedPracticePage />,
+          },
+          {
+            path: 'practice/untimed/:operation',
+            element: <StudentUntimedPracticePage />,
+          },
+          {
+            path: 'practice/set/:operation',
+            element: <StudentSetPracticePage />,
+          },
+          {
+            path: 'practice/flashcards',
+            element: <StudentFlashCardPracticePage />,
+          },
+          {
             path: 'profile',
             element: <ProfilePage />,
           },
-        ],
-      },
-      // Route: 'boltabacus.com/student' -> No Navbar & Footer
-      {
-        path: 'student',
-        element: <StudentLayout withNavBar withFooter={false} />,
-        children: [
           {
             path: 'quiz/:levelId/:classId/:topicId/:quizType',
             element: <StudentQuizPage />,
@@ -347,22 +356,13 @@ export const router = createBrowserRouter([
             path: 'final-test/:levelId',
             element: <StudentFinalTestPage />,
           },
-          {
-            path: 'practice/timed/:operation',
-            element: <StudentTimedPracticePage />,
-          },
-          {
-            path: 'practice/untimed/:operation',
-            element: <StudentUntimedPracticePage />,
-          },
-          {
-            path: 'practice/set/:operation',
-            element: <StudentSetPracticePage />,
-          },
-          {
-            path: 'practice/flashcards',
-            element: <StudentFlashCardPracticePage />,
-          },
+        ],
+      },
+      // Route: 'boltabacus.com/student' -> No Navbar & Footer (Practice pages only)
+      {
+        path: 'student',
+        element: <StudentLayout withNavBar withFooter={false} />,
+        children: [
           {
             path: '*',
             element: (

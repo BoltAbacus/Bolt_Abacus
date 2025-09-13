@@ -7,7 +7,7 @@ export const getLevelName = (levelId: string | number): string => {
     'Lightning Realm',
     'Crystal Realm',
     'Shadow Realm',
-    'Light Realm',
+    'Mythical Realm',
     'Celestial Realm',
     'Eternal Realm'
   ];

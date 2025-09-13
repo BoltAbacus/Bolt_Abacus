@@ -292,3 +292,208 @@ export const generateTimedResult = (
 
   return { result, totalScore: result.filter((r) => r.verdict).length };
 };
+
+// PvP Question Generation using Practice Mode Settings
+export interface PvPQuestion {
+  question_id: number;
+  operands: number[];
+  operator: string;
+  correct_answer: number;
+  question_type: string;
+}
+
+export const generatePvPQuestions = (
+  operation: string,
+  numberOfDigitsLeft: number,
+  numberOfDigitsRight: number,
+  numberOfQuestions: number,
+  numberOfRows: number,
+  isZigzag: boolean,
+  includeSubtraction: boolean,
+  persistNumberOfDigits: boolean,
+  includeDecimals: boolean
+): PvPQuestion[] => {
+  const questions: PvPQuestion[] = [];
+
+  for (let i = 0; i < numberOfQuestions; i += 1) {
+    let numbers: number[] = [];
+
+    if (operation === 'addition') {
+      for (let j = 0; j < numberOfRows; j += 1) {
+        const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+        const currentMax = isZigzag
+          ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+          : 10 ** numberOfDigitsLeft - 1;
+        numbers.push(generateRandomNumber(currentMin, currentMax));
+      }
+
+      if (includeSubtraction) {
+        // Ensure the cumulative sum is always positive at each step
+        let attempts = 0;
+        const maxAttempts = 100; // Prevent infinite loops
+        let cumulativeSum = 0;
+        
+        do {
+          // Reset numbers to positive values
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = isZigzag
+              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Apply subtraction randomly but ensure cumulative sum never goes below 0
+          cumulativeSum = numbers[0]; // Start with first number (always positive)
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+              // Only make negative if it won't make cumulative sum negative
+              numbers[j] *= -1;
+              cumulativeSum += numbers[j];
+            } else {
+              // Keep positive
+              cumulativeSum += numbers[j];
+            }
+          }
+          
+          attempts++;
+        } while (cumulativeSum <= 0 && attempts < maxAttempts);
+        
+        // If we still couldn't find a valid combination, use a more conservative approach
+        if (attempts >= maxAttempts) {
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = isZigzag
+              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Conservative approach: ensure first number is large enough to handle all subtractions
+          cumulativeSum = numbers[0];
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+              numbers[j] *= -1;
+              cumulativeSum += numbers[j];
+            } else {
+              cumulativeSum += numbers[j];
+            }
+          }
+        }
+      }
+
+      if (persistNumberOfDigits) {
+        let sum = numbers.reduce((a, b) => a + b, 0);
+        while (Math.abs(sum).toString().length !== numberOfDigitsLeft) {
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = isZigzag
+              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              : 10 ** numberOfDigitsRight - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Re-apply subtraction logic if needed
+          if (includeSubtraction) {
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            do {
+              const tempNumbers = [...numbers];
+              let cumulativeSum = tempNumbers[0]; // Start with first number
+              
+              for (let j = 1; j < tempNumbers.length; j += 1) {
+                if (Math.random() < 0.5 && cumulativeSum - tempNumbers[j] > 0) {
+                  // Only make negative if it won't make cumulative sum negative
+                  tempNumbers[j] *= -1;
+                  cumulativeSum += tempNumbers[j];
+                } else {
+                  // Keep positive
+                  cumulativeSum += tempNumbers[j];
+                }
+              }
+              
+              if (cumulativeSum > 0) {
+                numbers = tempNumbers;
+                break;
+              }
+              
+              attempts++;
+            } while (attempts < maxAttempts);
+          }
+          
+          sum = numbers.reduce((a, b) => a + b, 0);
+        }
+      }
+    } else if (operation === 'multiplication') {
+      const leftMin = 10 ** (numberOfDigitsLeft - 1);
+      const leftMax = 10 ** numberOfDigitsLeft - 1;
+      const rightMin = 10 ** (numberOfDigitsRight - 1);
+      const rightMax = 10 ** numberOfDigitsRight - 1;
+
+      numbers.push(generateRandomNumber(leftMin, leftMax));
+      numbers.push(generateRandomNumber(rightMin, rightMax));
+    } else if (operation === 'division') {
+      const leftMin = 10 ** (numberOfDigitsLeft - 1);
+      const leftMax = 10 ** numberOfDigitsLeft - 1;
+      const rightMin = 10 ** (numberOfDigitsRight - 1);
+      const rightMax = 10 ** numberOfDigitsRight - 1;
+
+      let num1 = generateRandomNumber(leftMin, leftMax);
+      let num2 = generateRandomNumber(rightMin, rightMax);
+
+      if (num1 < num2) {
+        [num1, num2] = [num2, num1];
+      }
+
+      if (!includeDecimals) {
+        while (num1 % num2 !== 0) {
+          num1 = generateRandomNumber(leftMin, leftMax);
+          num2 = generateRandomNumber(rightMin, rightMax);
+
+          if (num1 < num2) {
+            [num1, num2] = [num2, num1];
+          }
+        }
+      }
+
+      numbers = [num1, num2];
+    }
+
+    // Calculate correct answer
+    let correctAnswer = numbers[0];
+    const operator = operation === 'addition' ? '+' : operation === 'multiplication' ? '*' : '/';
+
+    for (let j = 1; j < numbers.length; j += 1) {
+      if (operator === '+') {
+        correctAnswer += numbers[j];
+      } else if (operator === '*') {
+        correctAnswer *= numbers[j];
+      } else if (operator === '/') {
+        correctAnswer /= numbers[j];
+      }
+    }
+
+    // Round to 2 decimal places for division with decimals
+    if (operation === 'division' && includeDecimals) {
+      correctAnswer = Math.round(correctAnswer * 100) / 100;
+    }
+
+    const question: PvPQuestion = {
+      question_id: i + 1,
+      operands: numbers,
+      operator,
+      correct_answer: correctAnswer,
+      question_type: 'basic'
+    };
+
+    questions.push(question);
+  }
+
+  return questions;
+};

@@ -100,7 +100,7 @@ const StudentRoadmapPage: FC<StudentRoadmapPageProps> = () => {
             </>
           ) : (
             <>
-              <SeoComponent title="Roadmap" />
+              <SeoComponent title="Path of Conquest" />
               <div>
                 <QuickActionsSection
                   currentLevel={currentLevel!}

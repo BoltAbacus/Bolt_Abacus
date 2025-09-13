@@ -93,7 +93,13 @@ const QuizBox: FC<QuizBoxProps> = ({
     
     let questionText = '';
     if (operator === '+') {
-      questionText = `${numbers[0]} plus ${numbers[1]}`;
+      // Handle multiple numbers for addition (when numberOfRows > 2)
+      if (numbers.length > 2) {
+        const allNumbers = numbers.map(num => num.toString()).join(' plus ');
+        questionText = allNumbers;
+      } else {
+        questionText = `${numbers[0]} plus ${numbers[1]}`;
+      }
     } else if (operator === '*') {
       questionText = `${numbers[0]} times ${numbers[1]}`;
     } else if (operator === '/') {
@@ -160,14 +166,12 @@ const QuizBox: FC<QuizBoxProps> = ({
           >
             {isReading ? '🔊 Reading...' : '🔊 Read Again'}
           </button>
-          {showQuestion && (
-            <button
-              onClick={toggleQuestionVisibility}
-              className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-3 rounded-lg transition-colors"
-            >
-              👁️ Hide
-            </button>
-          )}
+          <button
+            onClick={toggleQuestionVisibility}
+            className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-3 rounded-lg transition-colors"
+          >
+            {showQuestion ? '👁️ Hide' : '👁️ Show'}
+          </button>
         </div>
       )}
 

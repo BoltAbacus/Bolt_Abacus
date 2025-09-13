@@ -113,9 +113,9 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
                 </div>
               )}
               <div>
-                <p className="font-medium text-lg text-white">Class {classProgress.classId}</p>
+                <p className="font-medium text-lg text-white">Conquest {classProgress.classId}</p>
                 <p className="text-sm text-gray-300">
-                  {classStats.completedTopics}/{classStats.totalTopics} topics completed
+                  {classStats.completedTopics}/{classStats.totalTopics} missions completed
                 </p>
               </div>
             </div>
@@ -146,7 +146,7 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
       {/* Class Progress Overview */}
       <div className="mt-3 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-300">Topic Progress</span>
+          <span className="text-sm text-gray-300">Mission Progress</span>
           <span className="text-sm font-medium text-white">{Math.round(classStats.topicProgress)}%</span>
         </div>
         <ProgressBar percentage={classStats.topicProgress} type="blue" />
@@ -170,10 +170,10 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
                 <div className="grid grid-cols-3 pb-2 text-[#6D6D6D]">
                   <div />
                   <div className="flex justify-center items-center font-semibold">
-                    Classwork
+                    Sage's Wisdom
                   </div>
                   <div className="flex justify-center items-center font-semibold">
-                    Homework
+                    Self Mastery
                   </div>
                 </div>
                 {classProgress.topics.map((topicProgress, index) => {
@@ -188,7 +188,7 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
                         ) : (
                           <FaLock className="text-gray-500 text-sm" />
                         )}
-                        Topic {topicProgress.topicId}
+                        Mission {topicProgress.topicId}
                       </div>
                       <div className="flex justify-center items-center font-semibold">
                         <ResultBox

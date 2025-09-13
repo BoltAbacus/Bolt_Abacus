@@ -74,7 +74,8 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
     if (!audioMode) return;
     
     setIsReading(true);
-    const questionText = quizQuestion.question.numbers.join(' plus ');
+    // Ensure all numbers are properly converted to strings for speech synthesis
+    const questionText = quizQuestion.question.numbers.map(num => num.toString()).join(' plus ');
     const utterance = new SpeechSynthesisUtterance(questionText);
     
     // Set speech rate based on pace
@@ -157,14 +158,12 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
           >
             {isReading ? '🔊 Reading...' : '🔊 Read Again'}
           </button>
-          {showQuestion && (
-            <button
-              onClick={toggleQuestionVisibility}
-              className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-3 rounded-lg transition-colors"
-            >
-              👁️ Hide
-            </button>
-          )}
+          <button
+            onClick={toggleQuestionVisibility}
+            className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-3 rounded-lg transition-colors"
+          >
+            {showQuestion ? '👁️ Hide' : '👁️ Show'}
+          </button>
         </div>
       )}
 

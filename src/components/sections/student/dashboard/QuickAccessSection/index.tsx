@@ -5,6 +5,7 @@ import {
   AiOutlineBook, 
   AiOutlineCalculator
 } from 'react-icons/ai';
+import { MdOutlineMap } from 'react-icons/md';
 import { STUDENT_ROADMAP, STUDENT_PRACTICE } from '@constants/routes';
 
 export interface QuickAccessSectionProps {
@@ -15,15 +16,15 @@ const QuickAccessSection: FC<QuickAccessSectionProps> = ({ className = '' }) => 
   const quickAccessItems = [
     {
       id: 1,
-      title: 'Roadmap',
+      title: 'Path of Conquest',
       description: 'View your learning progress',
-      icon: AiOutlineBarChart,
+      icon: MdOutlineMap,
       link: STUDENT_ROADMAP,
       color: 'from-blue-500 to-blue-600',
     },
     {
       id: 2,
-      title: 'Practice',
+      title: 'Solo Training Ground',
       description: 'Practice your skills',
       icon: AiOutlineBook,
       link: STUDENT_PRACTICE,

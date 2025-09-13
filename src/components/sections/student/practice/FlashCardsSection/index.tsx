@@ -138,6 +138,33 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
   };
 
   const handleStartQuiz = () => {
+    // Save practice mode settings to localStorage
+    const practiceSettings = {
+      numberOfDigitsLeft: numberOfDigits,
+      numberOfDigitsRight: numberOfDigits,
+      isZigzag,
+      numberOfRows,
+      includeSubtraction,
+      persistNumberOfDigits,
+      includeDecimals: false,
+      audioMode,
+      audioPace,
+      showQuestion,
+      operation,
+      game_mode: 'flashcards',
+      number_of_digits: numberOfDigits,
+      time_per_question: speed / 1000, // Convert milliseconds to seconds
+      number_of_questions: numberOfQuestions,
+      difficulty_level: 'medium',
+      flashcard_speed: speed // Store the actual speed in milliseconds
+    };
+    
+    try {
+      localStorage.setItem('practiceModeSettings', JSON.stringify(practiceSettings));
+    } catch (error) {
+      console.log('Error saving practice mode settings:', error);
+    }
+
     setLoading(true);
     setQuizQuestions(
       generatePracticeQuestions(

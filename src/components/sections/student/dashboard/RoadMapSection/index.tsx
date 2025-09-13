@@ -24,7 +24,7 @@ const RoadmapSection: FC<RoadmapSectionProps> = ({
           <LevelCard
             key={i}
             type="inprogress"
-            description="Classes Incomplete"
+            description="Conquests Incomplete"
             progress={progress[i]}
             level={i}
           />
@@ -34,7 +34,7 @@ const RoadmapSection: FC<RoadmapSectionProps> = ({
           <LevelCard
             key={i}
             type="finished"
-            description="Classes Completed"
+            description="Conquests Completed"
             level={i}
           />
         );
@@ -44,21 +44,21 @@ const RoadmapSection: FC<RoadmapSectionProps> = ({
         <LevelCard
           key={i}
           type="inprogress"
-          description={`Class ${currentClass}`}
+          description={`Conquest ${currentClass}`}
           progress={progress[currentLevel]}
           level={i}
         />
       );
     } else {
       classCards.push(
-        <LevelCard key={i} type="locked" description="Class Locked" level={i} />
+        <LevelCard key={i} type="locked" description="Conquest Locked" level={i} />
       );
     }
   }
 
   return (
     <div className="px-6 tablet:p-10 desktop:px-24">
-      <p className="font-medium text-md desktop:text-lg" style={{ color: '#ffffff' }}>Roadmap</p>
+      <p className="font-medium text-md desktop:text-lg" style={{ color: '#ffffff' }}>Path of Conquest</p>
       <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 desktop:grid-cols-3">
         {classCards}
       </div>

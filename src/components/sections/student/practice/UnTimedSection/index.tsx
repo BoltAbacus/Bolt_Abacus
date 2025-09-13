@@ -147,6 +147,32 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
   };
 
   const handleStartQuiz = async () => {
+    // Save practice mode settings to localStorage
+    const practiceSettings = {
+      numberOfDigitsLeft,
+      numberOfDigitsRight,
+      isZigzag,
+      numberOfRows,
+      includeSubtraction,
+      persistNumberOfDigits,
+      includeDecimals,
+      audioMode,
+      audioPace,
+      showQuestion,
+      operation,
+      game_mode: 'untimed',
+      number_of_digits: numberOfDigitsLeft,
+      time_per_question: 0, // No time limit for untimed
+      number_of_questions: numberOfQuestions,
+      difficulty_level: 'medium'
+    };
+    
+    try {
+      localStorage.setItem('practiceModeSettings', JSON.stringify(practiceSettings));
+    } catch (error) {
+      console.log('Error saving practice mode settings:', error);
+    }
+
     setLoading(true);
     await setQuizQuestions(
       generatePracticeQuestions(

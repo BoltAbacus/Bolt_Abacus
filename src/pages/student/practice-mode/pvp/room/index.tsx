@@ -179,7 +179,7 @@ const StudentPvPRoomPage: FC = () => {
   const currentUserId = user?.id ?? (user as any)?.userId;
   const isCreator = roomDetails.creator.userId === currentUserId;
   // const currentPlayer = roomDetails.players.find((p: any) => p.player.userId === user?.id);
-  const hasEnoughPlayers = roomDetails.players.length === roomDetails.max_players;
+  const hasEnoughPlayers = roomDetails.players.length >= 2; // Minimum 2 players to start
   const isRoomWaiting = roomDetails.status === 'waiting';
   const canStartGame = isCreator && hasEnoughPlayers && isRoomWaiting;
 
@@ -193,7 +193,8 @@ const StudentPvPRoomPage: FC = () => {
     userId: currentUserId,
     playersCount: roomDetails.players.length,
     maxPlayers: roomDetails.max_players,
-    roomStatus: roomDetails.status
+    roomStatus: roomDetails.status,
+    minPlayersToStart: 2
   });
 
 
@@ -209,7 +210,7 @@ const StudentPvPRoomPage: FC = () => {
           
           <div className="relative z-10 text-center">
             <h1 className="text-4xl font-black text-gold mb-4">
-              🏰 BATTLE ROOM 🏰
+              🏰 EPIC BATTLE ROOM 🏰
             </h1>
             <div className="flex items-center justify-center gap-3">
               <p className="text-white text-lg">Room Code: <span className="font-bold text-gold">{roomId}</span></p>
@@ -284,6 +285,23 @@ const StudentPvPRoomPage: FC = () => {
           
           <div className="relative z-10">
             <h2 className="text-2xl font-black text-gold mb-6 text-center">Players ({roomDetails.players.length}/{roomDetails.max_players})</h2>
+            
+            {/* Game Start Status */}
+            <div className="mb-6 text-center">
+              {roomDetails.players.length < 2 ? (
+                <div className="bg-yellow-500/10 border border-yellow-400/50 rounded-xl p-4 text-yellow-200">
+                  ⏳ Waiting for more players... Need at least 2 players to start
+                </div>
+              ) : isCreator ? (
+                <div className="bg-green-500/10 border border-green-400/50 rounded-xl p-4 text-green-200">
+                  ✅ Ready to start! You can begin the game with {roomDetails.players.length} players
+                </div>
+              ) : (
+                <div className="bg-blue-500/10 border border-blue-400/50 rounded-xl p-4 text-blue-200">
+                  🎮 Waiting for room creator to start the game
+                </div>
+              )}
+            </div>
             
             <div className="space-y-4">
               {roomDetails.players.map((player: any, index: number) => (

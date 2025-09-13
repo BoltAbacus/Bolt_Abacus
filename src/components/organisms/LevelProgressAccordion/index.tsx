@@ -121,7 +121,7 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
               <div>
                 <p className="font-medium text-lg text-white">{getLevelName(levelProgress.levelId)}</p>
                 <p className="text-sm text-gray-300">
-                  {levelStats.completedClasses}/{levelStats.totalClasses} classes completed
+                  {levelStats.completedClasses}/{levelStats.totalClasses} conquests completed
                 </p>
               </div>
             </div>
@@ -152,7 +152,7 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
       {/* Level Progress Overview */}
       <div className="mt-4 mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-300">Class Progress</span>
+          <span className="text-sm text-gray-300">Conquest Progress</span>
           <span className="text-sm font-medium text-white">{Math.round(levelStats.classProgress)}%</span>
         </div>
         <ProgressBar percentage={levelStats.classProgress} type="blue" />
@@ -160,10 +160,10 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
 
       {levelStats.isLevelCompleted && (
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-300">Level Score</span>
-            <span className="text-sm font-medium text-white">{levelStats.averageScore}%</span>
-          </div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-300">Realm Score</span>
+          <span className="text-sm font-medium text-white">{levelStats.averageScore}%</span>
+        </div>
           <ProgressBar percentage={levelStats.averageScore} type="yellow" />
         </div>
       )}
@@ -186,9 +186,9 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
             </div>
           </div>
           
-          {/* Level Tests Section */}
+          {/* Realm Tests Section */}
           <div className="mt-6 p-4 bg-[#2a2a2a] rounded-lg">
-            <h4 className="text-lg font-semibold text-white mb-4">Level Tests</h4>
+            <h4 className="text-lg font-semibold text-white mb-4">Realm Tests</h4>
             <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4">
               <div className="flex items-center justify-between p-3 bg-[#1b1b1b] rounded-lg">
                 <div className="flex items-center gap-3">

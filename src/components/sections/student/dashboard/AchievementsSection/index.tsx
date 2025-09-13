@@ -31,7 +31,7 @@ const AchievementsSection: FC<AchievementsSectionProps> = ({ className = '', onV
       <div className={`flex items-center justify-between ${compact ? 'mb-3' : 'mb-6'}`}>
         <h2 className={`${headingClass} font-bold flex items-center text-white m-0`}>
           <span className="mr-2">🏆</span>
-          Lightning Achievements
+          Badges of Honour
         </h2>
       </div>
       <div className={`${gridClass} ${compact ? '' : 'mb-6'}`}>
@@ -67,12 +67,12 @@ const AchievementsSection: FC<AchievementsSectionProps> = ({ className = '', onV
       <div className="flex justify-center">
         {onViewAll ? (
           <button onClick={onViewAll} className={`inline-block bg-[#080808]/80 hover:bg-[#191919] text-white ${compact ? 'text-xs px-3 py-2' : 'px-6 py-3'} rounded-xl font-semibold border border-gold/50 transition-colors shadow-[0_10px_28px_rgba(0,0,0,0.55)] ring-1 ring-white/5 backdrop-blur-md`}>
-            {compact ? 'View more' : 'View All Achievements ⚡'}
+            {compact ? 'View more' : 'View All Badges ⚡'}
           </button>
         ) : (
           <Link to={STUDENT_PROGRESS} className="inline-block">
             <div className={`bg-[#080808]/80 hover:bg-[#191919] text-white ${compact ? 'text-xs px-3 py-2' : 'px-6 py-3'} rounded-xl font-semibold border border-gold/50 transition-colors shadow-[0_10px_28px_rgba(0,0,0,0.55)] ring-1 ring-white/5 backdrop-blur-md`}>
-              {compact ? 'View more' : 'View All Achievements ⚡'}
+              {compact ? 'View more' : 'View All Badges ⚡'}
             </div>
           </Link>
         )}
