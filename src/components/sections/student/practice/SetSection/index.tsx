@@ -58,7 +58,7 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
   const [numberOfDigitsRight, setNumberOfDigitsRight] = useState(1);
   const [isZigzag, setIsZigzag] = useState(false);
   const [numberOfRows, setNumberOfRows] = useState(2);
-  const [includeSubtraction, setIncludeSubtraction] = useState(false);
+  const [includeSubtraction, setIncludeSubtraction] = useState(operation === 'addition');
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
   const [includeDecimals, setIncludeDecimals] = useState(false);
   const [audioMode, setAudioMode] = useState(false);
@@ -308,20 +308,22 @@ const SetPracticeSection: FC<SetPracticeSectionProps> = ({ operation }) => {
                     minutes={secondsToMinsSecs(totalSeconds).minutes}
                     seconds={secondsToMinsSecs(totalSeconds).seconds}
                   />
-                  <div className="tablet:px-4">
-                    <QuizBox
-                      quizQuestion={quizQuestions[currentIndex]}
-                      answer={currentAnswer}
-                      setAnswer={setCurrentAnswer}
-                      setDisabled={setIsNextDisabled}
-                      submitAnswer={answerQuestion}
-                      operation={operation}
-                      includeDecimals={includeDecimals}
-                      audioMode={audioMode}
-                      audioPace={audioPace}
-                      showQuestion={showQuestion}
-                      setShowQuestion={setShowQuestion}
-                    />
+                  <div className="tablet:px-4 flex justify-center">
+                    <div className="w-full max-w-4xl">
+                      <QuizBox
+                        quizQuestion={quizQuestions[currentIndex]}
+                        answer={currentAnswer}
+                        setAnswer={setCurrentAnswer}
+                        setDisabled={setIsNextDisabled}
+                        submitAnswer={answerQuestion}
+                        operation={operation}
+                        includeDecimals={includeDecimals}
+                        audioMode={audioMode}
+                        audioPace={audioPace}
+                        showQuestion={showQuestion}
+                        setShowQuestion={setShowQuestion}
+                      />
+                    </div>
                   </div>
                   <div className="tablet:gap-12 flex justify-center items-center gap-4 pt-4">
                     <QuizActionButton

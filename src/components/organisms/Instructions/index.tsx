@@ -16,22 +16,22 @@ const Instructions: FC<InstructionsProps> = ({ type, startQuiz }) => {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex flex-col gap-6 border border-gold px-14 py-8 bg-darkBlack rounded-lg">
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col gap-6 border border-gold px-14 py-8 bg-darkBlack rounded-lg max-w-md w-full mx-4 text-center">
         <p className="text-xl text-gold font-bold">Instructions</p>
         <div className="text-md p-1">
           {type === 'quiz' ? (
-            <>
+            <ul className="space-y-2">
               {quizInstructions.map((instruction, index) => (
-                <li key={index}>{instruction}</li>
+                <li key={index} className="text-white">{instruction}</li>
               ))}
-            </>
+            </ul>
           ) : (
-            <>
+            <ul className="space-y-2">
               {testInstructions.map((instruction, index) => (
-                <li key={index}>{instruction}</li>
+                <li key={index} className="text-white">{instruction}</li>
               ))}
-            </>
+            </ul>
           )}
         </div>
         <div

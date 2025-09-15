@@ -80,7 +80,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
     numberOfDigitsRight: 1,
     isZigzag: false,
     numberOfRows: 2,
-    includeSubtraction: false,
+    includeSubtraction: true,
     persistNumberOfDigits: false,
     includeDecimals: false,
     audioMode: false,
@@ -108,7 +108,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
             numberOfDigitsRight: parsedSettings.numberOfDigitsRight || prev.numberOfDigitsRight,
             isZigzag: parsedSettings.isZigzag !== undefined ? parsedSettings.isZigzag : prev.isZigzag,
             numberOfRows: parsedSettings.numberOfRows || prev.numberOfRows,
-            includeSubtraction: parsedSettings.includeSubtraction !== undefined ? parsedSettings.includeSubtraction : prev.includeSubtraction,
+            includeSubtraction: parsedSettings.operation === 'addition' ? true : (parsedSettings.includeSubtraction !== undefined ? parsedSettings.includeSubtraction : prev.includeSubtraction),
             persistNumberOfDigits: parsedSettings.persistNumberOfDigits !== undefined ? parsedSettings.persistNumberOfDigits : prev.persistNumberOfDigits,
             includeDecimals: parsedSettings.includeDecimals !== undefined ? parsedSettings.includeDecimals : prev.includeDecimals,
             audioMode: parsedSettings.audioMode !== undefined ? parsedSettings.audioMode : prev.audioMode,
@@ -187,6 +187,10 @@ const PvPFlow: FC<PvPFlowProps> = () => {
       return;
     }
 
+    // Trigger sidebar collapse
+    localStorage.setItem('pvpSidebarCollapsed', 'true');
+    window.dispatchEvent(new CustomEvent('pvpSidebarCollapse'));
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -229,6 +233,10 @@ const PvPFlow: FC<PvPFlowProps> = () => {
       setError('Room code must be 6 characters long');
       return;
     }
+
+    // Trigger sidebar collapse
+    localStorage.setItem('pvpSidebarCollapsed', 'true');
+    window.dispatchEvent(new CustomEvent('pvpSidebarCollapse'));
 
     setLoading(true);
     setError(null);

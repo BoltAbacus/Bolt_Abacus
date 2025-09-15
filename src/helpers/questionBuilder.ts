@@ -40,10 +40,10 @@ export const generatePracticeQuestions = (
       }
 
       if (includeSubtraction) {
-        // Ensure the cumulative sum is always positive at each step
+        // Ensure first number is always positive and final answer is always positive
         let attempts = 0;
         const maxAttempts = 100; // Prevent infinite loops
-        let cumulativeSum = 0;
+        let finalSum = 0;
         
         do {
           // Reset numbers to positive values
@@ -56,22 +56,23 @@ export const generatePracticeQuestions = (
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
           
-          // Apply subtraction randomly but ensure cumulative sum never goes below 0
-          cumulativeSum = numbers[0]; // Start with first number (always positive)
+          // First number is always positive (never change it)
+          // Apply subtraction randomly to other numbers but ensure final sum is always positive
+          finalSum = numbers[0]; // Start with first number (always positive)
           
           for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
-              // Only make negative if it won't make cumulative sum negative
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
+              // Only make negative if it won't make final sum negative
               numbers[j] *= -1;
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             } else {
               // Keep positive
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             }
           }
           
           attempts++;
-        } while (cumulativeSum <= 0 && attempts < maxAttempts);
+        } while (finalSum <= 0 && attempts < maxAttempts);
         
         // If we still couldn't find a valid combination, use a more conservative approach
         if (attempts >= maxAttempts) {
@@ -85,14 +86,14 @@ export const generatePracticeQuestions = (
           }
           
           // Conservative approach: ensure first number is large enough to handle all subtractions
-          cumulativeSum = numbers[0];
+          finalSum = numbers[0]; // First number stays positive
           
           for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
               numbers[j] *= -1;
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             } else {
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             }
           }
         }
@@ -328,10 +329,10 @@ export const generatePvPQuestions = (
       }
 
       if (includeSubtraction) {
-        // Ensure the cumulative sum is always positive at each step
+        // Ensure first number is always positive and final answer is always positive
         let attempts = 0;
         const maxAttempts = 100; // Prevent infinite loops
-        let cumulativeSum = 0;
+        let finalSum = 0;
         
         do {
           // Reset numbers to positive values
@@ -344,22 +345,23 @@ export const generatePvPQuestions = (
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
           
-          // Apply subtraction randomly but ensure cumulative sum never goes below 0
-          cumulativeSum = numbers[0]; // Start with first number (always positive)
+          // First number is always positive (never change it)
+          // Apply subtraction randomly to other numbers but ensure final sum is always positive
+          finalSum = numbers[0]; // Start with first number (always positive)
           
           for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
-              // Only make negative if it won't make cumulative sum negative
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
+              // Only make negative if it won't make final sum negative
               numbers[j] *= -1;
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             } else {
               // Keep positive
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             }
           }
           
           attempts++;
-        } while (cumulativeSum <= 0 && attempts < maxAttempts);
+        } while (finalSum <= 0 && attempts < maxAttempts);
         
         // If we still couldn't find a valid combination, use a more conservative approach
         if (attempts >= maxAttempts) {
@@ -373,14 +375,14 @@ export const generatePvPQuestions = (
           }
           
           // Conservative approach: ensure first number is large enough to handle all subtractions
-          cumulativeSum = numbers[0];
+          finalSum = numbers[0]; // First number stays positive
           
           for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && cumulativeSum - numbers[j] > 0) {
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
               numbers[j] *= -1;
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             } else {
-              cumulativeSum += numbers[j];
+              finalSum += numbers[j];
             }
           }
         }

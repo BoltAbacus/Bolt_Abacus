@@ -51,7 +51,7 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
   const [numberOfDigits, setNumberOfDigits] = useState(1);
   const [numberOfRows, setNumberOfRows] = useState(2);
   const [isZigzag, setIsZigzag] = useState(false);
-  const [includeSubtraction, setIncludeSubtraction] = useState(false);
+  const [includeSubtraction, setIncludeSubtraction] = useState(operation === 'addition');
   const [persistNumberOfDigits, setPersistNumberOfDigits] = useState(false);
   const [speed, setSpeed] = useState<number>(2500);
   const [audioMode, setAudioMode] = useState(false);

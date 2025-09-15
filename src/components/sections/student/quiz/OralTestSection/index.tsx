@@ -137,11 +137,11 @@ const OralTestSection: FC<OralTestSectionProps> = ({
   }, [quizStarted, start]);
 
   return (
-    <div className="tablet:gap-16 tablet:p-10 desktop:px-64 desktop:py-6 flex flex-col gap-10 desktop:gap-8 p-6">
+    <div className="min-h-screen flex flex-col">
       {!quizStarted ? (
         <Instructions startQuiz={setQuizStarted} type="test" />
       ) : (
-        <div>
+        <div className="tablet:gap-16 tablet:p-10 desktop:px-64 desktop:py-6 flex flex-col gap-10 desktop:gap-8 p-6">
           {quizCompleted ? (
             <div>
               {loading ? (
@@ -175,14 +175,16 @@ const OralTestSection: FC<OralTestSectionProps> = ({
                 seconds={seconds}
                 levelId={levelId}
               />
-              <div className="tablet:px-4">
-                <OralTestBox
-                  answer={currentAnswer}
-                  questionNumber={currentIndex + 1}
-                  setAnswer={setCurrentAnswer}
-                  setDisabled={setIsNextDisabled}
-                  submitAnswer={answerQuestion}
-                />
+              <div className="tablet:px-4 flex justify-center">
+                <div className="w-full max-w-4xl">
+                  <OralTestBox
+                    answer={currentAnswer}
+                    questionNumber={currentIndex + 1}
+                    setAnswer={setCurrentAnswer}
+                    setDisabled={setIsNextDisabled}
+                    submitAnswer={answerQuestion}
+                  />
+                </div>
               </div>
               <div className="tablet:gap-12 flex justify-center items-center gap-4 pt-4">
                 <QuizActionButton

@@ -26,7 +26,9 @@ const StudentLayoutWithSidebar: FC<StudentLayoutWithSidebarProps> = () => {
                                   location.pathname.includes('/practice/timed/') ||
                                   location.pathname.includes('/practice/untimed/') ||
                                   location.pathname.includes('/practice/set/') ||
-                                  location.pathname.includes('/practice/flashcards');
+                                  location.pathname.includes('/practice/flashcards') ||
+                                  location.pathname.includes('/pvp/room/') ||
+                                  location.pathname.includes('/pvp/game/');
 
   // Create margin classes based on sidebar state
   const marginClasses = (isSidebarCollapsed && isQuizTestOrPracticePage) 

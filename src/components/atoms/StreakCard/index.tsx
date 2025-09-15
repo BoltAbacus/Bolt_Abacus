@@ -61,9 +61,7 @@ const StreakCard: FC<StreakCardProps> = ({ className = '' }) => {
           )}
         </div>
       </div>
-      <p className="text-xs mt-2 text-white/70">
-        {currentStreak === 0 ? 'Start your learning journey!' : 'Keep up the great work!'}
-      </p>
+     
     </div>
   );
 };

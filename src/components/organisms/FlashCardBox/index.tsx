@@ -147,50 +147,50 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
   };
 
   return (
-    <div className="flex flex-col justify-center items-center bg-darkBlack shadow-boxWhite p-2 py-6 rounded-2xl w-full min-h-[300px]">
+    <div className="flex flex-col justify-center items-center bg-darkBlack shadow-boxWhite p-6 py-8 rounded-2xl w-full min-h-[400px]">
       {/* Audio Mode Controls */}
       {audioMode && (
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-3 mb-6">
           <button
             onClick={readQuestion}
             disabled={isReading}
-            className="bg-gold hover:bg-lightGold disabled:bg-grey text-black font-bold py-2 px-3 rounded-lg transition-colors"
+            className="bg-gold hover:bg-lightGold disabled:bg-grey text-black font-bold py-2 px-4 rounded-lg transition-colors"
           >
             {isReading ? '🔊 Reading...' : '🔊 Read Again'}
           </button>
           <button
             onClick={toggleQuestionVisibility}
-            className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-3 rounded-lg transition-colors"
+            className="bg-purple hover:bg-pink-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
           >
             {showQuestion ? '👁️ Hide' : '👁️ Show'}
           </button>
         </div>
       )}
 
-      <div className="flex justify-evenly items-center gap-4 w-full overflow-auto font-bold text-lg tablet:text-xl">
+      <div className="flex justify-evenly items-center gap-6 w-full overflow-auto">
         <div className="flex flex-col">
-          <div className="tablet:gap-10 flex items-center gap-4">
-            <div className="flex flex-col items-end gap-1 tracking-widest">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-end gap-2 tracking-widest">
               {showQuestion ? (
                 <div
                   key={currentIndex}
                   className={`border-2 border-gold rounded-lg font-bold text-gold
-                              ${animate ? 'animate-fadeIn' : 'opacity-0'} p-2 tablet:p-4`}
+                              ${animate ? 'animate-fadeIn' : 'opacity-0'} p-4 tablet:p-6`}
                 >
-                  <p>{BigInt(currentNumber).toString()}</p>
+                  <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(currentNumber).toString()}</p>
                 </div>
               ) : (
-                <div className="border-2 border-grey rounded-lg font-bold text-grey p-2 tablet:p-4">
-                  <p>🔊 Listen</p>
+                <div className="border-2 border-grey rounded-lg font-bold text-grey p-4">
+                  <p className="text-xl">🔊 Listen</p>
                 </div>
               )}
             </div>
           </div>
         </div>
-        <div className="text-gold text-2xl desktop:text-3xl"> = </div>
+        <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold"> = </div>
         <div className="">
           <input
-            className="tablet:w-32 bg-darkBlack px-4 py-3 border border-[#A0A0A0] rounded-lg outline-none w-20 text-center"
+            className="bg-darkBlack px-4 py-3 border-2 border-[#A0A0A0] rounded-lg outline-none text-center text-2xl tablet:text-3xl desktop:text-4xl font-bold w-24 tablet:w-32 desktop:w-40"
             type="text"
             inputMode="decimal"
             value={answer}
@@ -204,7 +204,7 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
 
       {/* Audio Mode Instructions */}
       {audioMode && !showQuestion && (
-        <div className="absolute bottom-4 left-4 right-4 text-center">
+        <div className="absolute bottom-6 left-6 right-6 text-center">
           <p className="text-white/60 text-sm">
             🎧 Question read aloud. Click 👁️ to show question or 🔊 to read again.
           </p>

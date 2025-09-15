@@ -7,6 +7,7 @@ import { useExperienceStore } from '@store/experienceStore';
 import { submitPVPGameResult, startPVPGame, getPVPRoomDetails, getPVPGameQuestions, getPVPGameResult } from '@services/pvp';
 import { logActivity } from '@helpers/activity';
 import { generatePvPQuestions } from '@helpers/questionBuilder';
+import { QuizQuestion } from '@interfaces/apis/student';
 
 // Import practice mode components
 import QuizBox from '@components/organisms/QuizBox';
@@ -42,10 +43,6 @@ interface GameData {
   };
 }
 
-interface FlashCardState {
-  currentStep: 'operand1' | 'operator' | 'operand2' | 'input';
-  flashCardSpeed: number;
-}
 
 const StudentPvPGamePage: FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -60,17 +57,13 @@ const StudentPvPGamePage: FC = () => {
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
+  const [gameTimeLeft, setGameTimeLeft] = useState(300); // 5 minutes for 10 questions
   const [gameEnded, setGameEnded] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [waitingForOthers, setWaitingForOthers] = useState(false);
   const [gameResult, setGameResult] = useState<any>(null);
   
-  // Flashcard state
-  const [flashCardState, setFlashCardState] = useState<FlashCardState>({
-    currentStep: 'operand1',
-    flashCardSpeed: 5000 // Default 5 seconds
-  });
 
   const currentQuestion = gameData?.questions[currentQuestionIndex];
   
@@ -159,8 +152,22 @@ const StudentPvPGamePage: FC = () => {
               console.log('Start game response:', response.data);
               
               if (response.data.success) {
+                // Use local generation to ensure all room settings are respected
+                console.log('Creator - using local question generation to respect all room settings');
+                const generatedQuestions = generatePvPQuestions(
+                  response.data.data.operation || 'addition',
+                  roomData.numberOfDigitsLeft || 1,
+                  roomData.numberOfDigitsRight || 1,
+                  response.data.data.total_questions,
+                  roomData.numberOfRows || 2,
+                  roomData.isZigzag || false,
+                  roomData.includeSubtraction || false,
+                  roomData.persistNumberOfDigits || false,
+                  roomData.includeDecimals || false
+                );
+                
                 const gameData: GameData = {
-                  questions: response.data.data.questions,
+                  questions: generatedQuestions,
                   total_questions: response.data.data.total_questions,
                   time_per_question: response.data.data.time_per_question,
                   game_mode: response.data.data.game_mode || 'flashcards',
@@ -176,7 +183,8 @@ const StudentPvPGamePage: FC = () => {
                     includeDecimals: roomData.includeDecimals,
                     audioMode: roomData.audioMode,
                     audioPace: roomData.audioPace,
-                    showQuestion: roomData.showQuestion
+                    showQuestion: roomData.showQuestion,
+                    flashcard_speed: roomData.flashcard_speed
                   }
                 };
                 
@@ -275,34 +283,52 @@ const StudentPvPGamePage: FC = () => {
       
       const response = await getPVPGameQuestions(roomId, authToken);
       console.log('Game questions response:', response.data);
+      console.log('Room settings for subtraction:', {
+        includeSubtraction: roomData.includeSubtraction,
+        operation: response.data.data?.operation,
+        firstQuestion: response.data.data?.questions?.[0]
+      });
       
       if (response.data.success) {
-        const gameData: GameData = {
-          questions: response.data.data.questions,
-          total_questions: response.data.data.total_questions,
-          time_per_question: response.data.data.time_per_question,
-          game_mode: response.data.data.game_mode || 'flashcards',
-          operation: response.data.data.operation || 'addition',
-          room_settings: {
-            // Include practice mode settings from room data
-            numberOfDigitsLeft: roomData.numberOfDigitsLeft,
-            numberOfDigitsRight: roomData.numberOfDigitsRight,
-            isZigzag: roomData.isZigzag,
-            numberOfRows: roomData.numberOfRows,
-            includeSubtraction: roomData.includeSubtraction,
-            persistNumberOfDigits: roomData.persistNumberOfDigits,
-            includeDecimals: roomData.includeDecimals,
-            audioMode: roomData.audioMode,
-            audioPace: roomData.audioPace,
-            showQuestion: roomData.showQuestion
-          }
-        };
-        
-        console.log('Setting participant game data:', gameData);
-        console.log('First question (participant):', gameData.questions?.[0]);
+        // Always use local generation to ensure all room settings are respected
+        console.log('Using local question generation to respect all room settings');
+        const generatedQuestions = generatePvPQuestions(
+          response.data.data.operation || 'addition',
+          roomData.numberOfDigitsLeft || 1,
+          roomData.numberOfDigitsRight || 1,
+          response.data.data.total_questions,
+          roomData.numberOfRows || 2,
+          roomData.isZigzag || false,
+          roomData.includeSubtraction || false,
+          roomData.persistNumberOfDigits || false,
+          roomData.includeDecimals || false
+        );
+          
+          const gameData: GameData = {
+            questions: generatedQuestions,
+            total_questions: response.data.data.total_questions,
+            time_per_question: response.data.data.time_per_question,
+            game_mode: response.data.data.game_mode || 'flashcards',
+            operation: response.data.data.operation || 'addition',
+            room_settings: {
+              numberOfDigitsLeft: roomData.numberOfDigitsLeft,
+              numberOfDigitsRight: roomData.numberOfDigitsRight,
+              isZigzag: roomData.isZigzag,
+              numberOfRows: roomData.numberOfRows,
+              includeSubtraction: roomData.includeSubtraction,
+              persistNumberOfDigits: roomData.persistNumberOfDigits,
+              includeDecimals: roomData.includeDecimals,
+              audioMode: roomData.audioMode,
+              audioPace: roomData.audioPace,
+              showQuestion: roomData.showQuestion,
+              flashcard_speed: roomData.flashcard_speed
+            }
+          };
+          
         setGameData(gameData);
         setCurrentQuestionIndex(0);
         setCountdown(3);
+        return;
       } else {
         console.log('Failed to get game questions:', response.data);
         // Use fallback question generation with practice mode settings
@@ -396,6 +422,7 @@ const StudentPvPGamePage: FC = () => {
 
   useEffect(() => {
     if (countdown !== null) return; // pause during countdown
+    if (gameData?.game_mode === 'flashcards') return; // Skip for flashcards
     if (timeLeft > 0 && !gameEnded && currentQuestion) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
@@ -403,7 +430,18 @@ const StudentPvPGamePage: FC = () => {
       console.log('Time up, auto-submitting');
       handleAnswerSubmit(); // Auto-submit when time runs out
     }
-  }, [timeLeft, gameEnded, currentQuestion, countdown]);
+  }, [timeLeft, gameEnded, currentQuestion, countdown, gameData?.game_mode]);
+
+  // Game timer effect - overall timer for flashcards
+  useEffect(() => {
+    if (gameData?.game_mode === 'flashcards' && !gameEnded && gameTimeLeft > 0) {
+      const timer = setTimeout(() => setGameTimeLeft(gameTimeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (gameData?.game_mode === 'flashcards' && gameTimeLeft === 0 && !gameEnded) {
+      console.log('Game time up, auto-submitting');
+      handleAnswerSubmit(); // Auto-submit when game time runs out
+    }
+  }, [gameTimeLeft, gameEnded, gameData?.game_mode]);
 
   // If we have game data but no current question, try to show the first question
   useEffect(() => {
@@ -413,46 +451,53 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
-  // Flashcard logic - handle step progression
+  // Convert PvP questions to QuizQuestion format for flashcards
+  const [quizQuestions, setQuizQuestions] = useState<Array<QuizQuestion>>([]);
+  const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
+  const [currentFlashcardAnswer, setCurrentFlashcardAnswer] = useState('');
+  const [isFlashcardNextDisabled, setIsFlashcardNextDisabled] = useState(true);
+
+  // Convert PvP questions to practice mode format when game data changes
   useEffect(() => {
-    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded) {
-      // Reset flashcard state for new question
-      // Use flashcard_speed from room settings, not time_per_question
-      const flashcardSpeed = gameData.room_settings?.flashcard_speed || 5; // Default 5 seconds
-      setFlashCardState({
-        currentStep: 'operand1',
-        flashCardSpeed: flashcardSpeed * 1000 // Convert to milliseconds
-      });
+    if (gameData?.questions && gameData.game_mode === 'flashcards') {
+      
+      const convertedQuestions: QuizQuestion[] = gameData.questions.map((question) => ({
+        questionId: question.question_id,
+        question: {
+          operator: question.operator,
+          numbers: question.operands
+        }
+      }));
+      setQuizQuestions(convertedQuestions);
+      setCurrentFlashcardIndex(0);
+      setCurrentFlashcardAnswer('');
+      setIsFlashcardNextDisabled(true);
     }
-  }, [currentQuestion, gameData?.game_mode, gameEnded]);
+  }, [gameData?.questions, gameData?.game_mode]);
 
-  // Flashcard timing effect - progress through steps
-  useEffect(() => {
-    if (gameData?.game_mode === 'flashcards' && currentQuestion && !gameEnded && flashCardState.currentStep !== 'input') {
-      const timer = setTimeout(() => {
-        setFlashCardState(prev => {
-          switch (prev.currentStep) {
-            case 'operand1':
-              return { ...prev, currentStep: 'operand2' };
-            case 'operand2':
-              return { ...prev, currentStep: 'input' };
-            default:
-              return prev;
-          }
-        });
-      }, flashCardState.flashCardSpeed);
-
-      return () => clearTimeout(timer);
-    }
-  }, [flashCardState.currentStep, currentQuestion, gameData?.game_mode, gameEnded, flashCardState.flashCardSpeed]);
-
-  // Auto-advance for flashcards when time runs out
-  useEffect(() => {
-    if (gameData?.game_mode === 'flashcards' && flashCardState.currentStep === 'input' && timeLeft === 0 && !gameEnded && currentQuestion) {
-      console.log('Flashcard time up, auto-submitting');
+  // Flashcard question progression
+  const moveFlashcardQuestion = () => {
+    if (currentFlashcardIndex + 1 >= quizQuestions.length) {
+      // All questions answered, submit
       handleAnswerSubmit();
+    } else {
+      setCurrentFlashcardIndex(currentFlashcardIndex + 1);
+      setCurrentFlashcardAnswer('');
+      setIsFlashcardNextDisabled(true);
     }
-  }, [gameData?.game_mode, flashCardState.currentStep, timeLeft, gameEnded, currentQuestion]);
+  };
+
+  const answerFlashcardQuestion = () => {
+    if (currentFlashcardAnswer.trim()) {
+      setUserAnswer(currentFlashcardAnswer);
+      moveFlashcardQuestion();
+    }
+  };
+
+  const skipFlashcardQuestion = () => {
+    setUserAnswer('');
+    moveFlashcardQuestion();
+  };
 
   const handleAnswerSubmit = async () => {
     if (!roomId || !authToken || !currentQuestion) return;
@@ -767,10 +812,12 @@ const StudentPvPGamePage: FC = () => {
                   Question {currentQuestionIndex + 1} of {gameData?.total_questions}
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
-                <AiOutlineClockCircle className="text-xl" />
-                <span className="text-2xl font-bold">{timeLeft}s</span>
-              </div>
+              {gameData?.game_mode !== 'flashcards' && (
+                <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
+                  <AiOutlineClockCircle className="text-xl" />
+                  <span className="text-2xl font-bold">{timeLeft}s</span>
+                </div>
+              )}
             </div>
             
             {/* Progress Bar */}
@@ -784,73 +831,100 @@ const StudentPvPGamePage: FC = () => {
         </div>
 
         {/* Question Card - Use Practice Mode Components */}
-        {gameData?.game_mode === 'flashcards' ? (
-          <FlashCardBox
-            speed={gameData?.room_settings?.flashcard_speed || 5000}
-            quizQuestion={{
-              question: {
-                numbers: currentQuestion?.operands || [],
-                operator: currentQuestion?.operator || '+'
-              },
-              correct_answer: currentQuestion?.correct_answer || 0
-            }}
-            answer={userAnswer}
-            setAnswer={setUserAnswer}
-            setDisabled={() => {}}
-            audioMode={gameData?.room_settings?.audioMode || false}
-            showQuestion={gameData?.room_settings?.showQuestion !== false}
-            audioPace={gameData?.room_settings?.audioPace || 'normal'}
-          />
-        ) : (
-          <QuizBox
-            quizQuestion={{
-              question: {
-                numbers: currentQuestion?.operands || [],
-                operator: currentQuestion?.operator || '+'
-              },
-              correct_answer: currentQuestion?.correct_answer || 0
-            }}
-            answer={userAnswer}
-            setAnswer={setUserAnswer}
-            audioMode={gameData?.room_settings?.audioMode || false}
-            showQuestion={gameData?.room_settings?.showQuestion !== false}
-            audioPace={gameData?.room_settings?.audioPace || 'normal'}
-          />
-        )}
+        <div className="flex justify-center">
+          <div className="w-full max-w-4xl">
+            {gameData?.game_mode === 'flashcards' ? (
+              <>
+                {/* Practice Mode Style Header */}
+                <div className="flex justify-between items-center mb-6">
+                  <div className="text-white">
+                    <h2 className="text-xl font-bold">Flashcard Practice</h2>
+                    <p className="text-sm text-gray-400">
+                      Question {currentFlashcardIndex + 1} of {quizQuestions.length}
+                    </p>
+                  </div>
+                  <div className="text-white text-right">
+                    <div className="text-2xl font-bold">
+                      {Math.floor(gameTimeLeft / 60)}:{(gameTimeLeft % 60).toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-sm text-gray-400">Game Time Remaining</div>
+                  </div>
+                </div>
+
+                {/* FlashCardBox with Practice Mode Structure */}
+                <div className="tablet:px-4">
+                  <FlashCardBox
+                    speed={gameData?.room_settings?.flashcard_speed || 2500}
+                    quizQuestion={quizQuestions[currentFlashcardIndex]}
+                    answer={currentFlashcardAnswer}
+                    setAnswer={setCurrentFlashcardAnswer}
+                    setDisabled={setIsFlashcardNextDisabled}
+                    submitAnswer={answerFlashcardQuestion}
+                    audioMode={gameData?.room_settings?.audioMode || false}
+                    showQuestion={gameData?.room_settings?.showQuestion !== false}
+                    audioPace={gameData?.room_settings?.audioPace || 'normal'}
+                  />
+                </div>
+
+              </>
+            ) : (
+              <QuizBox
+                quizQuestion={{
+                  questionId: currentQuestion?.question_id || 0,
+                  question: {
+                    numbers: currentQuestion?.operands || [],
+                    operator: currentQuestion?.operator || '+'
+                  }
+                }}
+                answer={userAnswer}
+                setAnswer={setUserAnswer}
+                setDisabled={() => {}}
+                submitAnswer={handleAnswerSubmit}
+                operation={(gameData?.operation as 'addition' | 'multiplication' | 'division') || 'addition'}
+                includeDecimals={gameData?.room_settings?.includeDecimals || false}
+                audioMode={gameData?.room_settings?.audioMode || false}
+                showQuestion={gameData?.room_settings?.showQuestion !== false}
+                audioPace={gameData?.room_settings?.audioPace || 'normal'}
+              />
+            )}
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
           <div className="relative z-10">
             <div className="flex justify-center gap-4">
               {gameData?.game_mode === 'flashcards' ? (
-                /* Flashcard Mode Buttons - Always show */
+                /* Flashcard Mode Buttons - Practice Mode Style */
                 <>
                   <button
-                    onClick={() => {
-                      setUserAnswer('');
-                      // Move to next question without submitting (skip with 0 score)
-                      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
-                        setCurrentQuestionIndex(currentQuestionIndex + 1);
-                        setTimeLeft(gameData?.time_per_question || 30);
-                      } else {
-                        handleAnswerSubmit();
-                      }
-                    }}
-                    disabled={loading}
-                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50"
+                    onClick={skipFlashcardQuestion}
+                    disabled={loading || currentFlashcardIndex + 1 === quizQuestions.length}
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#212124', color: '#ffffff' }}
                   >
                     Skip
                   </button>
                   
-                  <button
-                    onClick={handleAnswerSubmit}
-                    disabled={loading || !userAnswer.trim()}
-                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: '#ffba08', color: '#000000' }}
-                  >
-                    {loading ? 'Submitting...' : 'Next'}
-                  </button>
+                  {currentFlashcardIndex + 1 === quizQuestions.length ? (
+                    <button
+                      onClick={answerFlashcardQuestion}
+                      disabled={loading}
+                      className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50"
+                      style={{ backgroundColor: '#ffba08', color: '#000000' }}
+                    >
+                      {loading ? 'Submitting...' : 'Submit'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={answerFlashcardQuestion}
+                      disabled={loading || isFlashcardNextDisabled}
+                      className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: '#ffba08', color: '#000000' }}
+                    >
+                      Next
+                    </button>
+                  )}
                 </>
               ) : (
                 /* Regular Mode Buttons */

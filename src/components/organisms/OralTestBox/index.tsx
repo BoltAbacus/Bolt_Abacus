@@ -45,13 +45,13 @@ const OralTestBox: FC<OralTestBoxProps> = ({
   });
 
   return (
-    <div className="w-full min-h-[300px] flex justify-center items-center p-2 py-6 bg-darkBlack shadow-boxWhite rounded-2xl">
-      <div className="flex flex-col gap-6 items-center w-full text-lg font-bold justify-evenly tablet:text-xl">
-        <p className="font-medium text-md tablet:text-lg text-center">
+    <div className="w-full min-h-[400px] flex justify-center items-center p-6 py-8 bg-darkBlack shadow-boxWhite rounded-2xl">
+      <div className="flex flex-col gap-8 items-center w-full justify-evenly">
+        <p className="font-bold text-xl tablet:text-2xl desktop:text-3xl text-center text-white">
           Please enter answer for question {questionNumber} below
         </p>
         <input
-          className="w-28 px-4 py-3 bg-darkBlack outline-none border text-center border-[#A0A0A0] rounded-lg tablet:w-36"
+          className="w-32 px-4 py-3 bg-darkBlack outline-none border-2 text-center border-[#A0A0A0] rounded-lg tablet:w-40 desktop:w-48 text-2xl tablet:text-3xl desktop:text-4xl font-bold"
           type="text"
           inputMode="decimal"
           value={answer}

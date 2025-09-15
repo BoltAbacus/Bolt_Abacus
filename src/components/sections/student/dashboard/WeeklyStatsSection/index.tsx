@@ -44,7 +44,7 @@ const WeeklyStatsSection: FC<WeeklyStatsSectionProps> = ({
       
       <div className="mt-6 p-4 bg-[#212124] hover:bg-[#2a2a2d] rounded-lg transition-all duration-300 hover:scale-105">
         <p className="text-sm text-white text-center font-semibold">
-          Keep up the great work!
+          
         </p>
       </div>
     </div>

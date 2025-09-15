@@ -149,11 +149,11 @@ const TestSection: FC<TestSectionProps> = ({
   }, [quizStarted, start]);
 
   return (
-    <div className="flex flex-col gap-10 p-6 tablet:p-10 tablet:gap-16 desktop:px-64 desktop:py-6 desktop:gap-8">
+    <div className="min-h-screen flex flex-col">
       {!quizStarted ? (
         <Instructions startQuiz={setQuizStarted} type="test" />
       ) : (
-        <div>
+        <div className="flex flex-col gap-10 p-6 tablet:p-10 tablet:gap-16 desktop:px-64 desktop:py-6 desktop:gap-8">
           {quizCompleted ? (
             <div>
               {loading ? (
@@ -188,14 +188,16 @@ const TestSection: FC<TestSectionProps> = ({
                 levelId={levelId}
                 classId={classId}
               />
-              <div className="tablet:px-4">
-                <QuizBox
-                  quizQuestion={quizQuestions[currentIndex]}
-                  answer={currentAnswer}
-                  setAnswer={setCurrentAnswer}
-                  setDisabled={setIsNextDisabled}
-                  submitAnswer={answerQuestion}
-                />
+              <div className="tablet:px-4 flex justify-center">
+                <div className="w-full max-w-4xl">
+                  <QuizBox
+                    quizQuestion={quizQuestions[currentIndex]}
+                    answer={currentAnswer}
+                    setAnswer={setCurrentAnswer}
+                    setDisabled={setIsNextDisabled}
+                    submitAnswer={answerQuestion}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-center gap-4 pt-4 tablet:gap-12">
                 <QuizActionButton

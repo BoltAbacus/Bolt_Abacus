@@ -65,7 +65,9 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                                     location.pathname.includes('/practice/timed/') ||
                                     location.pathname.includes('/practice/untimed/') ||
                                     location.pathname.includes('/practice/set/') ||
-                                    location.pathname.includes('/practice/flashcards');
+                                    location.pathname.includes('/practice/flashcards') ||
+                                    location.pathname.includes('/pvp/room/') ||
+                                    location.pathname.includes('/pvp/game/');
     
     if (isQuizTestOrPracticePage && !isCollapsed && !userManuallyToggled) {
       // Auto-collapse when entering quiz/test/practice pages
@@ -82,6 +84,23 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
       setUserManuallyToggled(false);
     }
   }, [location.pathname, isCollapsed, onCollapseChange, userManuallyToggled]);
+
+  // Listen for PvP sidebar collapse events
+  useEffect(() => {
+    const handlePvPSidebarCollapse = () => {
+      if (!isCollapsed) {
+        setIsCollapsed(true);
+        onCollapseChange?.(true);
+        setUserManuallyToggled(false); // Allow auto-expansion when leaving PvP
+      }
+    };
+
+    window.addEventListener('pvpSidebarCollapse', handlePvPSidebarCollapse);
+    
+    return () => {
+      window.removeEventListener('pvpSidebarCollapse', handlePvPSidebarCollapse);
+    };
+  }, [isCollapsed, onCollapseChange]);
 
   const navigationItems = [
     {
@@ -166,7 +185,9 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                       location.pathname.includes('/practice/timed/') ||
                       location.pathname.includes('/practice/untimed/') ||
                       location.pathname.includes('/practice/set/') ||
-                      location.pathname.includes('/practice/flashcards')) ? (
+                      location.pathname.includes('/practice/flashcards') ||
+                      location.pathname.includes('/pvp/room/') ||
+                      location.pathname.includes('/pvp/game/')) ? (
         // Show only floating hamburger icon on quiz/test pages
         <div className="hidden tablet:block fixed top-4 left-4 z-50">
           <button

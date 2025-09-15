@@ -1,7 +1,8 @@
-import { FC } from 'react';
-import { Link } from 'react-router-dom';
+import { FC, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import PracticeCard from '@components/molecules/PracticeCard';
+import OperationSelector from '@components/molecules/OperationSelector';
+import GameModeSelector from '@components/molecules/GameModeSelector';
 
 import {
   STUDENT_FLASHCARDS,
@@ -12,119 +13,132 @@ import {
 
 export interface PracticeSectionProps {}
 
+type NavigationStep = 'operation' | 'gameMode';
+
 const PracticeSection: FC<PracticeSectionProps> = () => {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<NavigationStep>('operation');
+  const [selectedOperation, setSelectedOperation] = useState<string>('');
+
+  const handleOperationSelect = (operation: string) => {
+    setSelectedOperation(operation);
+    setCurrentStep('gameMode');
+  };
+
+  const handleGameModeSelect = (gameMode: string) => {
+    // Navigate directly to the appropriate practice page based on game mode
+    switch (gameMode) {
+      case 'flashcards':
+        navigate(STUDENT_FLASHCARDS);
+        break;
+      case 'norush':
+        navigate(`${STUDENT_UNTIMED}/${selectedOperation}`);
+        break;
+      case 'timeattack':
+        navigate(`${STUDENT_TIMED}/${selectedOperation}`);
+        break;
+      case 'custom':
+        navigate(`${STUDENT_SET}/${selectedOperation}`);
+        break;
+      default:
+        navigate(`${STUDENT_UNTIMED}/${selectedOperation}`);
+    }
+  };
+
+  const handleBackToOperation = () => {
+    setCurrentStep('operation');
+    setSelectedOperation('');
+  };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      <div className="px-4 pt-2 tablet:p-6 desktop:px-12 space-y-4 min-h-screen" style={{ backgroundColor: '#000000' }}>
-
-        {/* Arcade Game Catalog */}
-        <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-4xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-2">
-              🏰 Training Ground ⚔️
-            </h2>
-            <p className="text-lg" style={{ color: '#818181' }}>🎮 Choose your game and start playing! 🚀</p>
-          </div>
-
-          {/* Addition & Subtraction Games */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ffffff' }}></span>
-              ➕ Addition & Subtraction ➖
-            </h3>
-            <div className="gap-3 grid grid-cols-1 desktop:grid-cols-2 tablet:grid-cols-2">
-          <PracticeCard
-            title="Flash Cards"
-            image="/images/flashcards.png"
-            description="Quick memory training with instant feedback!"
-            link={`${STUDENT_FLASHCARDS}`}
-            color="red"
-          />
-          <PracticeCard
-            title="No Rush Mastery"
-            image="/images/unlimited-time.png"
-            description="Learn at your own pace without pressure."
-            link={`${STUDENT_UNTIMED}/addition`}
-            color="blue"
-          />
-          <PracticeCard
-            title="Time Attack"
-            image="/images/timed.png"
-            description="Race against the clock in this fast-paced challenge!"
-            link={`${STUDENT_TIMED}/addition`}
-            color="green"
-          />
-          <PracticeCard
-            title="Custom Challenge"
-            image="/images/set.png"
-            description="Create your own rules and difficulty settings."
-            link={`${STUDENT_SET}/addition`}
-            color="pink"
-          />
-            </div>
-          </div>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000000' }}>
+      <div className="px-4 tablet:p-6 desktop:px-12 space-y-6 w-full max-w-6xl" style={{ backgroundColor: '#000000' }}>
         
-          {/* Multiplication Games */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ffffff' }}></span>
-              ✖️ Multiplication
-            </h3>
-            <div className="gap-3 grid grid-cols-1 desktop:grid-cols-3 tablet:grid-cols-3">
-            <PracticeCard
-              title="No Rush Mastery"
-              image="/images/unlimited-time.png"
-              description="Master multiplication tables at your own speed."
-              link={`${STUDENT_UNTIMED}/multiplication`}
-              color="blue"
-            />
-            <PracticeCard
-              title="Time Attack"
-              image="/images/timed.png"
-              description="Speed through multiplication problems under pressure!"
-              link={`${STUDENT_TIMED}/multiplication`}
-              color="green"
-            />
-            <PracticeCard
-              title="Custom Challenge"
-              image="/images/set.png"
-              description="Design your own multiplication workout."
-              link={`${STUDENT_SET}/multiplication`}
-              color="pink"
-            />
+        {/* Progress Indicator */}
+        <div className="relative p-4 tablet:p-6 rounded-3xl overflow-hidden shadow-2xl">
+          {/* Glassmorphism background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-purple-500/10"></div>
+          
+          {/* Animated background elements */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-purple-500/20 rounded-full blur-2xl"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              {/* Back Button */}
+              {currentStep === 'gameMode' && (
+                <button
+                  onClick={handleBackToOperation}
+                  className="flex items-center gap-2 px-3 py-1 rounded-lg font-bold transition-all duration-300 text-sm backdrop-blur-sm border bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/50 hover:scale-105"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </button>
+              )}
+              
+              {/* Progress numbers always centered */}
+              <div className="flex-1 flex justify-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gold to-lightGold text-black font-bold flex items-center justify-center text-sm shadow-lg">
+                    1
+                  </div>
+                  <div className="w-8 h-2 bg-gradient-to-r from-gold to-lightGold rounded-full"></div>
+                  <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center text-sm ${
+                    currentStep === 'gameMode' 
+                      ? 'bg-gradient-to-r from-gold to-lightGold text-black shadow-lg' 
+                      : 'bg-gray-600/50 text-gray-400'
+                  }`}>
+                    2
+                  </div>
+                </div>
+              </div>
+              
+              {/* Spacer for balance when back button is present */}
+              {currentStep === 'gameMode' && <div className="w-20"></div>}
+            </div>
+            
+            <div className="text-center">
+              <h1 className="text-3xl tablet:text-4xl font-black bg-gradient-to-r from-gold via-lightGold to-orange-500 bg-clip-text text-transparent mb-2">
+                🏰 Solo Training Ground ⚔️
+              </h1>
+              <h2 className="text-xl tablet:text-2xl font-bold text-white/90 mb-2">
+                {currentStep === 'operation' ? 'Choose Your Operation' : 'Choose Game Mode'}
+              </h2>
+              <p className="text-white/80 backdrop-blur-sm">
+                {currentStep === 'operation' 
+                  ? 'Select the mathematical operation you want to practice' 
+                  : `Practice ${selectedOperation} with different challenges`
+                }
+              </p>
             </div>
           </div>
-        
-          {/* Division Games */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ffffff' }}></span>
-              ➗ Division
-            </h3>
-            <div className="gap-3 grid grid-cols-1 desktop:grid-cols-3 tablet:grid-cols-3">
-            <PracticeCard
-              title="No Rush Mastery"
-              image="/images/unlimited-time.png"
-              description="Conquer division problems without time pressure."
-              link={`${STUDENT_UNTIMED}/division`}
-              color="blue"
-            />
-            <PracticeCard
-              title="Time Attack"
-              image="/images/timed.png"
-              description="Divide and conquer against the ticking clock!"
-              link={`${STUDENT_TIMED}/division`}
-              color="green"
-            />
-            <PracticeCard
-              title="Custom Challenge"
-              image="/images/set.png"
-              description="Build your ultimate division training session."
-              link={`${STUDENT_SET}/division`}
-              color="pink"
-            />
-            </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="relative p-4 tablet:p-6 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
+          {/* Glassmorphism background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-gold/10 via-transparent to-blue-500/10"></div>
+          
+          {/* Animated background elements */}
+          <div className="absolute top-0 left-0 w-28 h-28 bg-gold/20 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
+          
+          <div className="relative z-10">
+            {currentStep === 'operation' && (
+              <OperationSelector onOperationSelect={handleOperationSelect} />
+            )}
+            
+            {currentStep === 'gameMode' && (
+              <GameModeSelector 
+                operation={selectedOperation}
+                onGameModeSelect={handleGameModeSelect}
+                onBack={handleBackToOperation}
+              />
+            )}
           </div>
         </div>
       </div>
