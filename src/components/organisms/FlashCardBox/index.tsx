@@ -187,6 +187,8 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
             </div>
           </div>
         </div>
+        {/* Show operator between numbers and equals */}
+        <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold">{quizQuestion.question.operator || '+'}</div>
         <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold"> = </div>
         <div className="">
           <input

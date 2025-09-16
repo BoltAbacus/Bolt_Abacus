@@ -264,15 +264,12 @@ const StudentPvPRoomPage: FC = () => {
               <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
                 <div className="text-gold font-bold text-lg">Game Mode</div>
                 <div className="text-white text-2xl font-black capitalize">
-                  {roomDetails.game_mode === 'flashcards' && 'Flash Cards'}
-                  {roomDetails.game_mode === 'norush' && 'No Rush Mastery'}
-                  {roomDetails.game_mode === 'timeattack' && 'Time Attack'}
-                  {roomDetails.game_mode === 'custom' && 'Custom Challenge'}
+                  {roomDetails.game_mode === 'flashcards' ? 'Flash Cards' :
+                   roomDetails.game_mode === 'norush' ? 'No Rush Mastery' :
+                   roomDetails.game_mode === 'timeattack' ? 'Time Attack' :
+                   roomDetails.game_mode === 'custom' ? 'Custom Challenge' :
+                   (roomDetails.game_mode || 'Flash Cards')}
                 </div>
-              </div>
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Difficulty</div>
-                <div className="text-white text-2xl font-black capitalize">{roomDetails.difficulty_level}</div>
               </div>
             </div>
           </div>

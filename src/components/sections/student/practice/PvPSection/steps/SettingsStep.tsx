@@ -97,9 +97,13 @@ const SettingsStep: FC<SettingsStepProps> = ({
                 type="number"
                 className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
                 value={Number(settings.max_players)}
-                max={50}
+                max={4}
                 min={2}
-                onChange={(e) => updateSettings('max_players', parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  const clamped = isNaN(v) ? 2 : Math.max(2, Math.min(4, v));
+                  updateSettings('max_players', clamped);
+                }}
               />
             </div>
 
@@ -154,17 +158,21 @@ const SettingsStep: FC<SettingsStepProps> = ({
               </div>
             )}
 
-            {/* Number of Rows - Only for addition */}
-            {selectedOperation === 'addition' && (
+            {/* Number of Rows - Only for addition and non-flashcards */}
+            {selectedOperation === 'addition' && selectedGameMode !== 'flashcards' && (
               <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
                 <p className="text-md text-left">Number of Rows: </p>
                 <input
                   type="number"
                   className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
                   value={Number(settings.numberOfRows)}
-                  max={15}
+                  max={10}
                   min={1}
-                  onChange={(e) => updateSettings('numberOfRows', parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    const clamped = isNaN(v) ? 1 : Math.max(1, Math.min(10, v));
+                    updateSettings('numberOfRows', clamped);
+                  }}
                 />
               </div>
             )}

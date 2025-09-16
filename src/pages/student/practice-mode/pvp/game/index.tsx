@@ -66,6 +66,10 @@ const StudentPvPGamePage: FC = () => {
   
 
   const currentQuestion = gameData?.questions[currentQuestionIndex];
+  const [quizQuestions, setQuizQuestions] = useState<Array<QuizQuestion>>([]);
+  const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
+  const [currentFlashcardAnswer, setCurrentFlashcardAnswer] = useState('');
+  const [isFlashcardNextDisabled, setIsFlashcardNextDisabled] = useState(true);
   
   // Debug logging (only when there are issues)
   // Prefer rendering once questions exist; avoid white boxes
@@ -451,11 +455,7 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
-  // Convert PvP questions to QuizQuestion format for flashcards
-  const [quizQuestions, setQuizQuestions] = useState<Array<QuizQuestion>>([]);
-  const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
-  const [currentFlashcardAnswer, setCurrentFlashcardAnswer] = useState('');
-  const [isFlashcardNextDisabled, setIsFlashcardNextDisabled] = useState(true);
+  // (moved declarations to top to avoid redeclare)
 
   // Convert PvP questions to practice mode format when game data changes
   useEffect(() => {
@@ -472,6 +472,8 @@ const StudentPvPGamePage: FC = () => {
       setCurrentFlashcardIndex(0);
       setCurrentFlashcardAnswer('');
       setIsFlashcardNextDisabled(true);
+      // keep outer index in sync with flashcard index for top tracker
+      setCurrentQuestionIndex(0);
     }
   }, [gameData?.questions, gameData?.game_mode]);
 
@@ -479,22 +481,32 @@ const StudentPvPGamePage: FC = () => {
   const moveFlashcardQuestion = () => {
     if (currentFlashcardIndex + 1 >= quizQuestions.length) {
       // All questions answered, submit
-      handleAnswerSubmit();
+      submitGameResults();
     } else {
-      setCurrentFlashcardIndex(currentFlashcardIndex + 1);
+      const nextIndex = currentFlashcardIndex + 1;
+      setCurrentFlashcardIndex(nextIndex);
+      setCurrentQuestionIndex(nextIndex); // sync top tracker
       setCurrentFlashcardAnswer('');
       setIsFlashcardNextDisabled(true);
     }
   };
 
   const answerFlashcardQuestion = () => {
+    // score the current flashcard
+    const correct = gameData?.questions[currentFlashcardIndex]?.correct_answer;
     if (currentFlashcardAnswer.trim()) {
-      setUserAnswer(currentFlashcardAnswer);
-      moveFlashcardQuestion();
+      const ans = parseFloat(currentFlashcardAnswer.trim());
+      const isCorrect = Math.abs(ans - (correct ?? NaN)) < 0.01;
+      if (isCorrect) {
+        setScore((s) => s + 10);
+        setCorrectAnswers((c) => c + 1);
+      }
     }
+    moveFlashcardQuestion();
   };
 
   const skipFlashcardQuestion = () => {
+    // skip gives 0 score
     setUserAnswer('');
     moveFlashcardQuestion();
   };
@@ -809,7 +821,11 @@ const StudentPvPGamePage: FC = () => {
                   {score}
                 </div>
                 <div className="text-white font-semibold">
-                  Question {currentQuestionIndex + 1} of {gameData?.total_questions}
+                  {(() => {
+                    const topIndex = gameData?.game_mode === 'flashcards' ? currentFlashcardIndex : currentQuestionIndex;
+                    const topTotal = gameData?.game_mode === 'flashcards' ? quizQuestions.length : (gameData?.total_questions || 0);
+                    return `Question ${topIndex + 1} of ${topTotal}`;
+                  })()}
                 </div>
               </div>
               {gameData?.game_mode !== 'flashcards' && (
