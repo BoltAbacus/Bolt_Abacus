@@ -315,12 +315,10 @@ export const generatePvPQuestions = (
   includeDecimals: boolean
 ): PvPQuestion[] => {
   const questions: PvPQuestion[] = [];
-  // Enforce at least 60% subtraction questions when requested
-  const shouldForceSubtraction = operation === 'addition' && includeSubtraction;
-  const subtractionTarget = shouldForceSubtraction
-    ? Math.ceil(numberOfQuestions * 0.6)
-    : 0;
-  let subtractionCount = 0;
+  // Enforce at least 60% questions with a negative second operand (but positive sum)
+  const shouldUseNegativeSecond = operation === 'addition' && includeSubtraction;
+  const negativeSecondTarget = shouldUseNegativeSecond ? Math.ceil(numberOfQuestions * 0.6) : 0;
+  let negativeSecondCount = 0;
 
   for (let i = 0; i < numberOfQuestions; i += 1) {
     let numbers: number[] = [];
@@ -333,32 +331,31 @@ export const generatePvPQuestions = (
           : 10 ** numberOfDigitsLeft - 1;
         numbers.push(generateRandomNumber(currentMin, currentMax));
       }
-      // If subtraction is requested, transform this question into a subtraction
-      // one (with all-positive operands) for at least the target share
-      if (includeSubtraction && subtractionCount < subtractionTarget) {
-        // Ensure the first number is larger than the sum of the rest
-        let attempts = 0;
-        const maxAttempts = 100;
-        let sumRest = numbers.slice(1).reduce((a, b) => a + b, 0);
-        while (attempts < maxAttempts && numbers[0] <= sumRest) {
-          // Regenerate smaller rest values to satisfy first > sum(rest)
-          for (let j = 1; j < numberOfRows; j += 1) {
-            const currentMin = 1;
-            const currentMax = Math.max(1, Math.floor(numbers[0] / numberOfRows));
-            numbers[j] = generateRandomNumber(currentMin, currentMax);
-          }
-          sumRest = numbers.slice(1).reduce((a, b) => a + b, 0);
-          attempts++;
+      // If "Include Subtraction" is checked, make the second operand negative (but keep total sum positive)
+      if (shouldUseNegativeSecond && negativeSecondCount < negativeSecondTarget && numberOfRows >= 2) {
+        // Ensure abs(second) < first so sum stays positive even if others are small
+        const maxSecond = Math.max(1, numbers[0] - 1);
+        const chosen = Math.min(generateRandomNumber(1, numbers[0]), maxSecond);
+        numbers[1] = -chosen;
+
+        // If there are more rows, keep them positive but small enough to avoid flipping result to negative
+        let runningSum = numbers[0] + numbers[1];
+        for (let j = 2; j < numberOfRows; j += 1) {
+          const allowMax = Math.max(1, numbers[0] - Math.abs(numbers[1]) - runningSum + 5);
+          const val = Math.min(generateRandomNumber(1, Math.max(1, 10 ** (numberOfDigitsLeft - 1))), allowMax);
+          numbers[j] = Math.max(1, val);
+          runningSum += numbers[j];
         }
-        subtractionCount += 1;
-        // Mark this question explicitly as subtraction by tagging a special operator below
-        (numbers as any)._forceSubtraction = true;
+
+        // Final guard: if somehow non-positive, bump last term
+        if (runningSum <= 0 && numberOfRows >= 2) {
+          numbers[numberOfRows - 1] += Math.abs(runningSum) + 1;
+        }
+        negativeSecondCount += 1;
       }
 
       if (persistNumberOfDigits) {
-        let sum = (numbers as any)._forceSubtraction
-          ? numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0)
-          : numbers.reduce((a, b) => a + b, 0);
+        let sum = numbers.reduce((a, b) => a + b, 0);
         while (Math.abs(sum).toString().length !== numberOfDigitsLeft) {
           numbers = [];
           for (let j = 0; j < numberOfRows; j += 1) {
@@ -368,25 +365,7 @@ export const generatePvPQuestions = (
               : 10 ** numberOfDigitsRight - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
-          // If subtraction is forced, ensure first > sum(rest)
-          if ((numbers as any)._forceSubtraction) {
-            let attempts2 = 0;
-            const maxAttempts2 = 100;
-            let sumRest2 = numbers.slice(1).reduce((a, b) => a + b, 0);
-            while (attempts2 < maxAttempts2 && numbers[0] <= sumRest2) {
-              for (let j = 1; j < numberOfRows; j += 1) {
-                const currentMin = 1;
-                const currentMax = Math.max(1, Math.floor(numbers[0] / numberOfRows));
-                numbers[j] = generateRandomNumber(currentMin, currentMax);
-              }
-              sumRest2 = numbers.slice(1).reduce((a, b) => a + b, 0);
-              attempts2++;
-            }
-          }
-
-          sum = (numbers as any)._forceSubtraction
-            ? numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0)
-            : numbers.reduce((a, b) => a + b, 0);
+          sum = numbers.reduce((a, b) => a + b, 0);
         }
       }
     } else if (operation === 'multiplication') {
@@ -426,27 +405,23 @@ export const generatePvPQuestions = (
 
     // Calculate correct answer
     let correctAnswer = numbers[0];
-    // Determine operator for display: for addition with forced subtraction use '-', else '+'
+    // Determine operator for display based on selected operation only
     let operator: string;
     if (operation === 'addition') {
-      operator = (numbers as any)._forceSubtraction ? '-' : '+';
+      operator = '+';
     } else if (operation === 'multiplication') {
       operator = '*';
     } else {
       operator = '/';
     }
 
-    if (operation === 'addition' && (numbers as any)._forceSubtraction) {
-      correctAnswer = numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0);
-    } else {
-      for (let j = 1; j < numbers.length; j += 1) {
-        if (operator === '+') {
-          correctAnswer += numbers[j];
-        } else if (operator === '*') {
-          correctAnswer *= numbers[j];
-        } else if (operator === '/') {
-          correctAnswer /= numbers[j];
-        }
+    for (let j = 1; j < numbers.length; j += 1) {
+      if (operator === '+') {
+        correctAnswer += numbers[j];
+      } else if (operator === '*') {
+        correctAnswer *= numbers[j];
+      } else if (operator === '/') {
+        correctAnswer /= numbers[j];
       }
     }
 
