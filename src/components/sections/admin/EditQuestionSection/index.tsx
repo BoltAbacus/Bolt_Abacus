@@ -120,6 +120,30 @@ const EditQuestionSection: FC<EditQuestionSectionProps> = ({ question }) => {
                     label: 'Division',
                     value: '/',
                   },
+                  {
+                    label: 'Square Root',
+                    value: 'sqrt',
+                  },
+                  {
+                    label: 'Cube Root',
+                    value: 'cuberoot',
+                  },
+                  {
+                    label: 'Square',
+                    value: 'square',
+                  },
+                  {
+                    label: 'Cube',
+                    value: 'cube',
+                  },
+                  {
+                    label: 'Power of 2',
+                    value: '^2',
+                  },
+                  {
+                    label: 'Power of 3',
+                    value: '^3',
+                  },
                 ]}
               />
               <FormInput

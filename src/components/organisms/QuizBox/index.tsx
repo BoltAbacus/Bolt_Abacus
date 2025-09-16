@@ -51,8 +51,11 @@ const QuizBox: FC<QuizBoxProps> = ({
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     let result = event.target.value;
     
-    // Allow decimal input for division with decimals enabled
-    if (operation === 'division' && includeDecimals) {
+    // Allow decimal input for division with decimals enabled or for operations that might result in decimals
+    if ((operation === 'division' && includeDecimals) || 
+        quizQuestion.question.operator === 'sqrt' || 
+        quizQuestion.question.operator === 'cuberoot' ||
+        quizQuestion.question.operator === '/') {
       // Allow numbers, minus sign, and decimal point
       result = result.replace(/[^0-9.-]/gi, '');
       // Ensure only one decimal point
@@ -61,14 +64,18 @@ const QuizBox: FC<QuizBoxProps> = ({
         result = parts[0] + '.' + parts.slice(1).join('');
       }
     } else {
-      // For other operations or when operation is not provided, only allow integers
+      // For other operations, only allow integers
       result = result.replace(/[^0-9-]/gi, '');
     }
     
     setAnswer(result);
 
     // Validate the number
-    const num = operation === 'division' && includeDecimals ? parseFloat(result) : parseInt(result, 10);
+    const shouldUseFloat = (operation === 'division' && includeDecimals) || 
+                          quizQuestion.question.operator === 'sqrt' || 
+                          quizQuestion.question.operator === 'cuberoot' ||
+                          quizQuestion.question.operator === '/';
+    const num = shouldUseFloat ? parseFloat(result) : parseInt(result, 10);
     if (Number.isNaN(num)) setDisabled(true);
     else setDisabled(false);
   };
@@ -104,6 +111,14 @@ const QuizBox: FC<QuizBoxProps> = ({
       questionText = `${numbers[0]} times ${numbers[1]}`;
     } else if (operator === '/') {
       questionText = `${numbers[0]} divided by ${numbers[1]}`;
+    } else if (operator === 'sqrt') {
+      questionText = `square root of ${numbers[0]}`;
+    } else if (operator === 'cuberoot') {
+      questionText = `cube root of ${numbers[0]}`;
+    } else if (operator === 'square' || operator === '^2') {
+      questionText = `${numbers[0]} squared`;
+    } else if (operator === 'cube' || operator === '^3') {
+      questionText = `${numbers[0]} cubed`;
     }
     
     const utterance = new SpeechSynthesisUtterance(questionText);
@@ -185,6 +200,16 @@ const QuizBox: FC<QuizBoxProps> = ({
                     <RxCross1 />
                   ) : quizQuestion.question.operator === '+' ? (
                     <RxPlus />
+                  ) : quizQuestion.question.operator === '/' ? (
+                    <PiDivide />
+                  ) : quizQuestion.question.operator === 'sqrt' ? (
+                    <span className="text-3xl">√</span>
+                  ) : quizQuestion.question.operator === 'cuberoot' ? (
+                    <span className="text-3xl">∛</span>
+                  ) : quizQuestion.question.operator === 'square' || quizQuestion.question.operator === '^2' ? (
+                    <span className="text-3xl">²</span>
+                  ) : quizQuestion.question.operator === 'cube' || quizQuestion.question.operator === '^3' ? (
+                    <span className="text-3xl">³</span>
                   ) : (
                     <PiDivide />
                   )}

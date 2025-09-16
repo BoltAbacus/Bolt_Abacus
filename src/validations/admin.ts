@@ -163,7 +163,7 @@ export const addQuestionSchema = z.object({
       errorMap: () => ({ message: 'Invalid Number' }),
     })
   ),
-  operator: z.enum(['+', '/', '*'], {
+  operator: z.enum(['+', '/', '*', 'sqrt', 'cuberoot', 'square', 'cube', '^2', '^3'], {
     errorMap: () => ({ message: 'Invalid Operator' }),
   }),
   correctAnswer: z.coerce.number({
@@ -199,7 +199,7 @@ export const editQuestionSchema = z.object({
       errorMap: () => ({ message: 'Invalid Number' }),
     })
     .array(),
-  operator: z.enum(['+', '/', '*'], {
+  operator: z.enum(['+', '/', '*', 'sqrt', 'cuberoot', 'square', 'cube', '^2', '^3'], {
     errorMap: () => ({ message: 'Invalid Operator' }),
   }),
   correctAnswer: z.coerce.number({

@@ -30,14 +30,26 @@ export const parseQuestions = (
     }
     ques.correctAnswer = correctAnswer;
 
+    // Support for basic arithmetic operations
     if (
       question.operation === '+' ||
       question.operation === '/' ||
       question.operation === '*'
     ) {
       ques.operation = question.operation;
+    } 
+    // Support for advanced mathematical operations
+    else if (
+      question.operation === 'sqrt' ||
+      question.operation === 'cuberoot' ||
+      question.operation === 'square' ||
+      question.operation === 'cube' ||
+      question.operation === '^2' ||
+      question.operation === '^3'
+    ) {
+      ques.operation = question.operation;
     } else {
-      throw new Error(`Operation at line ${index + 2} is not of valid type`);
+      throw new Error(`Operation at line ${index + 2} is not of valid type. Supported operations: +, *, /, sqrt, cuberoot, square, cube, ^2, ^3`);
     }
 
     const nums = question.numbers.split(',');
