@@ -1,7 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlinePlus, AiOutlineDelete, AiOutlineClose } from 'react-icons/ai';
 import { useTodoListStore } from '@store/todoListStore';
-import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
 import type { TodoItem } from '@services/todoList';
 
 export interface TodoListSectionProps {
@@ -10,9 +8,8 @@ export interface TodoListSectionProps {
   timeSpent?: string;
 }
 
-const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 0, timeSpent = '0h 0m' }) => {
-  const { todos, completed_todos, pending_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, toggleComplete, isLoading, error, clearError } = useTodoListStore() as any;
-  const { accuracy: storeAccuracy, time_spent_formatted: storeTimeSpent } = useWeeklyStatsStore();
+const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
+  const { todos, completed_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, toggleComplete, isLoading } = useTodoListStore() as any;
   const [newGoal, setNewGoal] = useState('');
   const [goalDate, setGoalDate] = useState('');
   const [goalTime, setGoalTime] = useState('');
@@ -43,7 +40,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
     }
   };
 
-  const formatDateTime = (todo: TodoItem) => {
+  const formatDateTime = () => {
     // For now, we'll return empty string since TodoItem doesn't have date/time fields
     // In a real implementation, you'd want to add date and time fields to the TodoItem interface
     // and return the actual date/time or empty string if not set
@@ -61,8 +58,8 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
   };
 
   // Use props if provided, otherwise fall back to store values
-  const displayAccuracy = accuracy || storeAccuracy || 0;
-  const displayTimeSpent = timeSpent || storeTimeSpent || '0h 0m';
+  // const displayAccuracy = accuracy || storeAccuracy || 0;
+  // const displayTimeSpent = timeSpent || storeTimeSpent || '0h 0m';
 
   return (
     <div className={`text-white h-full flex flex-col ${className}`}>
@@ -75,7 +72,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
           onClick={() => setShowAddForm(!showAddForm)}
           className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-1 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm"
         >
-          <AiOutlinePlus size={14} />
+          ➕
         </button>
       </div>
       
@@ -90,20 +87,27 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
                onChange={(e) => setNewGoal(e.target.value)}
                onKeyPress={handleKeyPress}
                placeholder="Add a new goal..."
-               className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+               className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs"
              />
              <input
                type="date"
                value={goalDate}
                onChange={(e) => setGoalDate(e.target.value)}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
              />
              <input
                type="time"
                value={goalTime}
                onChange={(e) => setGoalTime(e.target.value)}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
              />
+             <button
+               onClick={handleAddGoal}
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center"
+               title="Add goal"
+             >
+               ➕
+             </button>
              <button
                onClick={() => {
                  setShowAddForm(false);
@@ -114,7 +118,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
                className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center"
                title="Cancel"
              >
-               <AiOutlineClose size={16} />
+               ❌
              </button>
            </div>
          </div>
@@ -152,9 +156,9 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
                        }`}>
                          {todo.title}
                        </h3>
-                       {formatDateTime(todo) && (
+                       {formatDateTime() && (
                          <span className="text-xs text-gray-400">
-                           {formatDateTime(todo)}
+                           {formatDateTime()}
                          </span>
                        )}
                      </div>
@@ -170,7 +174,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 
                       className="flex-shrink-0 text-red-400 hover:text-red-300 transition-colors p-1"
                       title="Remove goal"
                     >
-                      <AiOutlineDelete size={14} />
+                      🗑️
                     </button>
                   )}
                 </div>
