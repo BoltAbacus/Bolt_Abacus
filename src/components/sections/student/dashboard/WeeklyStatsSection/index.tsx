@@ -2,19 +2,16 @@ import { FC } from 'react';
 
 export interface WeeklyStatsSectionProps {
   className?: string;
-  sessions?: number;
   accuracy?: number;
   timeSpent?: string;
 }
 
 const WeeklyStatsSection: FC<WeeklyStatsSectionProps> = ({
   className = '',
-  sessions = 0,
   accuracy = 0,
   timeSpent = '0h 0m',
 }) => {
   const stats = [
-    { label: 'Sessions', value: sessions.toString(), icon: '📊' },
     { label: 'Accuracy', value: `${accuracy}%`, icon: '🎯' },
     { label: 'Time Spent', value: timeSpent, icon: '⏱️' },
   ];
@@ -26,7 +23,7 @@ const WeeklyStatsSection: FC<WeeklyStatsSectionProps> = ({
         This Week's Power
       </h2>
       
-      <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4 tablet:gap-6">
+      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4 tablet:gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="bg-[#212124] hover:bg-[#2a2a2d] p-4 rounded-lg transition-all duration-300 hover:scale-105 group min-h-[100px]">
             <div className="flex flex-col space-y-3 h-full">

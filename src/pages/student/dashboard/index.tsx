@@ -9,7 +9,6 @@ import DebugConsole from '@components/atoms/DebugConsole';
 import SpotlightCard from '@components/atoms/SpotlightCard';
 import TodoListSection from '@components/sections/student/dashboard/TodoListSection';
 import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid';
-import WeeklyStatsSection from '@components/sections/student/dashboard/WeeklyStatsSection';
 import SplitText from '@components/atoms/SplitText';
 import CountUp from '@components/atoms/CountUp';
 import JoinClassButton from '@components/atoms/JoinClassButton';
@@ -52,8 +51,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
   const { currentStreak, fetchStreak, updateStreak } = useStreakStore();
   const { experience_points, level, syncWithBackend } = useExperienceStore();
-  const { sessions, accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
-  const [computedSessions, setComputedSessions] = useState<number>(0);
+  const { accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
   const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
   const { todos, completed_todos, pending_todos, fetchTodoList } = useTodoListStore();
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
@@ -209,7 +207,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     time_spent_minutes: minutes,
                     time_spent_formatted: `${hours}h ${minutes}m`,
                   });
-                  setComputedSessions(totalActivities);
                   setComputedTimeFormatted(`${hours}h ${minutes}m`);
                 } else {
                   setCurrentLevelProgressPct(0);
@@ -422,24 +419,24 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                   {/* Level/XP and Personal Goals - Side by Side Layout */}
                   <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4 tablet:gap-6 mb-6">
                     {/* Class Level Progress */}
-                    <div className="flex flex-col tablet:flex-row tablet:items-center space-y-4 tablet:space-y-0 tablet:space-x-3 bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
+                    <div className="flex flex-col tablet:flex-row tablet:items-center space-y-1 tablet:space-y-0 tablet:space-x-2 bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-2 py-1 rounded-lg relative overflow-hidden hover:scale-[1.01]">
                       <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_left,rgba(107,114,128,0.10),transparent_42%)]"></div>
                       
-                      <div className="relative z-10 flex items-center justify-center w-12 h-12 tablet:w-16 tablet:h-16 bg-[#2a2a2d] rounded-2xl hover:scale-110 hover:rotate-12 hover:bg-gold transition-all duration-300">
+                      <div className="relative z-10 flex items-center justify-center w-10 h-10 tablet:w-12 tablet:h-12 bg-[#2a2a2d] rounded-xl hover:scale-110 hover:rotate-12 hover:bg-gold transition-all duration-300">
                         <span className="text-xl tablet:text-2xl hover:scale-125 transition-transform duration-300">📚</span>
                       </div>
                       <div className="flex flex-col min-w-0 flex-1 relative z-10">
-                        <span className="text-lg tablet:text-xl font-bold text-gold mb-2">
+                        <span className="text-lg tablet:text-xl font-bold text-gold mb-1">
                           {getLevelName(currentLevel)}, Conquest {dashboardData?.latestClass || 1}
                         </span>
-                        <div className="flex justify-between items-center mb-3">
+                        <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-white/80 font-semibold">Progress</span>
                           <span className="text-sm font-bold text-gold">{currentLevelProgressPct}%</span>
                         </div>
                         {/* Enhanced Progress Bar */}
-                        <div className="w-full bg-[#0e0e0e]/50 rounded-full h-4 tablet:h-5 shadow-inner mb-3 relative overflow-hidden border border-gold/40 ring-1 ring-gold/20">
+                        <div className="w-full bg-[#0e0e0e]/50 rounded-full h-3 tablet:h-4 shadow-inner mb-1 relative overflow-hidden border border-gold/40 ring-1 ring-gold/20">
                           <div 
-                            className="bg-gold h-4 tablet:h-5 rounded-full transition-all duration-700 shadow-[0_0_16px_rgba(255,186,8,0.30)] relative overflow-hidden"
+                            className="bg-gold h-3 tablet:h-4 rounded-full transition-all duration-700 shadow-[0_0_16px_rgba(255,186,8,0.30)] relative overflow-hidden"
                             style={{ width: `${currentLevelProgressPct}%` }}
                           />
                         </div>
@@ -454,6 +451,29 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                             ⚡ Resume Learning
                           </Link>
                         </div>
+                        
+                        {/* Weekly Stats */}
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div className="bg-[#2a2a2d] hover:bg-[#3a3a3d] p-3 rounded-lg text-center transition-all duration-300 border border-gold/20">
+                            <div className="flex items-center justify-center space-x-1 mb-1">
+                              <span className="text-base">🎯</span>
+                              <span className="text-xs text-white/80 font-medium">Accuracy</span>
+                            </div>
+                            <div className="text-lg font-bold text-gold">
+                              {accuracy || 0}%
+                            </div>
+                          </div>
+                          
+                          <div className="bg-[#2a2a2d] hover:bg-[#3a3a3d] p-3 rounded-lg text-center transition-all duration-300 border border-gold/20">
+                            <div className="flex items-center justify-center space-x-1 mb-1">
+                              <span className="text-base">⏱️</span>
+                              <span className="text-xs text-white/80 font-medium">Time Spent</span>
+                            </div>
+                            <div className="text-lg font-bold text-gold">
+                              {time_spent_formatted || computedTimeFormatted}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -461,7 +481,10 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
                       <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_right,rgba(107,114,128,0.10),transparent_42%)]"></div>
                       <div className="relative z-10">
-                        <TodoListSection />
+                        <TodoListSection 
+                          accuracy={accuracy || 0}
+                          timeSpent={time_spent_formatted || computedTimeFormatted}
+                        />
                       </div>
                     </div>
                   </div>
@@ -472,21 +495,10 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                  {/* 📂 SHORTCUTS GRID */}
                  <ShortcutsGrid />
                 
-                 {/* 🏆 THIS WEEK'S POWER & RECENT ACTIVITY (Responsive Layout) */}
+                 {/* ⚡ RECENT ACTIVITY & LEADERBOARD (2x1 Layout) */}
                  <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4 tablet:gap-6">
-                   <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
-                                             <div className="relative z-10">
-                          <WeeklyStatsSection
-                            sessions={sessions || computedSessions}
-                            accuracy={accuracy || 0}
-                            timeSpent={time_spent_formatted || computedTimeFormatted}
-                          />
-                        </div>
-                   </SpotlightCard>
-                   
                    {/* Recent Activity Section */}
                    <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
-                     
                      <div className="relative z-10">
                        <h2 className="text-xl font-bold mb-6 flex items-center text-white hover:text-gold transition-colors duration-300">
                          <span className="mr-2 hover:scale-125 hover:rotate-12 transition-transform duration-300">⚡</span>
@@ -518,51 +530,51 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                          )}
                        </div>
                      </div>
-                 </SpotlightCard>
-                 </div>
-                 
-                 {/* ⚡ LIGHTNING LEADERBOARD */}
-                 <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
-                   <div className="relative z-10">
-                     <div className="flex items-center justify-between mb-6">
-                       <h2 className="text-xl font-bold flex items-center text-white hover:text-gold transition-colors duration-300">
-                         <span className="mr-2 hover:scale-125 hover:rotate-12 transition-transform duration-300">⚡</span>
-                         Lightning Leaderboard
-                       </h2>
-                       <Link
-                         to={STUDENT_LEADERBOARD}
-                         className="bg-[#212124] hover:bg-gold text-white px-4 py-2 rounded-lg transition-all duration-300 text-sm font-semibold hover:scale-105"
-                       >
-                         View Full ⚡
-                       </Link>
-                     </div>
-                     
-                     <div className="space-y-3">
-                       {topLeaderboard.length === 0 ? (
-                         <div className="text-center py-8">
-                           <div className="text-4xl mb-2">🏆</div>
-                           <p className="text-sm text-[#818181]">No leaderboard data available</p>
-                           <p className="text-xs text-[#818181]">Start playing to see rankings!</p>
-                         </div>
-                       ) : (
-                         topLeaderboard.map((player, index) => (
-                           <div key={player.userId} className="flex items-center justify-between p-3 bg-[#212124] rounded-lg hover:bg-[#2a2a2d] hover:scale-[1.02] transition-all duration-300">
-                             <div className="flex items-center space-x-3">
-                               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2a2a2d] hover:scale-110 hover:bg-gold transition-all duration-300">
-                                 <span className="text-sm font-bold text-gold hover:scale-125 transition-transform duration-300">#{player.rank}</span>
-                               </div>
-                               <div>
-                                 <span className="text-sm text-white font-medium">{player.name}</span>
-                                 <p className="text-xs text-[#818181]">{getLevelName(player.level)}</p>
-                               </div>
-                             </div>
-                             <span className="text-sm font-bold text-gold">{player.xp.toLocaleString()} XP</span>
+                   </SpotlightCard>
+                   
+                   {/* Lightning Leaderboard Section */}
+                   <SpotlightCard className="text-white" spotlightColor="rgba(255, 186, 8, 0.08)">
+                     <div className="relative z-10">
+                       <div className="flex items-center justify-between mb-6">
+                         <h2 className="text-xl font-bold flex items-center text-white hover:text-gold transition-colors duration-300">
+                           <span className="mr-2 hover:scale-125 hover:rotate-12 transition-transform duration-300">⚡</span>
+                           Lightning Leaderboard
+                         </h2>
+                         <Link
+                           to={STUDENT_LEADERBOARD}
+                           className="bg-[#212124] hover:bg-gold text-white px-4 py-2 rounded-lg transition-all duration-300 text-sm font-semibold hover:scale-105"
+                         >
+                           View Full ⚡
+                         </Link>
+                       </div>
+                       
+                       <div className="space-y-3">
+                         {topLeaderboard.length === 0 ? (
+                           <div className="text-center py-8">
+                             <div className="text-4xl mb-2">🏆</div>
+                             <p className="text-sm text-[#818181]">No leaderboard data available</p>
+                             <p className="text-xs text-[#818181]">Start playing to see rankings!</p>
                            </div>
-                         ))
-                       )}
+                         ) : (
+                           topLeaderboard.map((player, index) => (
+                             <div key={player.userId} className="flex items-center justify-between p-3 bg-[#212124] rounded-lg hover:bg-[#2a2a2d] hover:scale-[1.02] transition-all duration-300">
+                               <div className="flex items-center space-x-3">
+                                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2a2a2d] hover:scale-110 hover:bg-gold transition-all duration-300">
+                                   <span className="text-sm font-bold text-gold hover:scale-125 transition-transform duration-300">#{player.rank}</span>
+                                 </div>
+                                 <div>
+                                   <span className="text-sm text-white font-medium">{player.name}</span>
+                                   <p className="text-xs text-[#818181]">{getLevelName(player.level)}</p>
+                                 </div>
+                               </div>
+                               <span className="text-sm font-bold text-gold">{player.xp.toLocaleString()} XP</span>
+                             </div>
+                           ))
+                         )}
+                       </div>
                      </div>
-                   </div>
-                 </SpotlightCard>
+                   </SpotlightCard>
+                 </div>
                  
                   {/* ACHIEVEMENTS SECTION COMMENTED OUT - CLIENT DOES NOT WANT THIS FEATURE */}
                   {/* <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">

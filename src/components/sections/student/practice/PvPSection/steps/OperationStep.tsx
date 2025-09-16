@@ -12,7 +12,7 @@ const OperationStep: FC<OperationStepProps> = ({
   onNext
 }) => {
   const operations = [
-    { id: 'addition', label: '➕ Addition & Subtraction', icon: '➕', description: 'Basic arithmetic with addition and subtraction' },
+    { id: 'addition', label: '➕➖ Addition & Subtraction', icon: '➕➖', description: 'Basic arithmetic with addition and subtraction' },
     { id: 'multiplication', label: '✖️ Multiplication', icon: '✖️', description: 'Master multiplication tables and beyond' },
     { id: 'division', label: '➗ Division', icon: '➗', description: 'Divide and conquer with division problems' }
   ];

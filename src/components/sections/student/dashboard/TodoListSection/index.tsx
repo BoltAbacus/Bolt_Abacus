@@ -1,15 +1,21 @@
 import { FC, useState, useEffect } from 'react';
-import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlinePlus, AiOutlineDelete, AiOutlineClose } from 'react-icons/ai';
 import { useTodoListStore } from '@store/todoListStore';
+import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
 import type { TodoItem } from '@services/todoList';
 
 export interface TodoListSectionProps {
   className?: string;
+  accuracy?: number;
+  timeSpent?: string;
 }
 
-const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
+const TodoListSection: FC<TodoListSectionProps> = ({ className = '', accuracy = 0, timeSpent = '0h 0m' }) => {
   const { todos, completed_todos, pending_todos, total_todos, fetchTodoList, addPersonalGoal, removePersonalGoal, toggleComplete, isLoading, error, clearError } = useTodoListStore() as any;
+  const { accuracy: storeAccuracy, time_spent_formatted: storeTimeSpent } = useWeeklyStatsStore();
   const [newGoal, setNewGoal] = useState('');
+  const [goalDate, setGoalDate] = useState('');
+  const [goalTime, setGoalTime] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
@@ -18,8 +24,11 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
 
   const handleAddGoal = async () => {
     if (newGoal.trim()) {
+      // Add the goal even if date and time are empty
       await addPersonalGoal(newGoal.trim());
       setNewGoal('');
+      setGoalDate('');
+      setGoalTime('');
       setShowAddForm(false);
     }
   };
@@ -34,13 +43,11 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-400';
-      case 'medium': return 'text-yellow-400';
-      case 'low': return 'text-green-400';
-      default: return 'text-gray-400';
-    }
+  const formatDateTime = (todo: TodoItem) => {
+    // For now, we'll return empty string since TodoItem doesn't have date/time fields
+    // In a real implementation, you'd want to add date and time fields to the TodoItem interface
+    // and return the actual date/time or empty string if not set
+    return ''; // Empty - no date/time shown if not provided
   };
 
   const getTypeIcon = (type: string) => {
@@ -53,8 +60,12 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
     }
   };
 
+  // Use props if provided, otherwise fall back to store values
+  const displayAccuracy = accuracy || storeAccuracy || 0;
+  const displayTimeSpent = timeSpent || storeTimeSpent || '0h 0m';
+
   return (
-    <div className={`text-white ${className}`}>
+    <div className={`text-white h-full flex flex-col ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center">
           <span className="mr-2">📋</span>
@@ -68,36 +79,46 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         </button>
       </div>
       
-      {/* Add Goal Form */}
-      {showAddForm && (
-        <div className="mb-4 p-3 bg-[#080808]/30 rounded-lg border border-gold/30">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Add a new goal..."
-              className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
-            />
-            <button
-              onClick={handleAddGoal}
-              className="bg-gold hover:bg-lightGold text-black px-3 py-2 rounded-lg font-semibold transition-colors text-sm"
-            >
-              Add
-            </button>
-            <button
-              onClick={() => {
-                setShowAddForm(false);
-                setNewGoal('');
-              }}
-              className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      
+       {/* Add Goal Form */}
+       {showAddForm && (
+         <div className="mb-4 p-3 bg-[#080808]/30 rounded-lg border border-gold/30">
+           <div className="flex space-x-2">
+             <input
+               type="text"
+               value={newGoal}
+               onChange={(e) => setNewGoal(e.target.value)}
+               onKeyPress={handleKeyPress}
+               placeholder="Add a new goal..."
+               className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+             />
+             <input
+               type="date"
+               value={goalDate}
+               onChange={(e) => setGoalDate(e.target.value)}
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+             />
+             <input
+               type="time"
+               value={goalTime}
+               onChange={(e) => setGoalTime(e.target.value)}
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
+             />
+             <button
+               onClick={() => {
+                 setShowAddForm(false);
+                 setNewGoal('');
+                 setGoalDate('');
+                 setGoalTime('');
+               }}
+               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center"
+               title="Cancel"
+             >
+               <AiOutlineClose size={16} />
+             </button>
+           </div>
+         </div>
+       )}
       
       {isLoading ? (
         <div className="text-center py-4">
@@ -108,7 +129,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         <>
           {/* Silently hide backend error banner for cleaner UX */}
           {/* Todo list */}
-          <div className="space-y-3 max-h-64 overflow-y-auto">
+          <div className="space-y-3 max-h-48 overflow-y-auto flex-1">
             {todos.slice(0, 4).map((todo: TodoItem) => (
               <div key={todo.id} className={`p-3 rounded-lg border backdrop-blur-sm transition-all duration-200 ${
                 todo.completed 
@@ -124,19 +145,19 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                     title="Mark complete"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-lg">{getTypeIcon(todo.type)}</span>
-                      <h3 className={`text-sm font-semibold ${
-                        todo.completed ? 'line-through text-gray-400' : 'text-white'
-                      }`}>
-                        {todo.title}
-                      </h3>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        todo.completed ? 'bg-green-500/20 text-green-400' : getPriorityColor(todo.priority)
-                      }`}>
-                        {todo.priority}
-                      </span>
-                    </div>
+                     <div className="flex items-center space-x-2 mb-1">
+                       <span className="text-lg">{getTypeIcon(todo.type)}</span>
+                       <h3 className={`text-sm font-semibold ${
+                         todo.completed ? 'line-through text-gray-400' : 'text-white'
+                       }`}>
+                         {todo.title}
+                       </h3>
+                       {formatDateTime(todo) && (
+                         <span className="text-xs text-gray-400">
+                           {formatDateTime(todo)}
+                         </span>
+                       )}
+                     </div>
                     <p className={`text-xs ${
                       todo.completed ? 'text-gray-500' : 'text-gray-300'
                     }`}>

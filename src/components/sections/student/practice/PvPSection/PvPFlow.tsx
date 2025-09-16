@@ -395,22 +395,22 @@ const PvPFlow: FC<PvPFlowProps> = () => {
       <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-blue/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-gold/10 rounded-full blur-2xl"></div>
       
-      <div className="relative z-10 space-y-4 tablet:space-y-6 min-h-screen p-4">
+      <div className="relative z-10 space-y-3 tablet:space-y-6 min-h-screen p-2 tablet:p-4">
         {/* Header */}
-        <div className="transition-colors text-white p-4 tablet:p-8 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.65)] relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
+        <div className="transition-colors text-white p-3 tablet:p-8 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.65)] relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
           <div className="relative z-10 text-center">
-            <h1 className="text-3xl tablet:text-5xl font-black bg-gradient-to-r from-gold via-yellow-300 to-gold bg-clip-text text-transparent mb-4">
+            <h1 className="text-xl tablet:text-5xl font-black bg-gradient-to-r from-gold via-yellow-300 to-gold bg-clip-text text-transparent mb-2 tablet:mb-4">
               ⚔️ EPIC BATTLE GROUND ⚔️
             </h1>
-            <div className="flex flex-col tablet:flex-row justify-center items-center gap-2 tablet:gap-4 mb-6">
-              <div className="backdrop-blur-sm bg-gold/80 text-black px-3 tablet:px-4 py-2 rounded-full font-bold text-sm tablet:text-base border border-gold/50 shadow-lg hover:shadow-gold/50 transition-all duration-300 hover:scale-105">
+            <div className="flex flex-col tablet:flex-row justify-center items-center gap-1 tablet:gap-4 mb-3 tablet:mb-6">
+              <div className="backdrop-blur-sm bg-gold/80 text-black px-2 tablet:px-4 py-1 tablet:py-2 rounded-full font-bold text-xs tablet:text-base border border-gold/50 shadow-lg hover:shadow-gold/50 transition-all duration-300 hover:scale-105">
                 🏆 CHALLENGE FRIENDS
               </div>
-              <div className="backdrop-blur-sm bg-purple/80 text-white px-3 tablet:px-4 py-2 rounded-full font-bold text-sm tablet:text-base border border-purple/50 shadow-lg hover:shadow-purple/50 transition-all duration-300 hover:scale-105">
+              <div className="backdrop-blur-sm bg-purple/80 text-white px-2 tablet:px-4 py-1 tablet:py-2 rounded-full font-bold text-xs tablet:text-base border border-purple/50 shadow-lg hover:shadow-purple/50 transition-all duration-300 hover:scale-105">
                 ⚡ REAL-TIME BATTLES
               </div>
             </div>
-            <p className="text-white/90 text-sm tablet:text-lg max-w-3xl mx-auto backdrop-blur-sm">
+            <p className="text-white/90 text-xs tablet:text-lg max-w-3xl mx-auto backdrop-blur-sm">
               Challenge your friends in epic math battles! Create rooms, join battles, and climb the leaderboard.
               <span className="font-bold text-gold"> Ready to battle? 🚀</span>
             </p>
@@ -418,7 +418,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
         </div>
 
         {/* Progress Indicator */}
-        <div className="relative p-4 tablet:p-6 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="relative p-3 tablet:p-6 rounded-3xl overflow-hidden shadow-2xl">
           {/* Glassmorphism background */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-purple-500/10"></div>
@@ -488,7 +488,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
         </div>
 
         {/* Step Content */}
-        <div className="relative p-4 tablet:p-6 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
+        <div className="relative p-3 tablet:p-6 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
           {/* Glassmorphism background */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-tr from-gold/10 via-transparent to-blue-500/10"></div>

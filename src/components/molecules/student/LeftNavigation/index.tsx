@@ -106,37 +106,37 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
     {
       name: 'Dashboard',
       href: STUDENT_DASHBOARD,
-      icon: AiOutlineDashboard,
+      icon: '🏠',
     },
     {
       name: 'Path of Conquest',
       href: STUDENT_ROADMAP,
-      icon: MdOutlineMap,
+      icon: '🗺️',
     },
     {
       name: 'Progress',
       href: STUDENT_PROGRESS,
-      icon: AiOutlineBarChart,
+      icon: '📊',
     },
     {
       name: 'Solo Training Ground',
       href: STUDENT_PRACTICE,
-      icon: AiOutlineBook,
+      icon: '🎯',
     },
     {
       name: 'Epic Battle Ground',
       href: STUDENT_PVP,
-      icon: AiOutlineTeam,
+      icon: '⚔️',
     },
     {
       name: 'Virtual Abacus',
       href: STUDENT_VIRTUAL_ABACUS,
-      icon: AiOutlineCalculator,
+      icon: '🧮',
     },
     {
       name: 'Hall of Fame',
       href: STUDENT_LEADERBOARD,
-      icon: AiOutlineTrophy,
+      icon: '🏆',
     },
   ];
 
@@ -166,7 +166,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
         onClick={handleMobileMenuToggle}
         className="fixed top-4 left-4 z-[60] tablet:hidden p-2 rounded-lg bg-[#161618] text-white hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 border border-[#212124]"
       >
-        <AiOutlineMenu size={20} />
+        <span className="text-lg">☰</span>
       </button>
 
       {/* Mobile Overlay */}
@@ -194,16 +194,16 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
             onClick={handleCollapseToggle}
             className="p-3 rounded-lg bg-[#161618] text-white hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 border border-[#212124] shadow-lg"
           >
-            <AiOutlineMenu size={20} />
+            <span className="text-lg">☰</span>
           </button>
         </div>
       ) : (
         // Show normal sidebar
-        <div className={`hidden tablet:block fixed left-0 top-0 h-full bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] ${
+        <div className={`hidden tablet:block fixed left-0 top-0 h-screen bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] flex flex-col ${
           isCollapsed ? 'w-16' : 'w-64'
         }`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[#212124]">
+          <div className="flex items-center justify-between p-2 border-b border-[#212124] flex-shrink-0">
             {!isCollapsed ? (
               <div className="flex items-center space-x-2">
                 <BrandLogo link="/" />
@@ -225,14 +225,14 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
               onClick={handleCollapseToggle}
               className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
             >
-              {isCollapsed ? <AiOutlineMenu size={20} /> : <AiOutlineClose size={20} />}
+              {isCollapsed ? <span className="text-lg">☰</span> : <span className="text-lg">✕</span>}
             </button>
           </div>
 
           {/* User Info & Streak */}
-          <div className="p-4 border-b border-[#212124]">
+          <div className="p-2 border-b border-[#212124] flex-shrink-0">
             {!isCollapsed && (
-              <div className="flex items-center justify-between mb-4 -ml-2 p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group">
+              <div className="flex items-center justify-between mb-1 -ml-2 p-1 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 group">
                 <Link
                   to={STUDENT_PROFILE_PAGE}
                   className="flex items-center space-x-3 cursor-pointer flex-1"
@@ -252,17 +252,17 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                   className="p-1.5 rounded-md hover:bg-[#e6b422] transition-all duration-200"
                   title="Logout"
                 >
-                  <AiOutlineLogout size={16} className="text-white group-hover:text-[#000000]" />
+                  <span className="text-sm">🚪</span>
                 </button>
               </div>
             )}
             
             {/* Streak Display with Join Button */}
             {!isCollapsed ? (
-              <div className="flex items-center justify-between p-2">
+              <div className="flex items-center justify-between p-1">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-[#facb25] rounded-full flex items-center justify-center">
-                    <AiOutlineFire className="text-[#000000]" size={16} />
+                    <span className="text-sm">🔥</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">
@@ -272,35 +272,34 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                   </div>
                 </div>
                 <button className="bg-[#facb25] text-[#000000] px-3 py-1.5 rounded-lg font-medium hover:bg-[#e6b422] transition-all duration-200 flex items-center space-x-1">
-                  <AiOutlineVideoCamera size={14} />
+                  <span className="text-sm">📹</span>
                   <span className="text-sm">Join</span>
                 </button>
               </div>
             ) : (
-              <div className="flex justify-center p-2">
+              <div className="flex justify-center p-1">
                 <div className="w-8 h-8 bg-[#facb25] rounded-full flex items-center justify-center">
-                  <AiOutlineFire className="text-[#000000]" size={16} />
+                  <span className="text-sm">🔥</span>
                 </div>
               </div>
             )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-1.5">
+          <nav className="flex-1 p-2 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            <ul className="space-y-1">
               {navigationItems.map((item) => {
-                const Icon = item.icon;
                 return (
                   <li key={item.name} className="relative">
                     <Link
                       to={item.href}
-                      className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 group ${
+                      className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-2 rounded-lg transition-all duration-200 group ${
                         isActive(item.href)
                           ? 'bg-[#facb25] text-[#000000] shadow-lg'
                           : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
                       }`}
                     >
-                      <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
+                      <span className="text-xl">{item.icon}</span>
                       {!isCollapsed && (
                         <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
                       )}
@@ -325,14 +324,14 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           </nav>
 
           {/* Bottom Actions */}
-          <div className="p-4 border-t border-[#212124]">
-            <ul className="space-y-2">
+          <div className="p-2 border-t border-[#212124] flex-shrink-0">
+            <ul className="space-y-1">
               <li>
                 <Link
                   to={STUDENT_ARCHIVE}
-                  className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
+                  className={`flex items-center ${isCollapsed ? 'justify-center' : ''} p-2 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
                 >
-                  <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
+                  <span className="text-xl">📚</span>
                   {!isCollapsed && (
                     <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
                   )}
@@ -341,9 +340,9 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
               <li>
                 <button
                   onClick={logout}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} p-2 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group`}
                 >
-                  <AiOutlineLogout size={20} className="text-white group-hover:text-[#000000]" />
+                  <span className="text-xl">🚪</span>
                   {!isCollapsed && (
                     <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Logout</span>
                   )}
@@ -365,7 +364,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
             onClick={closeMobileMenu}
             className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
           >
-            <AiOutlineClose size={20} />
+            <span className="text-lg">✕</span>
           </button>
         </div>
 
@@ -389,7 +388,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
           
           {/* Mobile Streak */}
           <div className="flex items-center space-x-2 p-2 rounded-lg bg-[#212124]">
-            <AiOutlineFire className="text-[#facb25]" size={20} />
+            <span className="text-xl">🔥</span>
             <div>
               <p className="text-sm font-medium text-white">
                 {currentStreak || 0} Day Streak
@@ -403,7 +402,6 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
             {navigationItems.map((item) => {
-              const Icon = item.icon;
               return (
                 <li key={item.name}>
                   <Link
@@ -415,7 +413,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                         : 'text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md'
                     }`}
                   >
-                    <Icon size={20} className={isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'} />
+                    <span className="text-xl">{item.icon}</span>
                     <span className={`ml-3 text-sm font-medium ${isActive(item.href) ? 'text-[#000000]' : 'text-white group-hover:text-[#000000]'}`}>{item.name}</span>
                   </Link>
                 </li>
@@ -433,7 +431,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                 onClick={closeMobileMenu}
                 className="flex items-center p-3 rounded-lg transition-all duration-200 text-white hover:bg-[#facb25] hover:text-[#000000] hover:shadow-md group"
               >
-                <AiOutlineHistory size={20} className="text-white group-hover:text-[#000000]" />
+                <span className="text-xl">📚</span>
                 <span className="ml-3 text-sm font-medium text-white group-hover:text-[#000000]">Archive</span>
               </Link>
             </li>
