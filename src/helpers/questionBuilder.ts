@@ -315,6 +315,12 @@ export const generatePvPQuestions = (
   includeDecimals: boolean
 ): PvPQuestion[] => {
   const questions: PvPQuestion[] = [];
+  // Enforce at least 60% subtraction questions when requested
+  const shouldForceSubtraction = operation === 'addition' && includeSubtraction;
+  const subtractionTarget = shouldForceSubtraction
+    ? Math.ceil(numberOfQuestions * 0.6)
+    : 0;
+  let subtractionCount = 0;
 
   for (let i = 0; i < numberOfQuestions; i += 1) {
     let numbers: number[] = [];
@@ -327,69 +333,32 @@ export const generatePvPQuestions = (
           : 10 ** numberOfDigitsLeft - 1;
         numbers.push(generateRandomNumber(currentMin, currentMax));
       }
-
-      if (includeSubtraction) {
-        // Ensure first number is always positive and final answer is always positive
+      // If subtraction is requested, transform this question into a subtraction
+      // one (with all-positive operands) for at least the target share
+      if (includeSubtraction && subtractionCount < subtractionTarget) {
+        // Ensure the first number is larger than the sum of the rest
         let attempts = 0;
-        const maxAttempts = 100; // Prevent infinite loops
-        let finalSum = 0;
-        
-        do {
-          // Reset numbers to positive values
-          numbers = [];
-          for (let j = 0; j < numberOfRows; j += 1) {
-            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
-            const currentMax = isZigzag
-              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
-              : 10 ** numberOfDigitsLeft - 1;
-            numbers.push(generateRandomNumber(currentMin, currentMax));
+        const maxAttempts = 100;
+        let sumRest = numbers.slice(1).reduce((a, b) => a + b, 0);
+        while (attempts < maxAttempts && numbers[0] <= sumRest) {
+          // Regenerate smaller rest values to satisfy first > sum(rest)
+          for (let j = 1; j < numberOfRows; j += 1) {
+            const currentMin = 1;
+            const currentMax = Math.max(1, Math.floor(numbers[0] / numberOfRows));
+            numbers[j] = generateRandomNumber(currentMin, currentMax);
           }
-          
-          // First number is always positive (never change it)
-          // Apply subtraction randomly to other numbers but ensure final sum is always positive
-          finalSum = numbers[0]; // Start with first number (always positive)
-          
-          for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
-              // Only make negative if it won't make final sum negative
-              numbers[j] *= -1;
-              finalSum += numbers[j];
-            } else {
-              // Keep positive
-              finalSum += numbers[j];
-            }
-          }
-          
+          sumRest = numbers.slice(1).reduce((a, b) => a + b, 0);
           attempts++;
-        } while (finalSum <= 0 && attempts < maxAttempts);
-        
-        // If we still couldn't find a valid combination, use a more conservative approach
-        if (attempts >= maxAttempts) {
-          numbers = [];
-          for (let j = 0; j < numberOfRows; j += 1) {
-            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
-            const currentMax = isZigzag
-              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
-              : 10 ** numberOfDigitsLeft - 1;
-            numbers.push(generateRandomNumber(currentMin, currentMax));
-          }
-          
-          // Conservative approach: ensure first number is large enough to handle all subtractions
-          finalSum = numbers[0]; // First number stays positive
-          
-          for (let j = 1; j < numbers.length; j += 1) {
-            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
-              numbers[j] *= -1;
-              finalSum += numbers[j];
-            } else {
-              finalSum += numbers[j];
-            }
-          }
         }
+        subtractionCount += 1;
+        // Mark this question explicitly as subtraction by tagging a special operator below
+        (numbers as any)._forceSubtraction = true;
       }
 
       if (persistNumberOfDigits) {
-        let sum = numbers.reduce((a, b) => a + b, 0);
+        let sum = (numbers as any)._forceSubtraction
+          ? numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0)
+          : numbers.reduce((a, b) => a + b, 0);
         while (Math.abs(sum).toString().length !== numberOfDigitsLeft) {
           numbers = [];
           for (let j = 0; j < numberOfRows; j += 1) {
@@ -399,37 +368,25 @@ export const generatePvPQuestions = (
               : 10 ** numberOfDigitsRight - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
-          
-          // Re-apply subtraction logic if needed
-          if (includeSubtraction) {
-            let attempts = 0;
-            const maxAttempts = 100;
-            
-            do {
-              const tempNumbers = [...numbers];
-              let cumulativeSum = tempNumbers[0]; // Start with first number
-              
-              for (let j = 1; j < tempNumbers.length; j += 1) {
-                if (Math.random() < 0.5 && cumulativeSum - tempNumbers[j] > 0) {
-                  // Only make negative if it won't make cumulative sum negative
-                  tempNumbers[j] *= -1;
-                  cumulativeSum += tempNumbers[j];
-                } else {
-                  // Keep positive
-                  cumulativeSum += tempNumbers[j];
-                }
+          // If subtraction is forced, ensure first > sum(rest)
+          if ((numbers as any)._forceSubtraction) {
+            let attempts2 = 0;
+            const maxAttempts2 = 100;
+            let sumRest2 = numbers.slice(1).reduce((a, b) => a + b, 0);
+            while (attempts2 < maxAttempts2 && numbers[0] <= sumRest2) {
+              for (let j = 1; j < numberOfRows; j += 1) {
+                const currentMin = 1;
+                const currentMax = Math.max(1, Math.floor(numbers[0] / numberOfRows));
+                numbers[j] = generateRandomNumber(currentMin, currentMax);
               }
-              
-              if (cumulativeSum > 0) {
-                numbers = tempNumbers;
-                break;
-              }
-              
-              attempts++;
-            } while (attempts < maxAttempts);
+              sumRest2 = numbers.slice(1).reduce((a, b) => a + b, 0);
+              attempts2++;
+            }
           }
-          
-          sum = numbers.reduce((a, b) => a + b, 0);
+
+          sum = (numbers as any)._forceSubtraction
+            ? numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0)
+            : numbers.reduce((a, b) => a + b, 0);
         }
       }
     } else if (operation === 'multiplication') {
@@ -469,15 +426,27 @@ export const generatePvPQuestions = (
 
     // Calculate correct answer
     let correctAnswer = numbers[0];
-    const operator = operation === 'addition' ? '+' : operation === 'multiplication' ? '*' : '/';
+    // Determine operator for display: for addition with forced subtraction use '-', else '+'
+    let operator: string;
+    if (operation === 'addition') {
+      operator = (numbers as any)._forceSubtraction ? '-' : '+';
+    } else if (operation === 'multiplication') {
+      operator = '*';
+    } else {
+      operator = '/';
+    }
 
-    for (let j = 1; j < numbers.length; j += 1) {
-      if (operator === '+') {
-        correctAnswer += numbers[j];
-      } else if (operator === '*') {
-        correctAnswer *= numbers[j];
-      } else if (operator === '/') {
-        correctAnswer /= numbers[j];
+    if (operation === 'addition' && (numbers as any)._forceSubtraction) {
+      correctAnswer = numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0);
+    } else {
+      for (let j = 1; j < numbers.length; j += 1) {
+        if (operator === '+') {
+          correctAnswer += numbers[j];
+        } else if (operator === '*') {
+          correctAnswer *= numbers[j];
+        } else if (operator === '/') {
+          correctAnswer /= numbers[j];
+        }
       }
     }
 

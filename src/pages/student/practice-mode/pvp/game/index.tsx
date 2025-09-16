@@ -158,14 +158,18 @@ const StudentPvPGamePage: FC = () => {
               if (response.data.success) {
                 // Use local generation to ensure all room settings are respected
                 console.log('Creator - using local question generation to respect all room settings');
+                const op = response.data.data.operation || 'addition';
+                const includeSub = (roomData.includeSubtraction !== undefined
+                  ? roomData.includeSubtraction
+                  : (op === 'addition'));
                 const generatedQuestions = generatePvPQuestions(
-                  response.data.data.operation || 'addition',
+                  op,
                   roomData.numberOfDigitsLeft || 1,
                   roomData.numberOfDigitsRight || 1,
                   response.data.data.total_questions,
                   roomData.numberOfRows || 2,
                   roomData.isZigzag || false,
-                  roomData.includeSubtraction || false,
+                  includeSub,
                   roomData.persistNumberOfDigits || false,
                   roomData.includeDecimals || false
                 );
@@ -175,14 +179,14 @@ const StudentPvPGamePage: FC = () => {
                   total_questions: response.data.data.total_questions,
                   time_per_question: response.data.data.time_per_question,
                   game_mode: response.data.data.game_mode || 'flashcards',
-                  operation: response.data.data.operation || 'addition',
+                  operation: op,
                   room_settings: {
                     // Include practice mode settings from room data
                     numberOfDigitsLeft: roomData.numberOfDigitsLeft,
                     numberOfDigitsRight: roomData.numberOfDigitsRight,
                     isZigzag: roomData.isZigzag,
                     numberOfRows: roomData.numberOfRows,
-                    includeSubtraction: roomData.includeSubtraction,
+                    includeSubtraction: includeSub,
                     persistNumberOfDigits: roomData.persistNumberOfDigits,
                     includeDecimals: roomData.includeDecimals,
                     audioMode: roomData.audioMode,
@@ -296,14 +300,18 @@ const StudentPvPGamePage: FC = () => {
       if (response.data.success) {
         // Always use local generation to ensure all room settings are respected
         console.log('Using local question generation to respect all room settings');
+        const op = response.data.data.operation || 'addition';
+        const includeSub = (roomData.includeSubtraction !== undefined
+          ? roomData.includeSubtraction
+          : (op === 'addition'));
         const generatedQuestions = generatePvPQuestions(
-          response.data.data.operation || 'addition',
+          op,
           roomData.numberOfDigitsLeft || 1,
           roomData.numberOfDigitsRight || 1,
           response.data.data.total_questions,
           roomData.numberOfRows || 2,
           roomData.isZigzag || false,
-          roomData.includeSubtraction || false,
+          includeSub,
           roomData.persistNumberOfDigits || false,
           roomData.includeDecimals || false
         );
@@ -313,13 +321,13 @@ const StudentPvPGamePage: FC = () => {
             total_questions: response.data.data.total_questions,
             time_per_question: response.data.data.time_per_question,
             game_mode: response.data.data.game_mode || 'flashcards',
-            operation: response.data.data.operation || 'addition',
+            operation: op,
             room_settings: {
               numberOfDigitsLeft: roomData.numberOfDigitsLeft,
               numberOfDigitsRight: roomData.numberOfDigitsRight,
               isZigzag: roomData.isZigzag,
               numberOfRows: roomData.numberOfRows,
-              includeSubtraction: roomData.includeSubtraction,
+              includeSubtraction: includeSub,
               persistNumberOfDigits: roomData.persistNumberOfDigits,
               includeDecimals: roomData.includeDecimals,
               audioMode: roomData.audioMode,
