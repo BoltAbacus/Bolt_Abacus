@@ -188,7 +188,8 @@ export const submitPVPGameResult = async (
   score: number,
   correctAnswers: number,
   totalTime: number,
-  token: string
+  token: string,
+  problemTimes?: any[]
 ) => {
   return axios.post(
     SUBMIT_PVP_GAME_RESULT_ENDPOINT,
@@ -197,6 +198,7 @@ export const submitPVPGameResult = async (
       score,
       correct_answers: correctAnswers,
       total_time: totalTime,
+      problemTimes: problemTimes || [],
     },
     {
       headers: { 'AUTH-TOKEN': token },

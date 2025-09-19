@@ -158,22 +158,51 @@ const SettingsStep: FC<SettingsStepProps> = ({
               </div>
             )}
 
-            {/* Number of Rows - Only for addition and non-flashcards */}
-            {selectedOperation === 'addition' && selectedGameMode !== 'flashcards' && (
+            {/* Number of Rows - For addition, multiplication, division and flash cards */}
+            {(selectedOperation === 'addition' || selectedOperation === 'multiplication' || selectedOperation === 'division' || selectedGameMode === 'flashcards') && (
               <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
                 <p className="text-md text-left">Number of Rows: </p>
-                <input
-                  type="number"
-                  className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
-                  value={Number(settings.numberOfRows)}
-                  max={10}
-                  min={1}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
-                    const clamped = isNaN(v) ? 1 : Math.max(1, Math.min(10, v));
-                    updateSettings('numberOfRows', clamped);
-                  }}
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+                    value={settings.numberOfRows.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty string for user to clear and type
+                      if (value === '') {
+                        updateSettings('numberOfRows', '');
+                        return;
+                      }
+                      // Only allow digits
+                      if (/^\d+$/.test(value)) {
+                        const num = parseInt(value, 10);
+                        if (num >= 1 && num <= 10) {
+                          updateSettings('numberOfRows', num);
+                        } else {
+                          updateSettings('numberOfRows', value); // Keep the invalid input for user to see
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || value === '1') {
+                        updateSettings('numberOfRows', 2); // Reset to default
+                      } else {
+                        const num = parseInt(value, 10);
+                        if (isNaN(num) || num < 2) {
+                          updateSettings('numberOfRows', 2); // Reset to default
+                        } else if (num > 10) {
+                          updateSettings('numberOfRows', 10); // Clamp to max
+                        }
+                      }
+                    }}
+                    placeholder="2-10"
+                  />
+                  {(settings.numberOfRows < 2 || settings.numberOfRows === 1) && (
+                    <p className="text-red-400 text-xs mt-1">⚠️ Number of rows cannot be less than 2</p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -338,15 +367,21 @@ const SettingsStep: FC<SettingsStepProps> = ({
 
         {/* Create Room Button */}
         <button
-          onClick={onCreateRoom}
-          disabled={loading}
+          onClick={() => {
+            if (settings.numberOfRows < 2) {
+              setError('Number of rows cannot be less than 2. Please enter a value between 2-10.');
+              return;
+            }
+            onCreateRoom();
+          }}
+          disabled={loading || settings.numberOfRows < 2}
           className={`w-full py-3 tablet:py-4 px-6 tablet:px-8 rounded-2xl font-black text-base tablet:text-lg transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-            loading
+            loading || settings.numberOfRows < 2
               ? 'bg-gray-500 text-gray-300'
               : 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-2xl hover:shadow-green-400/50'
           }`}
         >
-          {loading ? '🔄 Creating Room...' : '🚀 Create Room'}
+          {loading ? '🔄 Creating Room...' : settings.numberOfRows < 2 ? '⚠️ Fix rows (2-10)' : '🚀 Create Room'}
         </button>
       </div>
 

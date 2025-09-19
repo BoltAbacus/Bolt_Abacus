@@ -271,6 +271,22 @@ const StudentPvPRoomPage: FC = () => {
                    (roomDetails.game_mode || 'Flash Cards')}
                 </div>
               </div>
+              {/* Timer Information */}
+              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
+                <div className="text-gold font-bold text-lg">Total Game Time</div>
+                <div className="text-white text-2xl font-black">
+                  {roomDetails.game_mode === 'flashcards' ? 
+                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
+                   roomDetails.game_mode === 'norush' ? 
+                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
+                   roomDetails.game_mode === 'timeattack' ? 
+                    `${Math.floor((roomDetails.time_per_question * roomDetails.number_of_questions) / 60)}:${((roomDetails.time_per_question * roomDetails.number_of_questions) % 60).toString().padStart(2, '0')}` :
+                   roomDetails.game_mode === 'custom' ? 
+                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
+                    `${Math.floor((roomDetails.time_per_question * roomDetails.number_of_questions) / 60)}:${((roomDetails.time_per_question * roomDetails.number_of_questions) % 60).toString().padStart(2, '0')}`
+                  }
+                </div>
+              </div>
             </div>
           </div>
         </div>

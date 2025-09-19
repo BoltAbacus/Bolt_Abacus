@@ -8,6 +8,7 @@ import { submitPVPGameResult, startPVPGame, getPVPRoomDetails, getPVPGameQuestio
 import { logActivity } from '@helpers/activity';
 import { generatePvPQuestions } from '@helpers/questionBuilder';
 import { QuizQuestion } from '@interfaces/apis/student';
+import { useProblemTimer } from '@hooks/useProblemTimer';
 
 // Import practice mode components
 import QuizBox from '@components/organisms/QuizBox';
@@ -64,6 +65,17 @@ const StudentPvPGamePage: FC = () => {
   const [waitingForOthers, setWaitingForOthers] = useState(false);
   const [gameResult, setGameResult] = useState<any>(null);
   
+  const { startProblem, endProblem, getProblemTimes } = useProblemTimer();
+
+  // Start timing when a new question is shown
+  useEffect(() => {
+    if (gameData && gameData.questions && currentQuestionIndex < gameData.questions.length) {
+      const question = gameData.questions[currentQuestionIndex];
+      if (question) {
+        startProblem(question.question_id.toString());
+      }
+    }
+  }, [gameData, currentQuestionIndex, startProblem]);
 
   const currentQuestion = gameData?.questions[currentQuestionIndex];
   const [quizQuestions, setQuizQuestions] = useState<Array<QuizQuestion>>([]);
@@ -201,6 +213,16 @@ const StudentPvPGamePage: FC = () => {
                 setGameData(gameData);
                 setCurrentQuestionIndex(0);
                 setCountdown(3);
+                // Initialize game timer based on game mode
+                let totalGameTime = 300; // Default 5 minutes
+                if (gameData.game_mode === 'flashcards' || gameData.game_mode === 'norushmastery' || gameData.game_mode === 'custom') {
+                  // For flashcards, no rush mastery, and custom challenge: 5 minutes total
+                  totalGameTime = 300;
+                } else {
+                  // For other modes: time per question × total questions
+                  totalGameTime = (gameData.total_questions * gameData.time_per_question) || 300;
+                }
+                setGameTimeLeft(totalGameTime);
               }
             } catch (startError: any) {
               console.error('Error starting game:', startError);
@@ -273,6 +295,20 @@ const StudentPvPGamePage: FC = () => {
       
       setGameData(mockGameData);
       setCountdown(3);
+      // Initialize game timer based on game mode
+      let totalGameTime = 300; // Default 5 minutes
+      if (mockGameData.game_mode === 'flashcards') {
+        // For flashcards: speed × number of questions
+        const flashcardSpeed = mockGameData.room_settings?.flashcard_speed || 2500;
+        totalGameTime = (flashcardSpeed / 1000) * mockGameData.total_questions;
+      } else if (mockGameData.game_mode === 'norushmastery') {
+        // For No Rush Mastery: 5 minutes total
+        totalGameTime = 300;
+      } else {
+        // For other modes: time per question × total questions
+        totalGameTime = (mockGameData.total_questions * mockGameData.time_per_question) || 300;
+      }
+      setGameTimeLeft(totalGameTime);
     }
   };
 
@@ -340,6 +376,9 @@ const StudentPvPGamePage: FC = () => {
         setGameData(gameData);
         setCurrentQuestionIndex(0);
         setCountdown(3);
+        // Initialize game timer based on total questions and time per question
+        const totalGameTime = (gameData.total_questions * gameData.time_per_question) || 300;
+        setGameTimeLeft(totalGameTime);
         return;
       } else {
         console.log('Failed to get game questions:', response.data);
@@ -377,6 +416,20 @@ const StudentPvPGamePage: FC = () => {
         setGameData(fallbackGameData);
         setCurrentQuestionIndex(0);
         setCountdown(3);
+        // Initialize game timer based on game mode
+        let totalGameTime = 300; // Default 5 minutes
+        if (fallbackGameData.game_mode === 'flashcards') {
+          // For flashcards: speed × number of questions
+          const flashcardSpeed = fallbackGameData.room_settings?.flashcard_speed || 2500;
+          totalGameTime = (flashcardSpeed / 1000) * fallbackGameData.total_questions;
+        } else if (fallbackGameData.game_mode === 'norushmastery') {
+          // For No Rush Mastery: 5 minutes total
+          totalGameTime = 300;
+        } else {
+          // For other modes: time per question × total questions
+          totalGameTime = (fallbackGameData.total_questions * fallbackGameData.time_per_question) || 300;
+        }
+        setGameTimeLeft(totalGameTime);
       }
     } catch (err: any) {
       console.error('Error fetching game data for participant:', err);
@@ -416,6 +469,9 @@ const StudentPvPGamePage: FC = () => {
       setGameData(fallbackGameData);
       setCurrentQuestionIndex(0);
       setCountdown(3);
+      // Initialize game timer based on total questions and time per question
+      const totalGameTime = (fallbackGameData.total_questions * fallbackGameData.time_per_question) || 300;
+      setGameTimeLeft(totalGameTime);
     }
   };
 
@@ -444,16 +500,18 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [timeLeft, gameEnded, currentQuestion, countdown, gameData?.game_mode]);
 
-  // Game timer effect - overall timer for flashcards
+  // Game timer effect - overall timer for all modes
   useEffect(() => {
-    if (gameData?.game_mode === 'flashcards' && !gameEnded && gameTimeLeft > 0) {
+    if (countdown !== null) return; // pause during countdown
+    if (gameData?.game_mode === 'timeattack') return; // Skip for time attack (uses different timer)
+    if (gameTimeLeft > 0 && !gameEnded) {
       const timer = setTimeout(() => setGameTimeLeft(gameTimeLeft - 1), 1000);
       return () => clearTimeout(timer);
-    } else if (gameData?.game_mode === 'flashcards' && gameTimeLeft === 0 && !gameEnded) {
+    } else if (gameTimeLeft === 0 && !gameEnded) {
       console.log('Game time up, auto-submitting');
-      handleAnswerSubmit(); // Auto-submit when game time runs out
+      handleAnswerSubmit(); // Auto-submit when total game time runs out
     }
-  }, [gameTimeLeft, gameEnded, gameData?.game_mode]);
+  }, [gameTimeLeft, gameEnded, countdown, gameData?.game_mode]);
 
   // If we have game data but no current question, try to show the first question
   useEffect(() => {
@@ -501,20 +559,36 @@ const StudentPvPGamePage: FC = () => {
 
   const answerFlashcardQuestion = () => {
     // score the current flashcard
-    const correct = gameData?.questions[currentFlashcardIndex]?.correct_answer;
+    const question = gameData?.questions[currentFlashcardIndex];
+    const correct = question?.correct_answer;
+    let isCorrect = false;
+    
     if (currentFlashcardAnswer.trim()) {
       const ans = parseFloat(currentFlashcardAnswer.trim());
-      const isCorrect = Math.abs(ans - (correct ?? NaN)) < 0.01;
+      isCorrect = Math.abs(ans - (correct ?? NaN)) < 0.01;
       if (isCorrect) {
         setScore((s) => s + 10);
         setCorrectAnswers((c) => c + 1);
       }
     }
+    
+    // End timing for this problem
+    if (question) {
+      endProblem(question.question_id.toString(), isCorrect, false);
+    }
+    
     moveFlashcardQuestion();
   };
 
   const skipFlashcardQuestion = () => {
     // skip gives 0 score
+    const question = gameData?.questions[currentFlashcardIndex];
+    
+    // End timing for this problem (skipped)
+    if (question) {
+      endProblem(question.question_id.toString(), false, true);
+    }
+    
     setUserAnswer('');
     moveFlashcardQuestion();
   };
@@ -541,6 +615,9 @@ const StudentPvPGamePage: FC = () => {
         // Empty answer for flashcards - score 0
         isCorrect = false;
       }
+      
+      // End timing for this problem
+      endProblem(currentQuestion.question_id.toString(), isCorrect, false);
       
       if (isCorrect) {
         setScore(score + 10); // 10 points per correct answer
@@ -569,7 +646,8 @@ const StudentPvPGamePage: FC = () => {
     if (!roomId || !authToken) return;
     
     try {
-      const response = await submitPVPGameResult(roomId, score, correctAnswers, totalTime, authToken);
+      const problemTimes = getProblemTimes();
+      const response = await submitPVPGameResult(roomId, score, correctAnswers, totalTime, authToken, problemTimes);
       
       if (response.data.success) {
         const result = response.data.data;
@@ -836,10 +914,15 @@ const StudentPvPGamePage: FC = () => {
                   })()}
                 </div>
               </div>
-              {gameData?.game_mode !== 'flashcards' && (
+              {gameData?.game_mode === 'timeattack' ? (
                 <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
                   <AiOutlineClockCircle className="text-xl" />
                   <span className="text-2xl font-bold">{timeLeft}s</span>
+                </div>
+              ) : gameData?.game_mode !== 'flashcards' && (
+                <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
+                  <AiOutlineClockCircle className="text-xl" />
+                  <span className="text-2xl font-bold">{Math.floor(gameTimeLeft / 60)}:{(gameTimeLeft % 60).toString().padStart(2, '0')}</span>
                 </div>
               )}
             </div>

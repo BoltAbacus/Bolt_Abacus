@@ -53,6 +53,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const { experience_points, level, syncWithBackend } = useExperienceStore();
   const { accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
   const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
+  const [calculatedAccuracy, setCalculatedAccuracy] = useState<number>(0);
+  const [calculatedTimeSpent, setCalculatedTimeSpent] = useState<string>('0h 0m');
   const { todos, completed_todos, pending_todos, fetchTodoList } = useTodoListStore();
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const [topLeaderboard, setTopLeaderboard] = useState<any[]>([]);
@@ -83,6 +85,50 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  };
+
+  // Helper function to calculate accuracy and time from practice stats
+  const calculateStatsFromPracticeData = (practiceStats: any) => {
+    if (!practiceStats) return { accuracy: 0, timeSpent: '0h 0m' };
+
+    let totalQuestions = 0;
+    let totalCorrect = 0;
+    let totalTimeSeconds = 0;
+
+    // Calculate from detailed problem times if available
+    if (practiceStats.practiceSessions && Array.isArray(practiceStats.practiceSessions)) {
+      for (const session of practiceStats.practiceSessions) {
+        if (session.problemTimes && Array.isArray(session.problemTimes)) {
+          // Use detailed problem times
+          for (const problemTime of session.problemTimes) {
+            totalQuestions += 1;
+            if (problemTime.isCorrect) {
+              totalCorrect += 1;
+            }
+            totalTimeSeconds += problemTime.timeSpent || 0;
+          }
+        } else {
+          // Fallback to session-level data
+          totalQuestions += session.numberOfQuestions || 0;
+          totalCorrect += session.score || 0;
+          totalTimeSeconds += session.totalTime || 0;
+        }
+      }
+    } else {
+      // Fallback to aggregated data
+      totalQuestions = practiceStats.totalQuestions || 0;
+      totalCorrect = practiceStats.totalCorrectAnswers || 0;
+      totalTimeSeconds = practiceStats.totalTimeSpent || 0;
+    }
+
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    
+    // Format time spent
+    const hours = Math.floor(totalTimeSeconds / 3600);
+    const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
+    const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+    return { accuracy, timeSpent };
   };
 
   useEffect(() => {
@@ -135,20 +181,31 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               if (practiceRes.status === 200) {
                 const practiceData = practiceRes.data.practiceProgress;
                 if (!isMounted) return;
+                
+                const practiceStats = practiceData ? {
+                  totalSessions: practiceData.totalSessions || 0,
+                  totalPracticeTime: practiceData.totalTime || 0,
+                  totalProblemsSolved: practiceData.totalProblemsSolved || 0,
+                  totalQuestionsAttempted: practiceData.totalQuestionsAttempted || 0,
+                  averageTimePerSession: practiceData.averageTimePerSession || 0,
+                  averageProblemsPerSession: practiceData.averageProblemsPerSession || 0,
+                  recentSessions: practiceData.recentSessions || 0,
+                  practiceSessions: practiceData.practiceSessions || []
+                } : null;
+                
+                // Calculate accuracy and time spent from practice data
+                const { accuracy: calculatedAcc, timeSpent: calculatedTime } = calculateStatsFromPracticeData(practiceStats);
+                setCalculatedAccuracy(calculatedAcc);
+                setCalculatedTimeSpent(calculatedTime);
+                
                 setDashboardData({
                   ...dashboardResponse,
-                  practiceStats: practiceData ? {
-                    totalSessions: practiceData.totalSessions || 0,
-                    totalPracticeTime: practiceData.totalTime || 0,
-                    totalProblemsSolved: practiceData.totalProblemsSolved || 0,
-                    totalQuestionsAttempted: practiceData.totalQuestionsAttempted || 0,
-                    averageTimePerSession: practiceData.averageTimePerSession || 0,
-                    averageProblemsPerSession: practiceData.averageProblemsPerSession || 0,
-                    recentSessions: practiceData.recentSessions || 0,
-                    practiceSessions: practiceData.practiceSessions || []
-                  } : null
+                  practiceStats
                 });
-                console.log('✅ [Dashboard] Practice stats processed successfully');
+                console.log('✅ [Dashboard] Practice stats processed successfully', {
+                  calculatedAccuracy: calculatedAcc,
+                  calculatedTimeSpent: calculatedTime
+                });
               } else {
                 setDashboardData(dashboardResponse);
                 console.log('⚠️ [Dashboard] Practice stats failed, using dashboard data only');
@@ -460,7 +517,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                               <span className="text-xs text-white/80 font-medium">Accuracy</span>
                             </div>
                             <div className="text-lg font-bold text-gold">
-                              {accuracy || 0}%
+                              {calculatedAccuracy || accuracy || 0}%
                             </div>
                           </div>
                           
@@ -470,7 +527,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                               <span className="text-xs text-white/80 font-medium">Time Spent</span>
                             </div>
                             <div className="text-lg font-bold text-gold">
-                              {time_spent_formatted || computedTimeFormatted}
+                              {calculatedTimeSpent || time_spent_formatted || computedTimeFormatted}
                             </div>
                           </div>
                         </div>

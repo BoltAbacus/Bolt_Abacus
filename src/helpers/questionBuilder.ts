@@ -32,9 +32,9 @@ export const generatePracticeQuestions = (
 
     if (operation === 'addition') {
       for (let j = 0; j < numberOfRows; j += 1) {
-        const currentMin = zigZag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+        const currentMin = zigZag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
         const currentMax = zigZag
-          ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+          ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
           : 10 ** numberOfDigitsLeft - 1;
         numbers.push(generateRandomNumber(currentMin, currentMax));
       }
@@ -49,9 +49,9 @@ export const generatePracticeQuestions = (
           // Reset numbers to positive values
           numbers = [];
           for (let j = 0; j < numberOfRows; j += 1) {
-            const currentMin = zigZag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMin = zigZag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
             const currentMax = zigZag
-              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
               : 10 ** numberOfDigitsLeft - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
@@ -78,9 +78,9 @@ export const generatePracticeQuestions = (
         if (attempts >= maxAttempts) {
           numbers = [];
           for (let j = 0; j < numberOfRows; j += 1) {
-            const currentMin = zigZag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMin = zigZag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
             const currentMax = zigZag
-              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+              ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
               : 10 ** numberOfDigitsLeft - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
@@ -149,33 +149,65 @@ export const generatePracticeQuestions = (
       const rightMin = 10 ** (numberOfDigitsRight - 1);
       const rightMax = 10 ** numberOfDigitsRight - 1;
 
-      numbers.push(generateRandomNumber(leftMin, leftMax));
-      numbers.push(generateRandomNumber(rightMin, rightMax));
+      // Generate numbers for each row
+      for (let j = 0; j < numberOfRows; j += 1) {
+        if (j === 0) {
+          // First number uses left digits
+          numbers.push(generateRandomNumber(leftMin, leftMax));
+        } else if (j === 1) {
+          // Second number uses right digits
+          numbers.push(generateRandomNumber(rightMin, rightMax));
+        } else {
+          // Additional numbers use a mix of left and right digits for variety
+          const useLeftDigits = Math.random() < 0.5;
+          if (useLeftDigits) {
+            numbers.push(generateRandomNumber(leftMin, leftMax));
+          } else {
+            numbers.push(generateRandomNumber(rightMin, rightMax));
+          }
+        }
+      }
     } else if (operation === 'division') {
       const leftMin = 10 ** (numberOfDigitsLeft - 1);
       const leftMax = 10 ** numberOfDigitsLeft - 1;
       const rightMin = 10 ** (numberOfDigitsRight - 1);
       const rightMax = 10 ** numberOfDigitsRight - 1;
 
-      let num1 = generateRandomNumber(leftMin, leftMax);
-      let num2 = generateRandomNumber(rightMin, rightMax);
-
-      if (num1 < num2) {
-        [num1, num2] = [num2, num1];
-      }
-
-      if (!includeDecimals) {
-        while (num1 % num2 !== 0) {
-          num1 = generateRandomNumber(leftMin, leftMax);
-          num2 = generateRandomNumber(rightMin, rightMax);
-
-          if (num1 < num2) {
-            [num1, num2] = [num2, num1];
+      // Generate numbers for each row
+      for (let j = 0; j < numberOfRows; j += 1) {
+        if (j === 0) {
+          // First number uses left digits
+          numbers.push(generateRandomNumber(leftMin, leftMax));
+        } else if (j === 1) {
+          // Second number uses right digits
+          numbers.push(generateRandomNumber(rightMin, rightMax));
+        } else {
+          // Additional numbers use a mix of left and right digits for variety
+          const useLeftDigits = Math.random() < 0.5;
+          if (useLeftDigits) {
+            numbers.push(generateRandomNumber(leftMin, leftMax));
+          } else {
+            numbers.push(generateRandomNumber(rightMin, rightMax));
           }
         }
       }
 
-      numbers = [num1, num2];
+      // Ensure first number is larger than second for proper division
+      if (numbers[0] < numbers[1]) {
+        [numbers[0], numbers[1]] = [numbers[1], numbers[0]];
+      }
+
+      // If no decimals, ensure clean division for first two numbers
+      if (!includeDecimals && numbers.length >= 2) {
+        while (numbers[0] % numbers[1] !== 0) {
+          numbers[0] = generateRandomNumber(leftMin, leftMax);
+          numbers[1] = generateRandomNumber(rightMin, rightMax);
+          
+          if (numbers[0] < numbers[1]) {
+            [numbers[0], numbers[1]] = [numbers[1], numbers[0]];
+          }
+        }
+      }
     }
 
     const question: QuizQuestion = {
@@ -374,33 +406,65 @@ export const generatePvPQuestions = (
       const rightMin = 10 ** (numberOfDigitsRight - 1);
       const rightMax = 10 ** numberOfDigitsRight - 1;
 
-      numbers.push(generateRandomNumber(leftMin, leftMax));
-      numbers.push(generateRandomNumber(rightMin, rightMax));
+      // Generate numbers for each row
+      for (let j = 0; j < numberOfRows; j += 1) {
+        if (j === 0) {
+          // First number uses left digits
+          numbers.push(generateRandomNumber(leftMin, leftMax));
+        } else if (j === 1) {
+          // Second number uses right digits
+          numbers.push(generateRandomNumber(rightMin, rightMax));
+        } else {
+          // Additional numbers use a mix of left and right digits for variety
+          const useLeftDigits = Math.random() < 0.5;
+          if (useLeftDigits) {
+            numbers.push(generateRandomNumber(leftMin, leftMax));
+          } else {
+            numbers.push(generateRandomNumber(rightMin, rightMax));
+          }
+        }
+      }
     } else if (operation === 'division') {
       const leftMin = 10 ** (numberOfDigitsLeft - 1);
       const leftMax = 10 ** numberOfDigitsLeft - 1;
       const rightMin = 10 ** (numberOfDigitsRight - 1);
       const rightMax = 10 ** numberOfDigitsRight - 1;
 
-      let num1 = generateRandomNumber(leftMin, leftMax);
-      let num2 = generateRandomNumber(rightMin, rightMax);
-
-      if (num1 < num2) {
-        [num1, num2] = [num2, num1];
-      }
-
-      if (!includeDecimals) {
-        while (num1 % num2 !== 0) {
-          num1 = generateRandomNumber(leftMin, leftMax);
-          num2 = generateRandomNumber(rightMin, rightMax);
-
-          if (num1 < num2) {
-            [num1, num2] = [num2, num1];
+      // Generate numbers for each row
+      for (let j = 0; j < numberOfRows; j += 1) {
+        if (j === 0) {
+          // First number uses left digits
+          numbers.push(generateRandomNumber(leftMin, leftMax));
+        } else if (j === 1) {
+          // Second number uses right digits
+          numbers.push(generateRandomNumber(rightMin, rightMax));
+        } else {
+          // Additional numbers use a mix of left and right digits for variety
+          const useLeftDigits = Math.random() < 0.5;
+          if (useLeftDigits) {
+            numbers.push(generateRandomNumber(leftMin, leftMax));
+          } else {
+            numbers.push(generateRandomNumber(rightMin, rightMax));
           }
         }
       }
 
-      numbers = [num1, num2];
+      // Ensure first number is larger than second for proper division
+      if (numbers[0] < numbers[1]) {
+        [numbers[0], numbers[1]] = [numbers[1], numbers[0]];
+      }
+
+      // If no decimals, ensure clean division for first two numbers
+      if (!includeDecimals && numbers.length >= 2) {
+        while (numbers[0] % numbers[1] !== 0) {
+          numbers[0] = generateRandomNumber(leftMin, leftMax);
+          numbers[1] = generateRandomNumber(rightMin, rightMax);
+          
+          if (numbers[0] < numbers[1]) {
+            [numbers[0], numbers[1]] = [numbers[1], numbers[0]];
+          }
+        }
+      }
     }
 
     // Calculate correct answer

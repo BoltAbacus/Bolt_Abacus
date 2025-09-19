@@ -16,7 +16,7 @@ import { ACHIEVEMENTS } from '@constants/achievements';
 import { STUDENT_ROADMAP } from '@constants/routes';
 import { useAuthStore } from '@store/authStore';
 import { getAccuracyTrendRequest, getSpeedTrendRequest } from '@services/student';
-import { getLevelName, getTierName } from '@helpers/levelNames';
+import { getLevelName } from '@helpers/levelNames';
 
 import styles from './index.module.css';
 
@@ -29,6 +29,7 @@ export interface StudentProgressSectionProps {
 const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   batchName,
   progress,
+  practiceStats,
 }) => {
   const navigate = useNavigate();
   const { calculateProgressStats, checkAndUnlockAchievements, getMotivationalMessage } = useGamification();
@@ -57,6 +58,56 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   const progressStats = useMemo(() => {
     return calculateProgressStats(progress);
   }, [progress, calculateProgressStats]);
+
+  // Calculate stats from practice data
+  const practiceStatsCalculated = useMemo(() => {
+    if (!practiceStats) return { accuracy: 0, timeSpent: '0h 0m', problemsSolved: 0 };
+
+    let totalQuestions = 0;
+    let totalCorrect = 0;
+    let totalTimeSeconds = 0;
+
+    // Calculate from detailed problem times if available
+    if (practiceStats.practiceSessions && Array.isArray(practiceStats.practiceSessions)) {
+      for (const session of practiceStats.practiceSessions) {
+        if (session.problemTimes && Array.isArray(session.problemTimes)) {
+          // Use detailed problem times
+          for (const problemTime of session.problemTimes) {
+            totalQuestions += 1;
+            if (problemTime.isCorrect) {
+              totalCorrect += 1;
+            }
+            totalTimeSeconds += problemTime.timeSpent || 0;
+          }
+        } else {
+          // Fallback to session-level data
+          totalQuestions += session.numberOfQuestions || 0;
+          totalCorrect += session.score || 0;
+          totalTimeSeconds += session.totalTime || 0;
+        }
+      }
+    } else {
+      // Fallback to aggregated data
+      totalQuestions = practiceStats.totalQuestions || 0;
+      totalCorrect = practiceStats.totalCorrectAnswers || 0;
+      totalTimeSeconds = practiceStats.totalTimeSpent || 0;
+    }
+
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    
+    // Format time spent
+    const hours = Math.floor(totalTimeSeconds / 3600);
+    const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
+    const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+    return { 
+      accuracy, 
+      timeSpent, 
+      problemsSolved: totalCorrect,
+      totalQuestions,
+      practiceMinutes: Math.round(totalTimeSeconds / 60)
+    };
+  }, [practiceStats]);
 
   // Calculate current level specific metrics
   const currentLevelStats = useMemo(() => {
@@ -565,11 +616,11 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       {/* Weekly Goals */}
       <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
         <WeeklyGoalsSection 
-          sessionsCompleted={currentLevelStats.levelClassesThisWeek}
+          sessionsCompleted={practiceStats?.recentSessions || currentLevelStats.levelClassesThisWeek}
           sessionsTotal={5}
-          practiceMinutes={currentLevelStats.levelPracticeTime}
+          practiceMinutes={practiceStatsCalculated.practiceMinutes || (practiceStats ? Math.round(practiceStats.totalPracticeTime / 60) : currentLevelStats.levelPracticeTime)}
           practiceTargetMinutes={240}
-          problemsSolved={currentLevelStats.levelProblemsSolved}
+          problemsSolved={practiceStatsCalculated.problemsSolved || practiceStats?.totalProblemsSolved || currentLevelStats.levelProblemsSolved}
           problemsTarget={300}
         />
       </div>

@@ -70,12 +70,15 @@ const PracticeHeader: FC<PracticeHeaderProps> = ({
               />
             </div>
           )}
-          <p className="flex items-center gap-1 ml-auto">
-            <IoMdAlarm className="text-gold text-xl" />
-            <span className="text-md">
-              {getZeroPaddedNumber(minutes)}:{getZeroPaddedNumber(seconds)}
-            </span>
-          </p>
+          {/* Only show timer for timed practice modes */}
+          {(practiceType === 'timed' || practiceType === 'untimed') && (
+            <p className="flex items-center gap-1 ml-auto">
+              <IoMdAlarm className="text-gold text-xl" />
+              <span className="text-md">
+                {getZeroPaddedNumber(minutes)}:{getZeroPaddedNumber(seconds)}
+              </span>
+            </p>
+          )}
         </div>
       </div>
     </div>

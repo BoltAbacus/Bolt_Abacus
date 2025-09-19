@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useStopwatch } from 'react-timer-hook';
 import { isAxiosError } from 'axios';
 
@@ -25,6 +25,7 @@ import { logActivity } from '@helpers/activity';
 
 import { useAuthStore } from '@store/authStore';
 import { ERRORS, MESSAGES } from '@constants/app';
+import { useProblemTimer } from '@hooks/useProblemTimer';
 
 export interface UnTimedPracticeSectionProps {
   operation: 'addition' | 'multiplication' | 'division';
@@ -68,6 +69,32 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
     autoStart: false,
   });
 
+  const { startProblem, endProblem, getProblemTimes } = useProblemTimer();
+
+  // Start timing when a new question is shown
+  useEffect(() => {
+    if (isQuizStarted && quizQuestions.length > 0 && currentIndex < quizQuestions.length) {
+      startProblem(quizQuestions[currentIndex].questionId.toString());
+    }
+  }, [isQuizStarted, currentIndex, quizQuestions, startProblem]);
+
+  const calculateAnswer = (question: { operator: string; numbers: number[] }) => {
+    const { operator, numbers } = question;
+    
+    switch (operator) {
+      case 'addition':
+        return numbers.reduce((sum, num) => sum + num, 0);
+      case 'subtraction':
+        return numbers.reduce((diff, num, index) => index === 0 ? num : diff - num);
+      case 'multiplication':
+        return numbers.reduce((product, num) => product * num, 1);
+      case 'division':
+        return numbers.reduce((quotient, num, index) => index === 0 ? num : quotient / num);
+      default:
+        return 0;
+    }
+  };
+
   const getUpdatedAnswers = (ans: string | null) => {
     const { questionId } = quizQuestions[currentIndex];
     let answer;
@@ -99,6 +126,9 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
       quizQuestions,
       answers
     );
+    
+    // Get detailed problem times
+    const problemTimes = getProblemTimes();
     const avg = timeTaken / quizQuestions.length;
 
     setAverageTime(parseFloat(avg.toFixed(2)));
@@ -119,13 +149,14 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
         score,
         totalSeconds,
         parseFloat(avg.toFixed(2)),
-        authToken!
+        authToken!,
+        problemTimes // Include detailed problem times
       );
       logActivity({
         type: 'practice',
         title: `UnTimed Practice (${operation}) completed with score ${score}`,
         xp: undefined,
-        meta: { operation, numberOfDigitsLeft, numberOfQuestions }
+        meta: { operation, numberOfDigitsLeft, numberOfQuestions, problemTimes }
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -205,13 +236,33 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
   };
 
   const answerQuestion = () => {
+    const currentQuestion = quizQuestions[currentIndex];
     const answers = getUpdatedAnswers(currentAnswer);
+    
+    // Check if answer is correct
+    const correctAnswer = calculateAnswer(currentQuestion.question);
+    let userAnswer;
+    if (operation === 'division' && includeDecimals) {
+      userAnswer = parseFloat(currentAnswer);
+    } else {
+      userAnswer = parseInt(currentAnswer, 10);
+    }
+    const isCorrect = !isNaN(userAnswer) && userAnswer === correctAnswer;
+    
+    // End timing for this problem
+    endProblem(currentQuestion.questionId.toString(), isCorrect, false);
+    
     setQuizAnswers(answers);
     moveQuestion();
   };
 
   const skipQuestion = () => {
+    const currentQuestion = quizQuestions[currentIndex];
     const answers = getUpdatedAnswers(null);
+    
+    // End timing for this problem (skipped)
+    endProblem(currentQuestion.questionId.toString(), false, true);
+    
     setQuizAnswers(answers);
     moveQuestion();
   };

@@ -68,6 +68,8 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAllNumbers, setShowAllNumbers] = useState(false);
+  const [completedNumbers, setCompletedNumbers] = useState<number[]>([]);
 
   // Audio reading functionality
   const readQuestion = async () => {
@@ -106,6 +108,8 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
   useEffect(() => {
     setCurrentIndex(0);
     setCurrentNumber(quizQuestion.question.numbers[0]);
+    setShowAllNumbers(false);
+    setCompletedNumbers([]);
     if (propShowQuestion === undefined) {
       setShowQuestion(!audioMode);
     }
@@ -122,10 +126,15 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
         const nextIndex = prevIndex + 1;
         if (nextIndex < quizQuestion.question.numbers.length) {
           setCurrentNumber(quizQuestion.question.numbers[nextIndex]);
+          setCompletedNumbers(prev => [...prev, quizQuestion.question.numbers[prevIndex]]);
           return nextIndex;
+        } else {
+          // All numbers have been shown, now show all together
+          setCompletedNumbers(prev => [...prev, quizQuestion.question.numbers[prevIndex]]);
+          setShowAllNumbers(true);
+          clearInterval(interval);
+          return prevIndex;
         }
-        clearInterval(interval);
-        return prevIndex;
       });
     }, speed);
 
@@ -170,15 +179,37 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
       <div className="flex justify-evenly items-center gap-6 w-full overflow-auto">
         <div className="flex flex-col">
           <div className="flex items-center gap-6">
+            {/* Show operator on the left */}
+            <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold">
+              {quizQuestion.question.operator === 'sqrt' ? '√' :
+               quizQuestion.question.operator === 'cuberoot' ? '∛' :
+               quizQuestion.question.operator === 'square' || quizQuestion.question.operator === '^2' ? '²' :
+               quizQuestion.question.operator === 'cube' || quizQuestion.question.operator === '^3' ? '³' :
+               quizQuestion.question.operator || '+'}
+            </div>
+            {/* Show numbers in rows */}
             <div className="flex flex-col items-end gap-2 tracking-widest">
               {showQuestion ? (
-                <div
-                  key={currentIndex}
-                  className={`border-2 border-gold rounded-lg font-bold text-gold
-                              ${animate ? 'animate-fadeIn' : 'opacity-0'} p-4 tablet:p-6`}
-                >
-                  <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(currentNumber).toString()}</p>
-                </div>
+                showAllNumbers ? (
+                  // Show all numbers at once
+                  quizQuestion.question.numbers.map((number, index) => (
+                    <div
+                      key={index}
+                      className="border-2 border-gold rounded-lg font-bold text-gold p-4 tablet:p-6"
+                    >
+                      <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(number).toString()}</p>
+                    </div>
+                  ))
+                ) : (
+                  // Show current number only
+                  <div
+                    key={currentIndex}
+                    className={`border-2 border-gold rounded-lg font-bold text-gold
+                                ${animate ? 'animate-fadeIn' : 'opacity-0'} p-4 tablet:p-6`}
+                  >
+                    <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(currentNumber).toString()}</p>
+                  </div>
+                )
               ) : (
                 <div className="border-2 border-grey rounded-lg font-bold text-grey p-4">
                   <p className="text-xl">🔊 Listen</p>
@@ -186,14 +217,6 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
               )}
             </div>
           </div>
-        </div>
-        {/* Show operator between numbers and equals */}
-        <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold">
-          {quizQuestion.question.operator === 'sqrt' ? '√' :
-           quizQuestion.question.operator === 'cuberoot' ? '∛' :
-           quizQuestion.question.operator === 'square' || quizQuestion.question.operator === '^2' ? '²' :
-           quizQuestion.question.operator === 'cube' || quizQuestion.question.operator === '^3' ? '³' :
-           quizQuestion.question.operator || '+'}
         </div>
         <div className="text-gold text-4xl tablet:text-5xl desktop:text-6xl font-bold"> = </div>
         <div className="">

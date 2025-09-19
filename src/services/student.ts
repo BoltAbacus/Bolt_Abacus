@@ -167,7 +167,8 @@ export const practiceSubmitRequest = async (
   score: number,
   totalTime: number,
   averageTime: number,
-  token: string
+  token: string,
+  problemTimes?: any[]
 ) => {
   return axios.post(
     STUDENT_PRACTICE_SUBMIT_ENDPOINT,
@@ -184,6 +185,7 @@ export const practiceSubmitRequest = async (
       score,
       totalTime,
       averageTime,
+      problemTimes: problemTimes || [],
     },
     {
       headers: { 'AUTH-TOKEN': token },

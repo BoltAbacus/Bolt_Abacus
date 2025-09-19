@@ -126,6 +126,15 @@ export const PracticeSessionSchema = z.object({
   totalTime: z.number(),
   averageTime: z.number(),
   created_at: z.string(),
+  numberOfQuestions: z.number().optional(),
+  problemTimes: z.array(z.object({
+    questionId: z.string(),
+    startTime: z.number(),
+    endTime: z.number(),
+    timeSpent: z.number(),
+    isCorrect: z.boolean(),
+    isSkipped: z.boolean()
+  })).optional(),
 });
 
 export const PracticeStatsSchema = z.object({
@@ -137,6 +146,9 @@ export const PracticeStatsSchema = z.object({
   averageProblemsPerSession: z.number(),
   recentSessions: z.number(),
   practiceSessions: z.array(PracticeSessionSchema),
+  totalQuestions: z.number().optional(),
+  totalCorrectAnswers: z.number().optional(),
+  totalTimeSpent: z.number().optional(),
 });
 
 export const GetStudentProgressResponseSchema = z.object({
