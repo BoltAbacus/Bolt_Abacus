@@ -547,6 +547,7 @@ const StudentPvPGamePage: FC = () => {
   const moveFlashcardQuestion = () => {
     if (currentFlashcardIndex + 1 >= quizQuestions.length) {
       // All questions answered, submit
+      setLoading(true);
       submitGameResults();
     } else {
       const nextIndex = currentFlashcardIndex + 1;
@@ -558,6 +559,8 @@ const StudentPvPGamePage: FC = () => {
   };
 
   const answerFlashcardQuestion = () => {
+    if (loading) return; // Prevent multiple submissions
+    
     // score the current flashcard
     const question = gameData?.questions[currentFlashcardIndex];
     const correct = question?.correct_answer;
@@ -594,7 +597,7 @@ const StudentPvPGamePage: FC = () => {
   };
 
   const handleAnswerSubmit = async () => {
-    if (!roomId || !authToken || !currentQuestion) return;
+    if (!roomId || !authToken || !currentQuestion || loading) return;
     
     // For flashcards, allow empty answers (score 0)
     if (gameData?.game_mode === 'flashcards' && !userAnswer.trim()) {
@@ -620,30 +623,30 @@ const StudentPvPGamePage: FC = () => {
       endProblem(currentQuestion.question_id.toString(), isCorrect, false);
       
       if (isCorrect) {
-        setScore(score + 10); // 10 points per correct answer
-        setCorrectAnswers(correctAnswers + 1);
+        setScore(prev => prev + 10); // 10 points per correct answer
+        setCorrectAnswers(prev => prev + 1);
       }
       
-      setTotalTime(totalTime + timeTaken);
+      setTotalTime(prev => prev + timeTaken);
 
       // Move to next question or end game
       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setTimeLeft(gameData?.time_per_question || 30);
         setUserAnswer('');
+        setLoading(false); // Reset loading for next question
       } else {
         // Game finished, submit results
         await submitGameResults();
       }
     } catch (err) {
       console.error('Error submitting answer:', err);
-    } finally {
       setLoading(false);
     }
   };
 
   const submitGameResults = async () => {
-    if (!roomId || !authToken) return;
+    if (!roomId || !authToken || gameEnded) return;
     
     try {
       const problemTimes = getProblemTimes();
@@ -655,7 +658,9 @@ const StudentPvPGamePage: FC = () => {
         if (result.is_winner === null && result.finished_players < result.total_players) {
           // Not all players finished yet, show waiting screen
           setWaitingForOthers(true);
-          // Poll for results
+          setLoading(false); // Reset loading state
+          
+          // Poll for results with timeout
           const pollInterval = setInterval(async () => {
             try {
               const pollResponse = await getPVPGameResult(roomId, authToken);
@@ -664,14 +669,17 @@ const StudentPvPGamePage: FC = () => {
                 setGameResult(pollResponse.data.data);
                 setGameEnded(true);
                 setWaitingForOthers(false);
-                // Update experience and sync with backend
+                
+                // Update experience only once
                 const correctExperience = (() => {
                   const result = pollResponse.data.data;
                   if (result.is_draw) return 20;
                   else if (result.is_winner) return 50;
                   else return 10;
                 })();
+                
                 updateExperience(correctExperience);
+                
                 try {
                   const r = pollResponse.data.data;
                   logActivity({
@@ -681,6 +689,7 @@ const StudentPvPGamePage: FC = () => {
                     meta: { roomId, score, correctAnswers, totalTime }
                   });
                 } catch {}
+                
                 // Force sync with backend to ensure persistence
                 setTimeout(() => {
                   const { syncWithBackend } = useExperienceStore.getState();
@@ -690,19 +699,34 @@ const StudentPvPGamePage: FC = () => {
             } catch (err) {
               console.error('Error polling results:', err);
             }
-          }, 300);
+          }, 1000); // Increased polling interval to reduce server load
+          
+          // Set timeout to prevent infinite polling
+          setTimeout(() => {
+            clearInterval(pollInterval);
+            if (!gameEnded) {
+              console.error('Polling timeout - game may have ended');
+              setWaitingForOthers(false);
+              setLoading(false);
+            }
+          }, 30000); // 30 second timeout
+          
         } else {
           // All players finished, show results
           setGameResult(result);
           setGameEnded(true);
           setWaitingForOthers(false);
-          // Update experience and sync with backend
+          setLoading(false);
+          
+          // Update experience only once
           const correctExperience = (() => {
             if (result.is_draw) return 20;
             else if (result.is_winner) return 50;
             else return 10;
           })();
+          
           updateExperience(correctExperience);
+          
           try {
             logActivity({
               type: 'pvp',
@@ -711,6 +735,7 @@ const StudentPvPGamePage: FC = () => {
               meta: { roomId, score, correctAnswers, totalTime }
             });
           } catch {}
+          
           // Force sync with backend to ensure persistence
           setTimeout(() => {
             const { syncWithBackend } = useExperienceStore.getState();
@@ -720,6 +745,7 @@ const StudentPvPGamePage: FC = () => {
       }
     } catch (err) {
       console.error('Error submitting game results:', err);
+      setLoading(false);
     }
   };
 
@@ -1038,17 +1064,19 @@ const StudentPvPGamePage: FC = () => {
                 <>
                   <button
                     onClick={() => {
+                      if (loading) return; // Prevent multiple clicks
                       setUserAnswer('');
                       // Move to next question without submitting
                       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
                         setCurrentQuestionIndex(currentQuestionIndex + 1);
                         setTimeLeft(gameData?.time_per_question || 30);
                       } else {
+                        // Last question - submit with empty answer
                         handleAnswerSubmit();
                       }
                     }}
                     disabled={loading}
-                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50"
+                    className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#212124', color: '#ffffff' }}
                   >
                     Skip

@@ -347,43 +347,77 @@ export const generatePvPQuestions = (
   includeDecimals: boolean
 ): PvPQuestion[] => {
   const questions: PvPQuestion[] = [];
-  // Enforce at least 60% questions with a negative second operand (but positive sum)
-  const shouldUseNegativeSecond = operation === 'addition' && includeSubtraction;
-  const negativeSecondTarget = shouldUseNegativeSecond ? Math.ceil(numberOfQuestions * 0.6) : 0;
-  let negativeSecondCount = 0;
 
   for (let i = 0; i < numberOfQuestions; i += 1) {
     let numbers: number[] = [];
 
     if (operation === 'addition') {
       for (let j = 0; j < numberOfRows; j += 1) {
-        const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+        const currentMin = isZigzag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
         const currentMax = isZigzag
-          ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
+          ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
           : 10 ** numberOfDigitsLeft - 1;
         numbers.push(generateRandomNumber(currentMin, currentMax));
       }
-      // If "Include Subtraction" is checked, make the second operand negative (but keep total sum positive)
-      if (shouldUseNegativeSecond && negativeSecondCount < negativeSecondTarget && numberOfRows >= 2) {
-        // Ensure abs(second) < first so sum stays positive even if others are small
-        const maxSecond = Math.max(1, numbers[0] - 1);
-        const chosen = Math.min(generateRandomNumber(1, numbers[0]), maxSecond);
-        numbers[1] = -chosen;
 
-        // If there are more rows, keep them positive but small enough to avoid flipping result to negative
-        let runningSum = numbers[0] + numbers[1];
-        for (let j = 2; j < numberOfRows; j += 1) {
-          const allowMax = Math.max(1, numbers[0] - Math.abs(numbers[1]) - runningSum + 5);
-          const val = Math.min(generateRandomNumber(1, Math.max(1, 10 ** (numberOfDigitsLeft - 1))), allowMax);
-          numbers[j] = Math.max(1, val);
-          runningSum += numbers[j];
+      if (includeSubtraction) {
+        // Ensure first number is always positive and final answer is always positive
+        let attempts = 0;
+        const maxAttempts = 100; // Prevent infinite loops
+        let finalSum = 0;
+        
+        do {
+          // Reset numbers to positive values
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = isZigzag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = isZigzag
+              ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // First number is always positive (never change it)
+          // Apply subtraction randomly to other numbers but ensure final sum is always positive
+          finalSum = numbers[0]; // Start with first number (always positive)
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
+              // Only make negative if it won't make final sum negative
+              numbers[j] *= -1;
+              finalSum += numbers[j];
+            } else {
+              // Keep positive
+              finalSum += numbers[j];
+            }
+          }
+          
+          attempts++;
+        } while (finalSum <= 0 && attempts < maxAttempts);
+        
+        // If we still couldn't find a valid combination, use a more conservative approach
+        if (attempts >= maxAttempts) {
+          numbers = [];
+          for (let j = 0; j < numberOfRows; j += 1) {
+            const currentMin = isZigzag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
+            const currentMax = isZigzag
+              ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
+              : 10 ** numberOfDigitsLeft - 1;
+            numbers.push(generateRandomNumber(currentMin, currentMax));
+          }
+          
+          // Conservative approach: ensure first number is large enough to handle all subtractions
+          finalSum = numbers[0]; // First number stays positive
+          
+          for (let j = 1; j < numbers.length; j += 1) {
+            if (Math.random() < 0.5 && finalSum - numbers[j] > 0) {
+              numbers[j] *= -1;
+              finalSum += numbers[j];
+            } else {
+              finalSum += numbers[j];
+            }
+          }
         }
-
-        // Final guard: if somehow non-positive, bump last term
-        if (runningSum <= 0 && numberOfRows >= 2) {
-          numbers[numberOfRows - 1] += Math.abs(runningSum) + 1;
-        }
-        negativeSecondCount += 1;
       }
 
       if (persistNumberOfDigits) {
@@ -391,10 +425,10 @@ export const generatePvPQuestions = (
         while (Math.abs(sum).toString().length !== numberOfDigitsLeft) {
           numbers = [];
           for (let j = 0; j < numberOfRows; j += 1) {
-            const currentMin = isZigzag ? 1 : 10 ** (numberOfDigitsLeft - 1);
+            const currentMin = isZigzag ? 10 ** (numberOfDigitsLeft - 1) : 10 ** (numberOfDigitsLeft - 1);
             const currentMax = isZigzag
-              ? 10 ** generateRandomNumber(1, numberOfDigitsLeft) - 1
-              : 10 ** numberOfDigitsRight - 1;
+              ? 10 ** generateRandomNumber(numberOfDigitsLeft, numberOfDigitsLeft + 1) - 1
+              : 10 ** numberOfDigitsLeft - 1;
             numbers.push(generateRandomNumber(currentMin, currentMax));
           }
           sum = numbers.reduce((a, b) => a + b, 0);

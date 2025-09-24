@@ -4,7 +4,6 @@ import { AiOutlineCrown, AiOutlinePlayCircle, AiOutlineCopy } from 'react-icons/
 
 import { useAuthStore } from '@store/authStore';
 import { getPVPRoomDetails, startPVPGame } from '@services/pvp';
-import { getUserDetails } from '@services/auth';
 
 interface RoomDetails {
   room_id: string;
@@ -37,12 +36,14 @@ interface RoomDetails {
 const StudentPvPRoomPage: FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { user, authToken, setUser } = useAuthStore();
+  const { user, authToken } = useAuthStore();
   
   const [roomDetails, setRoomDetails] = useState<RoomDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  const minPlayersToStart = 2;
 
   useEffect(() => {
     if (roomId) {
@@ -53,150 +54,84 @@ const StudentPvPRoomPage: FC = () => {
     }
   }, [roomId]);
 
-  // Fetch user details when component mounts
-  useEffect(() => {
-    console.log('Component mount useEffect:', { authToken: !!authToken, user: !!user, userId: user?.id });
-    if (authToken && (!user || !user.id)) {
-      console.log('Calling fetchUserDetails from mount...');
-      fetchUserDetails();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authToken && (!user || !user.id)) {
-      fetchUserDetails();
-    }
-  }, [authToken, user]);
-
-  const fetchUserDetails = async () => {
-    console.log('fetchUserDetails called:', { authToken: !!authToken, user: !!user, userId: user?.id });
-    if (!authToken) {
-      console.log('No auth token, returning');
-      return;
-    }
-    
-    try {
-      console.log('Making getUserDetails API call...');
-      const response = await getUserDetails(authToken);
-      console.log('getUserDetails response:', response.data);
-      if (response.data.success) {
-        const userData = response.data.data;
-        console.log('Setting user data:', userData);
-        setUser({
-          id: (userData as any).id ?? (userData as any).userId,
-          name: {
-            first: userData.firstName,
-            last: userData.lastName,
-          },
-          email: userData.email,
-          phone: userData.phone,
-          organizationName: userData.organizationName,
-          role: userData.role,
-        });
-        console.log('User data set successfully, new ID:', userData.id);
-      } else {
-        console.error('getUserDetails failed:', response.data);
-      }
-    } catch (err: any) {
-      console.error('Error fetching user details:', err);
-      console.error('Error response:', err.response?.data);
-    }
-  };
-
   const fetchRoomDetails = async () => {
     if (!roomId || !authToken) return;
     
     try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching room details for room:', roomId);
+      
       const response = await getPVPRoomDetails(roomId, authToken);
-      if (response.data.success) {
-        const data = response.data.data as RoomDetails;
-        setRoomDetails(data);
-        // If user id is missing, try to infer from player list by matching name
-        if (user && !user.id) {
-          const match = data.players.find(
-            (p: any) =>
-              p.player.firstName === user.name.first &&
-              p.player.lastName === user.name.last
-          );
-          if (match) {
-            setUser({
-              ...user,
-              id: match.player.userId,
-            } as any);
-          }
-        }
-        
-        // If game has started, navigate to game page
-        if (data.status === 'active') {
-          navigate(`/student/pvp/game/${roomId}`);
-        }
+      console.log('Room details response:', response);
+      
+      if (response.data?.success && response.data?.data) {
+        setRoomDetails(response.data.data);
+      } else {
+        setError(response.data?.message || 'Failed to fetch room details');
       }
     } catch (err) {
       console.error('Error fetching room details:', err);
+      setError('Failed to fetch room details');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Ready flow removed – all participants are considered ready by default
-
   const handleStartGame = async () => {
-    if (!roomId || !authToken) return;
+    if (!roomId || !authToken || !roomDetails) return;
     
-    setLoading(true);
     try {
+      setLoading(true);
+      setError(null);
+      console.log('Starting PVP game for room:', roomId);
+      
       const response = await startPVPGame(roomId, authToken);
-      if (response.data.success) {
-        navigate(`/student/pvp/game/${roomId}`);
+      console.log('Start game response:', response);
+      
+      if (response.data?.success) {
+        console.log('Game started successfully, navigating to game page');
+        navigate(`/student/practice-mode/pvp/game/${roomId}`);
       } else {
-        setError(response.data.message || 'Failed to start game');
+        setError(response.data?.message || 'Failed to start game');
       }
     } catch (err) {
+      console.error('Error starting game:', err);
       setError('Failed to start game');
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = async () => {
-    if (roomId) {
-      try {
-        await navigator.clipboard.writeText(roomId);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy: ', err);
-      }
+  const copyRoomCode = () => {
+    if (roomDetails?.room_id) {
+      navigator.clipboard.writeText(roomDetails.room_id);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     }
   };
+
+  const isCreator = user?.id === roomDetails?.creator?.userId;
+  const canStartGame = isCreator && 
+    roomDetails && 
+    roomDetails.players.length >= minPlayersToStart && 
+    roomDetails.status === 'waiting';
 
   if (!roomDetails) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading room...</div>
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Loading room...</div>
+          <div className="animate-spin w-8 h-8 border-4 border-gold border-t-transparent rounded-full mx-auto"></div>
+          {error && (
+            <div className="mt-4 bg-red-500/10 border border-red-400/50 rounded-xl p-4 text-red-200">
+              ❌ {error}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
-
-  const currentUserId = user?.id ?? (user as any)?.userId;
-  const isCreator = roomDetails.creator.userId === currentUserId;
-  // const currentPlayer = roomDetails.players.find((p: any) => p.player.userId === user?.id);
-  const hasEnoughPlayers = roomDetails.players.length >= 2; // Minimum 2 players to start
-  const isRoomWaiting = roomDetails.status === 'waiting';
-  const canStartGame = isCreator && hasEnoughPlayers && isRoomWaiting;
-
-  // Debug logging (can be removed in production)
-  console.log('Room Debug:', {
-    isCreator,
-    hasEnoughPlayers,
-    isRoomWaiting,
-    canStartGame,
-    creatorId: roomDetails.creator.userId,
-    userId: currentUserId,
-    playersCount: roomDetails.players.length,
-    maxPlayers: roomDetails.max_players,
-    roomStatus: roomDetails.status,
-    minPlayersToStart: 2
-  });
-
 
   return (
     <div className="min-h-screen bg-black">
@@ -212,168 +147,101 @@ const StudentPvPRoomPage: FC = () => {
             <h1 className="text-4xl font-black text-gold mb-4">
               🏰 EPIC BATTLE ROOM 🏰
             </h1>
-            <div className="flex items-center justify-center gap-3">
-              <p className="text-white text-lg">Room Code: <span className="font-bold text-gold">{roomId}</span></p>
-              <button
-                onClick={copyToClipboard}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  copySuccess 
-                    ? 'bg-green-600 text-white' 
-                    : 'bg-gold/20 text-gold hover:bg-gold/30'
-                }`}
-                title="Copy room code"
-              >
-                <AiOutlineCopy className="text-sm" />
-                {copySuccess ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
+            <p className="text-white/80 text-lg">
+              Room Code: <span className="font-bold text-gold">{roomDetails.room_id}</span>
+            </p>
+            <button
+              onClick={copyRoomCode}
+              className="mt-2 px-4 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg transition-colors flex items-center gap-2 mx-auto"
+            >
+              <AiOutlineCopy />
+              {copySuccess ? 'Copied!' : 'Copy Code'}
+            </button>
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-400/50 rounded-2xl p-4 text-red-200 text-center backdrop-blur-xl">
-            ❌ {error}
-          </div>
-        )}
-
-        {/* Room Details */}
-        <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-purple/5"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-purple"></div>
-          
-          <div className="relative z-10">
-            <h2 className="text-2xl font-black text-gold mb-6 text-center">Room Settings</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Questions</div>
-                <div className="text-white text-2xl font-black">{roomDetails.number_of_questions}</div>
-              </div>
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Time per Question</div>
-                <div className="text-white text-2xl font-black">{roomDetails.time_per_question}s</div>
-              </div>
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Operation</div>
-                <div className="text-white text-2xl font-black capitalize">{roomDetails.operation || 'Addition'}</div>
-              </div>
+        {/* Room Settings */}
+        <div className="bg-black hover:bg-[#191919] transition-colors text-white p-6 rounded-2xl border border-gold/50 ring-1 ring-white/5 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.65)]">
+          <h2 className="text-2xl font-bold text-gold mb-4">⚙️ Room Settings</h2>
+          <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4">
+            <div>
+              <p className="text-white/60">Operation</p>
+              <p className="text-white font-semibold capitalize">{roomDetails.operation}</p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Game Mode</div>
-                <div className="text-white text-2xl font-black capitalize">
-                  {roomDetails.game_mode === 'flashcards' ? 'Flash Cards' :
-                   roomDetails.game_mode === 'norush' ? 'No Rush Mastery' :
-                   roomDetails.game_mode === 'timeattack' ? 'Time Attack' :
-                   roomDetails.game_mode === 'custom' ? 'Custom Challenge' :
-                   (roomDetails.game_mode || 'Flash Cards')}
-                </div>
-              </div>
-              {/* Timer Information */}
-              <div className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 text-center">
-                <div className="text-gold font-bold text-lg">Total Game Time</div>
-                <div className="text-white text-2xl font-black">
-                  {roomDetails.game_mode === 'flashcards' ? 
-                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
-                   roomDetails.game_mode === 'norush' ? 
-                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
-                   roomDetails.game_mode === 'timeattack' ? 
-                    `${Math.floor((roomDetails.time_per_question * roomDetails.number_of_questions) / 60)}:${((roomDetails.time_per_question * roomDetails.number_of_questions) % 60).toString().padStart(2, '0')}` :
-                   roomDetails.game_mode === 'custom' ? 
-                    `5:00 (${Math.floor(300 / roomDetails.number_of_questions)}s per question)` :
-                    `${Math.floor((roomDetails.time_per_question * roomDetails.number_of_questions) / 60)}:${((roomDetails.time_per_question * roomDetails.number_of_questions) % 60).toString().padStart(2, '0')}`
-                  }
-                </div>
-              </div>
+            <div>
+              <p className="text-white/60">Game Mode</p>
+              <p className="text-white font-semibold capitalize">{roomDetails.game_mode}</p>
+            </div>
+            <div>
+              <p className="text-white/60">Questions</p>
+              <p className="text-white font-semibold">{roomDetails.number_of_questions}</p>
+            </div>
+            <div>
+              <p className="text-white/60">Time Per Question</p>
+              <p className="text-white font-semibold">
+                {roomDetails.time_per_question === 0 ? 'No Limit' : `${roomDetails.time_per_question}s`}
+              </p>
+            </div>
+            <div>
+              <p className="text-white/60">Difficulty</p>
+              <p className="text-white font-semibold capitalize">{roomDetails.difficulty_level}</p>
+            </div>
+            <div>
+              <p className="text-white/60">Max Players</p>
+              <p className="text-white font-semibold">{roomDetails.max_players}</p>
             </div>
           </div>
         </div>
 
         {/* Players List */}
-        <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-purple/5"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-lightGold to-purple"></div>
-          
-          <div className="relative z-10">
-            <h2 className="text-2xl font-black text-gold mb-6 text-center">Players ({roomDetails.players.length}/{roomDetails.max_players})</h2>
-            
-            {/* Game Start Status */}
-            <div className="mb-6 text-center">
-              {roomDetails.players.length < 2 ? (
-                <div className="bg-yellow-500/10 border border-yellow-400/50 rounded-xl p-4 text-yellow-200">
-                  ⏳ Waiting for more players... Need at least 2 players to start
-                </div>
-              ) : isCreator ? (
-                <div className="bg-green-500/10 border border-green-400/50 rounded-xl p-4 text-green-200">
-                  ✅ Ready to start! You can begin the game with {roomDetails.players.length} players
-                </div>
-              ) : (
-                <div className="bg-blue-500/10 border border-blue-400/50 rounded-xl p-4 text-blue-200">
-                  🎮 Waiting for room creator to start the game
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              {roomDetails.players.map((player: any, index: number) => (
-                <div key={player.player.userId} className="bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-gold/30 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-gold text-black w-8 h-8 rounded-full flex items-center justify-center font-bold">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="text-white font-bold text-lg">
-                        {player.player.firstName} {player.player.lastName}
-                      </div>
-                      {player.player.userId === roomDetails.creator.userId && (
-                        <div className="text-gold text-sm flex items-center gap-1">
-                          <AiOutlineCrown className="text-sm" />
-                          Room Creator
-                        </div>
-                      )}
-                    </div>
+        <div className="bg-black hover:bg-[#191919] transition-colors text-white p-6 rounded-2xl border border-gold/50 ring-1 ring-white/5 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.65)]">
+          <h2 className="text-2xl font-bold text-gold mb-4">👥 Players ({roomDetails.players.length}/{roomDetails.max_players})</h2>
+          <div className="space-y-3">
+            {roomDetails.players.map((playerData, index) => (
+              <div
+                key={playerData.player.userId}
+                className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
+                    <span className="text-gold font-bold">
+                      {index === 0 ? <AiOutlineCrown className="text-xl" /> : index + 1}
+                    </span>
                   </div>
-                  <div className={`px-4 py-2 rounded-full text-sm font-bold ${
-                    player.is_ready 
-                      ? 'bg-green-500/20 text-green-400 border border-green-400/50' 
-                      : 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/50'
-                  }`}>
-                    {player.is_ready ? 'Ready' : 'Not Ready'}
+                  <div>
+                    <p className="text-white font-semibold">
+                      {playerData.player.firstName} {playerData.player.lastName}
+                    </p>
+                    <p className="text-white/60 text-sm">
+                      {playerData.is_ready ? '✅ Ready' : '⏳ Waiting...'}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+                {playerData.player.userId === roomDetails.creator.userId && (
+                  <span className="text-gold text-sm font-semibold">👑 Creator</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Game Status */}
-        {isCreator && !canStartGame && (
-          <div className="bg-yellow-500/10 border border-yellow-400/50 rounded-2xl p-4 text-yellow-200 text-center backdrop-blur-xl">
-            {!hasEnoughPlayers ? (
-              <div>
-                ⚠️ Need {roomDetails.max_players} players to start. Currently have {roomDetails.players.length} players.
-                {roomDetails.max_players === 2 && " (Duel requires 2 players)"}
-                {roomDetails.max_players === 3 && " (Trio requires 3 players)"}
-                {roomDetails.max_players === 4 && " (Squad requires 4 players)"}
-              </div>
-            ) : !isRoomWaiting ? (
-              <div>⚠️ Room is not in waiting status. Current status: {roomDetails.status}</div>
-            ) : null}
-          </div>
-        )}
-
-
-        {/* Action Buttons */}
-        <div className="flex flex-col tablet:flex-row gap-4 justify-center">
-          {/* No Ready button – participants are ready by default */}
+        {/* Start Game Button */}
+        <div className="text-center">
+          {error && (
+            <div className="mb-4 bg-red-500/10 border border-red-400/50 rounded-xl p-4 text-red-200">
+              ❌ {error}
+            </div>
+          )}
           
-          {isCreator && canStartGame && (
+          {isCreator && (
             <button
               onClick={handleStartGame}
-              disabled={loading}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+              disabled={!canStartGame || loading}
+              className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center gap-3 mx-auto ${
+                canStartGame && !loading
+                  ? 'bg-gradient-to-r from-gold to-lightGold hover:from-gold/80 hover:to-lightGold/80 text-black shadow-lg hover:shadow-xl transform hover:scale-105'
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
             >
               <AiOutlinePlayCircle className="text-xl" />
               {loading ? 'Starting Game...' : 'Start Game'}

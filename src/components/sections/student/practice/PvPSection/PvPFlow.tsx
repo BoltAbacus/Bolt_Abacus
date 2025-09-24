@@ -68,7 +68,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
   const [settings, setSettings] = useState<PvPSettings>({
     max_players: 2,
     number_of_questions: 10,
-    time_per_question: 30,
+    time_per_question: 0, // No time limit by default, like practice mode
     difficulty_level: 'medium',
     number_of_digits: 3,
     level_id: 1,
@@ -196,6 +196,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
     setSuccess(null);
 
     try {
+      console.log('Creating PVP room with settings:', settings);
       const response = await customAxios.post(CREATE_PVP_ROOM_ENDPOINT, settings, {
         headers: {
           'AUTH-TOKEN': authToken
@@ -203,13 +204,19 @@ const PvPFlow: FC<PvPFlowProps> = () => {
       });
 
       if (response.data.success) {
-        setSuccess(`Room created successfully! Room Code: ${response.data.data.room_id}`);
-        // Navigate to the room page
-        navigate(`/student/pvp/room/${response.data.data.room_id}`);
+        const roomId = response.data.data.room_id;
+        console.log('Room created successfully:', roomId);
+        setSuccess(`Room created successfully! Room Code: ${roomId}`);
+        
+        // Navigate to the room page immediately
+        setTimeout(() => {
+          navigate(`/student/pvp/room/${roomId}`);
+        }, 1000); // Small delay to show success message
       } else {
         setError(response.data.message || 'Failed to create room');
       }
     } catch (err: any) {
+      console.error('Error creating room:', err);
       setError(err.response?.data?.message || 'Failed to create room');
     } finally {
       setLoading(false);
@@ -243,6 +250,7 @@ const PvPFlow: FC<PvPFlowProps> = () => {
     setSuccess(null);
 
     try {
+      console.log('Joining PVP room:', trimmedCode);
       const response = await customAxios.post(JOIN_PVP_ROOM_ENDPOINT, {
         room_code: trimmedCode
       }, {
@@ -252,13 +260,18 @@ const PvPFlow: FC<PvPFlowProps> = () => {
       });
 
       if (response.data.success) {
+        console.log('Successfully joined room:', trimmedCode);
         setSuccess('Successfully joined the room!');
-        // Navigate to the room page
-        navigate(`/student/pvp/room/${trimmedCode}`);
+        
+        // Navigate to the room page immediately
+        setTimeout(() => {
+          navigate(`/student/pvp/room/${trimmedCode}`);
+        }, 1000); // Small delay to show success message
       } else {
         setError(response.data.message || 'Failed to join room');
       }
     } catch (err: any) {
+      console.error('Error joining room:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to join room';
       setError(errorMessage);
     } finally {
@@ -348,15 +361,15 @@ const PvPFlow: FC<PvPFlowProps> = () => {
               setSelectedGameMode(mode);
               updateSettings('game_mode', mode);
               
-              // Set default time based on game mode
+              // Set default time based on game mode (like practice mode)
               if (mode === 'norush') {
-                updateSettings('time_per_question', 120);
+                updateSettings('time_per_question', 0); // No time limit for no rush mastery
               } else if (mode === 'timeattack') {
-                updateSettings('time_per_question', 15);
+                updateSettings('time_per_question', 15); // 15 seconds for time attack
               } else if (mode === 'flashcards') {
-                updateSettings('time_per_question', 5);
+                updateSettings('time_per_question', 2.5); // 2.5 seconds for flashcards (2500ms)
               } else if (mode === 'custom') {
-                updateSettings('time_per_question', 30);
+                updateSettings('time_per_question', 0); // No time limit for custom (like practice mode)
               }
             }}
             selectedOperation={selectedOperation}

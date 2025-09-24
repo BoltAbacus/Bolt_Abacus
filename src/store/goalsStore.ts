@@ -6,13 +6,26 @@ export interface GoalItem {
   text: string;
   completed: boolean;
   createdAt: Date;
+  // Scheduling fields
+  dueDate?: string; // ISO string
+  scheduledDate?: string; // YYYY-MM-DD format
+  scheduledTime?: string; // HH:MM format
+  frequency?: 'once' | 'daily' | 'weekly' | 'monthly';
+  reminderEnabled?: boolean;
+  reminderTime?: string; // HH:MM format
+  priority?: 'high' | 'medium' | 'low';
+  goalType?: 'personal' | 'practice' | 'streak' | 'level' | 'pvp';
+  // Computed properties
+  isOverdue?: boolean;
+  isDueToday?: boolean;
+  daysUntilDue?: number;
 }
 
 interface GoalsState {
   goals: GoalItem[];
   sessionsCompleted: number;
   totalSessions: number;
-  addGoal: (text: string) => void;
+  addGoal: (text: string, schedulingOptions?: Partial<GoalItem>) => void;
   toggleGoal: (id: number) => void;
   deleteGoal: (id: number) => void;
   clearCompleted: () => void;
@@ -35,13 +48,15 @@ export const useGoalsStore = create<GoalsState>()(
       sessionsCompleted: 0,
       totalSessions: 1,
 
-      addGoal: (text: string) => {
+      addGoal: (text: string, schedulingOptions?: Partial<GoalItem>) => {
         const { goals } = get();
         const newGoal: GoalItem = {
           id: Date.now(),
           text: text.trim(),
           completed: false,
           createdAt: new Date(),
+          // Apply scheduling options if provided
+          ...schedulingOptions,
         };
         set({ goals: [...goals, newGoal] });
       },

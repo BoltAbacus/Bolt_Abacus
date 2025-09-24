@@ -12,6 +12,18 @@ export interface TodoItem {
   completed: boolean;
   priority: 'high' | 'medium' | 'low';
   type: 'practice' | 'streak' | 'level' | 'pvp' | 'personal';
+  // Scheduling fields
+  due_date?: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  frequency?: 'once' | 'daily' | 'weekly' | 'monthly';
+  reminder_enabled?: boolean;
+  reminder_time?: string;
+  is_overdue?: boolean;
+  is_due_today?: boolean;
+  days_until_due?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TodoListData {
@@ -42,14 +54,29 @@ export const getUserTodoList = async (
 export const addPersonalGoal = async (
   token: string,
   title: string,
-  description?: string
+  description?: string,
+  schedulingOptions?: any
 ): Promise<unknown> => {
+  const requestData: any = {
+    title,
+    description: description || '',
+  };
+
+  // Add scheduling options if provided
+  if (schedulingOptions) {
+    if (schedulingOptions.priority) requestData.priority = schedulingOptions.priority;
+    if (schedulingOptions.goalType) requestData.goal_type = schedulingOptions.goalType;
+    if (schedulingOptions.dueDate) requestData.due_date = schedulingOptions.dueDate;
+    if (schedulingOptions.scheduledDate) requestData.scheduled_date = schedulingOptions.scheduledDate;
+    if (schedulingOptions.scheduledTime) requestData.scheduled_time = schedulingOptions.scheduledTime;
+    if (schedulingOptions.frequency) requestData.frequency = schedulingOptions.frequency;
+    if (schedulingOptions.reminderEnabled !== undefined) requestData.reminder_enabled = schedulingOptions.reminderEnabled;
+    if (schedulingOptions.reminderTime) requestData.reminder_time = schedulingOptions.reminderTime;
+  }
+
   const response = await axios.post(
     ADD_PERSONAL_GOAL_ENDPOINT,
-    {
-      title,
-      description: description || '',
-    },
+    requestData,
     {
       headers: { 'AUTH-TOKEN': token },
     }

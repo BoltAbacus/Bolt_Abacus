@@ -7,6 +7,7 @@ export interface WeeklyStatsData {
   time_spent_hours: number;
   time_spent_minutes: number;
   time_spent_formatted: string;
+  problems_solved: number;
 }
 
 export interface WeeklyStatsResponse {

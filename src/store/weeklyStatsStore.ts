@@ -9,6 +9,7 @@ interface WeeklyStatsState {
   time_spent_hours: number;
   time_spent_minutes: number;
   time_spent_formatted: string;
+  problems_solved: number;
   isLoading: boolean;
   error: string | null;
 
@@ -26,6 +27,7 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
       time_spent_hours: 0,
       time_spent_minutes: 0,
       time_spent_formatted: '0h 0m',
+      problems_solved: 0,
       isLoading: false,
       error: null,
 
@@ -46,6 +48,7 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
               time_spent_hours: response.data.time_spent_hours,
               time_spent_minutes: response.data.time_spent_minutes,
               time_spent_formatted: response.data.time_spent_formatted,
+              problems_solved: response.data.problems_solved || 0,
               isLoading: false,
               error: null,
             });
@@ -73,6 +76,7 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
           time_spent_hours: statsData.time_spent_hours,
           time_spent_minutes: statsData.time_spent_minutes,
           time_spent_formatted: statsData.time_spent_formatted,
+          problems_solved: statsData.problems_solved || 0,
         });
       },
 
@@ -88,6 +92,7 @@ export const useWeeklyStatsStore = create<WeeklyStatsState>()(
         time_spent_hours: state.time_spent_hours,
         time_spent_minutes: state.time_spent_minutes,
         time_spent_formatted: state.time_spent_formatted,
+        problems_solved: state.problems_solved,
       }),
     }
   )

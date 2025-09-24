@@ -269,7 +269,7 @@ const SettingsStep: FC<SettingsStepProps> = ({
                     className="px-2 py-1 border border-grey rounded-md outline-none focus:outline-none w-full text-black text-center accent-gold"
                     id="flashcardSpeed"
                     type="range"
-                    min={100}
+                    min={1000}
                     max={5000}
                     value={settings.time_per_question * 1000} // Convert seconds to milliseconds
                     onChange={(e) => updateSettings('time_per_question', parseInt(e.target.value) / 1000)} // Convert milliseconds to seconds
@@ -287,6 +287,30 @@ const SettingsStep: FC<SettingsStepProps> = ({
                       ms ({settings.time_per_question * 1000 < 1500 ? 'Fast' : settings.time_per_question * 1000 > 2500 ? 'Slow' : 'Medium'})
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Time Per Question - Only show for timed modes, but make it optional like practice mode */}
+            {(selectedGameMode === 'timeattack' || selectedGameMode === 'custom') && (
+              <div className="tablet:gap-4 items-center gap-2 grid grid-cols-2 py-4 w-full">
+                <div className="text-left">
+                  <p className="text-md text-gold font-bold">⏱️ Time Per Question (Optional)</p>
+                  <p className="text-xs text-white/60">Set to 0 for no time limit (like practice mode)</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <input
+                    type="number"
+                    className="px-2 py-1 border border-grey rounded-md focus:outline-none w-full text-black text-center"
+                    value={Number(settings.time_per_question)}
+                    min={0}
+                    max={300}
+                    onChange={(e) => updateSettings('time_per_question', parseInt(e.target.value) || 0)}
+                    placeholder="0 = no limit"
+                  />
+                  <p className="text-xs text-white/60 mt-1">
+                    {settings.time_per_question === 0 ? 'No time limit' : `${settings.time_per_question} seconds per question`}
+                  </p>
                 </div>
               </div>
             )}

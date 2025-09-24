@@ -20,7 +20,7 @@ interface TodoListState {
   // Actions
   fetchTodoList: () => Promise<void>;
   setTodoList: (todoData: TodoListData) => void;
-  addPersonalGoal: (title: string, description?: string) => Promise<void>;
+  addPersonalGoal: (title: string, description?: string, schedulingOptions?: any) => Promise<void>;
   removePersonalGoal: (goalId: string) => Promise<void>;
   toggleComplete: (goalId: string) => void;
   clearError: () => void;
@@ -86,7 +86,7 @@ export const useTodoListStore = create<TodoListState>()(
         });
       },
 
-      addPersonalGoal: async (title: string, description?: string) => {
+      addPersonalGoal: async (title: string, description?: string, schedulingOptions?: any) => {
         const { authToken } = useAuthStore.getState();
         if (!authToken) {
           set({ error: 'No authentication token' });
@@ -103,8 +103,14 @@ export const useTodoListStore = create<TodoListState>()(
               title,
               description: description || '',
               completed: false,
-              priority: 'medium',
+              priority: schedulingOptions?.priority || 'medium',
               type: 'personal' as const,
+              scheduled_date: schedulingOptions?.scheduledDate,
+              scheduled_time: schedulingOptions?.scheduledTime,
+              due_date: schedulingOptions?.dueDate,
+              frequency: schedulingOptions?.frequency || 'once',
+              reminder_enabled: schedulingOptions?.reminderEnabled || false,
+              reminder_time: schedulingOptions?.reminderTime,
             },
             ...previousTodos,
           ],
@@ -114,7 +120,7 @@ export const useTodoListStore = create<TodoListState>()(
           error: null,
         });
         try {
-          const response = await addPersonalGoal(authToken, title, description);
+          const response = await addPersonalGoal(authToken, title, description, schedulingOptions);
           if (response.success) {
             // Refresh the todo list after adding
             await get().fetchTodoList();

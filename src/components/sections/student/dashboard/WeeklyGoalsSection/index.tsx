@@ -12,11 +12,11 @@ export interface WeeklyGoalsSectionProps {
 
 const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
   className = '',
-  sessionsCompleted = 4,
+  sessionsCompleted = 0,
   sessionsTotal = 5,
-  practiceMinutes = 180,
+  practiceMinutes = 0,
   practiceTargetMinutes = 240,
-  problemsSolved = 245,
+  problemsSolved = 0,
   problemsTarget = 300,
 }) => {
   const sessionsPct = Math.min(100, (sessionsCompleted / sessionsTotal) * 100);

@@ -12,7 +12,7 @@ import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid'
 import SplitText from '@components/atoms/SplitText';
 import CountUp from '@components/atoms/CountUp';
 import JoinClassButton from '@components/atoms/JoinClassButton';
-// import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
+// WeeklyGoalsSection moved to Progress page
 // import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
 import { getPracticeProgressRequest, getProgressRequest, dashboardRequestV2 } from '@services/student';
@@ -23,15 +23,13 @@ import { useExperienceStore } from '@store/experienceStore';
 import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
 import { useTodoListStore } from '@store/todoListStore';
 import { getActivities, ActivityItem } from '@helpers/activity';
+import { calculatePracticeStats } from '@helpers/progressCalculations';
 import axios from '@helpers/axios';
 import { STUDENT_LEADERBOARD, LOGIN_PAGE } from '@constants/routes';
 // import StreakTest from '@components/atoms/StreakTest';
 import { MESSAGES, ERRORS } from '@constants/app';
 import { STUDENT_DASHBOARD } from '@constants/routes';
-import {
-  LevelsPercentage,
-  DashboardResponseV2,
-} from '@interfaces/apis/student';
+import { DashboardResponseV2 } from '@interfaces/apis/student';
 
 export interface StudentDashboardPageProps {}
 
@@ -41,7 +39,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState<LevelsPercentage>({});
+  // Removed unused progress state
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [currentLevelProgressPct, setCurrentLevelProgressPct] = useState<number>(0);
   const [currentLevel, setCurrentLevel] = useState<number>(1);
@@ -50,12 +48,12 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
   const { currentStreak, fetchStreak, updateStreak } = useStreakStore();
-  const { experience_points, level, syncWithBackend } = useExperienceStore();
-  const { accuracy, time_spent_formatted, /* fetchWeeklyStats,*/ setWeeklyStats } = useWeeklyStatsStore() as any;
+  const { experience_points, syncWithBackend } = useExperienceStore();
+  const { accuracy, time_spent_formatted, setWeeklyStats } = useWeeklyStatsStore() as any;
   const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
   const [calculatedAccuracy, setCalculatedAccuracy] = useState<number>(0);
   const [calculatedTimeSpent, setCalculatedTimeSpent] = useState<string>('0h 0m');
-  const { todos, completed_todos, pending_todos, fetchTodoList } = useTodoListStore();
+  const { fetchTodoList } = useTodoListStore();
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const [topLeaderboard, setTopLeaderboard] = useState<any[]>([]);
 
@@ -87,48 +85,37 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
     return `${days}d ago`;
   };
 
-  // Helper function to calculate accuracy and time from practice stats
+  // Helper function to calculate accuracy and time from practice stats using unified calculation
   const calculateStatsFromPracticeData = (practiceStats: any) => {
-    if (!practiceStats) return { accuracy: 0, timeSpent: '0h 0m' };
+    const stats = calculatePracticeStats(practiceStats);
+    return { accuracy: stats.accuracy, timeSpent: stats.timeSpent };
+  };
 
-    let totalQuestions = 0;
-    let totalCorrect = 0;
-    let totalTimeSeconds = 0;
-
-    // Calculate from detailed problem times if available
-    if (practiceStats.practiceSessions && Array.isArray(practiceStats.practiceSessions)) {
-      for (const session of practiceStats.practiceSessions) {
-        if (session.problemTimes && Array.isArray(session.problemTimes)) {
-          // Use detailed problem times
-          for (const problemTime of session.problemTimes) {
-            totalQuestions += 1;
-            if (problemTime.isCorrect) {
-              totalCorrect += 1;
-            }
-            totalTimeSeconds += problemTime.timeSpent || 0;
-          }
-        } else {
-          // Fallback to session-level data
-          totalQuestions += session.numberOfQuestions || 0;
-          totalCorrect += session.score || 0;
-          totalTimeSeconds += session.totalTime || 0;
-        }
-      }
-    } else {
-      // Fallback to aggregated data
-      totalQuestions = practiceStats.totalQuestions || 0;
-      totalCorrect = practiceStats.totalCorrectAnswers || 0;
-      totalTimeSeconds = practiceStats.totalTimeSpent || 0;
+  // Unified accuracy calculation function
+  const getUnifiedAccuracy = () => {
+    // Priority: calculated accuracy from practice data > weekly stats > fallback to 0
+    if (calculatedAccuracy > 0) {
+      return calculatedAccuracy;
     }
+    if (accuracy > 0) {
+      return accuracy;
+    }
+    return 0;
+  };
 
-    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-    
-    // Format time spent
-    const hours = Math.floor(totalTimeSeconds / 3600);
-    const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
-    const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-    return { accuracy, timeSpent };
+  // Unified time calculation function
+  const getUnifiedTimeSpent = () => {
+    // Priority: calculated time > weekly stats > computed time > fallback
+    if (calculatedTimeSpent && calculatedTimeSpent !== '0h 0m') {
+      return calculatedTimeSpent;
+    }
+    if (time_spent_formatted && time_spent_formatted !== '0h 0m') {
+      return time_spent_formatted;
+    }
+    if (computedTimeFormatted && computedTimeFormatted !== '0h 0m') {
+      return computedTimeFormatted;
+    }
+    return '0h 0m';
   };
 
   useEffect(() => {
@@ -136,7 +123,11 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
     let isMounted = true;
     
     const getDashboardData = async () => {
-      console.log('🔄 [Dashboard] Starting data fetch...', {
+      console.log('🔄 [Dashboard] Starting data fetch...');
+      
+      // Skip weekly stats API here to avoid overwriting with zeros; we compute from practice/progress
+      
+      console.log('🔄 [Dashboard] Auth check:', {
         isAuthenticated,
         hasAuthToken: !!authToken,
         timestamp: new Date().toISOString()
@@ -166,7 +157,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
             setCurrentLevel(dashboardResponse.levelId);
             setClassLink(dashboardResponse.latestLink);
             setApiError(null);
-            setProgress(dashboardResponse.levelsPercentage);
+            // Removed unused setProgress
             
             // Fetch practice data
             try {
@@ -224,12 +215,11 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                 const currentLevelId = dashboardResponse.levelId;
                 const levelData = levels.find((lvl: any) => lvl.levelId === currentLevelId);
                 if (levelData && Array.isArray(levelData.classes)) {
-                  let completed = 0;
-                  let total = 0;
+                  // Compute aggregate minutes and activities
                   let totalMinutes = 0;
                   let totalActivities = 0;
                   let classesCompleted = 0;
-                  const TOTAL_CLASSES_PER_LEVEL = 12;
+                  const totalClassesInLevel = levelData.classes.length; // Use actual number of classes in the level
                   for (const classItem of levelData.classes) {
                     const topics = Array.isArray(classItem.topics) ? classItem.topics : [];
                     let classCompleted = false;
@@ -252,7 +242,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     }
                     if (classCompleted) classesCompleted += 1;
                   }
-                  const pct = Math.min(100, Math.round((classesCompleted / TOTAL_CLASSES_PER_LEVEL) * 100));
+                  const pct = totalClassesInLevel > 0 ? Math.min(100, Math.round((classesCompleted / totalClassesInLevel) * 100)) : 0;
                   setCurrentLevelProgressPct(pct);
                   // Provide fallback weekly stats when API fails later
                   const hours = Math.floor(totalMinutes / 60);
@@ -517,7 +507,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                               <span className="text-xs text-white/80 font-medium">Accuracy</span>
                             </div>
                             <div className="text-lg font-bold text-gold">
-                              {calculatedAccuracy || accuracy || 0}%
+                              {getUnifiedAccuracy()}%
                             </div>
                           </div>
                           
@@ -527,7 +517,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                               <span className="text-xs text-white/80 font-medium">Time Spent</span>
                             </div>
                             <div className="text-lg font-bold text-gold">
-                              {calculatedTimeSpent || time_spent_formatted || computedTimeFormatted}
+                              {getUnifiedTimeSpent()}
                             </div>
                           </div>
                         </div>
@@ -545,6 +535,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Weekly Goals moved to Progress page to avoid duplication */}
                 </SpotlightCard>
                 
                 {/* 🎯 WEEKLY GOALS moved to Progress tab */}
@@ -605,16 +597,16 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                          </Link>
                        </div>
                        
-                       <div className="space-y-3">
-                         {topLeaderboard.length === 0 ? (
+                          <div className="space-y-3">
+                            {topLeaderboard.length === 0 ? (
                            <div className="text-center py-8">
                              <div className="text-4xl mb-2">🏆</div>
                              <p className="text-sm text-[#818181]">No leaderboard data available</p>
                              <p className="text-xs text-[#818181]">Start playing to see rankings!</p>
                            </div>
                          ) : (
-                           topLeaderboard.map((player, index) => (
-                             <div key={player.userId} className="flex items-center justify-between p-3 bg-[#212124] rounded-lg hover:bg-[#2a2a2d] hover:scale-[1.02] transition-all duration-300">
+                              topLeaderboard.map((player) => (
+                                <div key={player.userId} className="flex items-center justify-between p-3 bg-[#212124] rounded-lg hover:bg-[#2a2a2d] hover:scale-[1.02] transition-all duration-300">
                                <div className="flex items-center space-x-3">
                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2a2a2d] hover:scale-110 hover:bg-gold transition-all duration-300">
                                    <span className="text-sm font-bold text-gold hover:scale-125 transition-transform duration-300">#{player.rank}</span>

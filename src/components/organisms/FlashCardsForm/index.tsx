@@ -189,6 +189,7 @@ const FlashCardsForm: FC<FlashCardsFormProps> = ({
               type="range"
               min={100}
               max={5000}
+              
               value={speed}
               onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
             />

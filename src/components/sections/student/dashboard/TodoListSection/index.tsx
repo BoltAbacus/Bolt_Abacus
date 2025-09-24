@@ -21,8 +21,18 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
 
   const handleAddGoal = async () => {
     if (newGoal.trim()) {
-      // Add the goal even if date and time are empty
-      await addPersonalGoal(newGoal.trim());
+      // Prepare scheduling options
+      const schedulingOptions: any = {};
+      
+      if (goalDate) {
+        schedulingOptions.scheduledDate = goalDate;
+      }
+      if (goalTime) {
+        schedulingOptions.scheduledTime = goalTime;
+      }
+      
+      // Add the goal with scheduling options
+      await addPersonalGoal(newGoal.trim(), '', schedulingOptions);
       setNewGoal('');
       setGoalDate('');
       setGoalTime('');
@@ -40,11 +50,34 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
     }
   };
 
-  const formatDateTime = () => {
-    // For now, we'll return empty string since TodoItem doesn't have date/time fields
-    // In a real implementation, you'd want to add date and time fields to the TodoItem interface
-    // and return the actual date/time or empty string if not set
-    return ''; // Empty - no date/time shown if not provided
+  const formatDateTime = (todo: any) => {
+    if (todo.scheduled_date && todo.scheduled_time) {
+      return `${todo.scheduled_date} at ${todo.scheduled_time}`;
+    } else if (todo.scheduled_date) {
+      return todo.scheduled_date;
+    } else if (todo.due_date) {
+      const dueDate = new Date(todo.due_date);
+      return `Due: ${dueDate.toLocaleDateString()}`;
+    }
+    return '';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-400';
+      case 'medium': return 'text-yellow-400';
+      case 'low': return 'text-green-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return '🔴';
+      case 'medium': return '🟡';
+      case 'low': return '🟢';
+      default: return '⚪';
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -151,17 +184,30 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                   <div className="flex-1 min-w-0">
                      <div className="flex items-center space-x-2 mb-1">
                        <span className="text-lg">{getTypeIcon(todo.type)}</span>
+                       <span className={`text-xs ${getPriorityColor(todo.priority)}`}>
+                         {getPriorityIcon(todo.priority)}
+                       </span>
                        <h3 className={`text-sm font-semibold ${
                          todo.completed ? 'line-through text-gray-400' : 'text-white'
                        }`}>
                          {todo.title}
                        </h3>
-                       {formatDateTime() && (
-                         <span className="text-xs text-gray-400">
-                           {formatDateTime()}
-                         </span>
-                       )}
                      </div>
+                     {formatDateTime(todo) && (
+                       <div className="text-xs text-gray-400 mb-1">
+                         📅 {formatDateTime(todo)}
+                       </div>
+                     )}
+                     {todo.is_overdue && (
+                       <div className="text-xs text-red-400 mb-1">
+                         ⚠️ Overdue
+                       </div>
+                     )}
+                     {todo.is_due_today && !todo.completed && (
+                       <div className="text-xs text-yellow-400 mb-1">
+                         🔔 Due Today
+                       </div>
+                     )}
                     <p className={`text-xs ${
                       todo.completed ? 'text-gray-500' : 'text-gray-300'
                     }`}>

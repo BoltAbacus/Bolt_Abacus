@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import { STUDENT_DASHBOARD, STUDENT_LEVEL } from '@constants/routes';
-import { useGoalsStore } from '@store/goalsStore';
+import { useTodoListStore } from '@store/todoListStore';
 
 export interface QuickActionsSectionProps {
   currentLevel: number;
@@ -17,12 +17,12 @@ const QuickActionsSection: FC<QuickActionsSectionProps> = ({
   className = '',
 }) => {
   const [goalText, setGoalText] = useState<string>('');
-  const { addGoal } = useGoalsStore();
+  const { addPersonalGoal } = useTodoListStore();
 
-  const handleAddGoal = () => {
+  const handleAddGoal = async () => {
     const trimmed = goalText.trim();
     if (!trimmed) return;
-    addGoal(trimmed);
+    await addPersonalGoal(trimmed);
     setGoalText('');
   };
 
