@@ -15,7 +15,7 @@ import JoinClassButton from '@components/atoms/JoinClassButton';
 // WeeklyGoalsSection moved to Progress page
 // import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
-import { getPracticeProgressRequest, getProgressRequest, dashboardRequestV2 } from '@services/student';
+import { getProgressRequest, dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { getLevelName } from '@helpers/levelNames';
 import { useStreakStore } from '@store/streakStore';
@@ -53,6 +53,8 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
   const [calculatedAccuracy, setCalculatedAccuracy] = useState<number>(0);
   const [calculatedTimeSpent, setCalculatedTimeSpent] = useState<string>('0h 0m');
+  const [realmAccuracy, setRealmAccuracy] = useState<number>(0);
+  const [realmTimeSpent, setRealmTimeSpent] = useState<string>('0h 0m');
   const { fetchTodoList } = useTodoListStore();
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const [topLeaderboard, setTopLeaderboard] = useState<any[]>([]);
@@ -91,9 +93,70 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
     return { accuracy: stats.accuracy, timeSpent: stats.timeSpent };
   };
 
+  // Helper function to calculate realm-specific accuracy and time from progress data
+  const calculateRealmSpecificStats = (levels: any[], currentLevelId: number) => {
+    const levelData = levels.find((lvl: any) => lvl.levelId === currentLevelId);
+    if (!levelData || !Array.isArray(levelData.classes)) {
+      return { accuracy: 0, timeSpent: '0h 0m', totalMinutes: 0 };
+    }
+
+    let totalCorrect = 0;
+    let totalQuestions = 0;
+    let totalMinutes = 0;
+    let totalActivities = 0;
+
+    for (const classItem of levelData.classes) {
+      const topics = Array.isArray(classItem.topics) ? classItem.topics : [];
+      
+      // Check class test
+      if (classItem.Test && classItem.Test > 0) {
+        totalActivities += 1;
+        totalMinutes += Math.round((classItem.Time || 0) / 60);
+        // For tests, we assume the score is the percentage of correct answers
+        const testScore = classItem.Test;
+        const testQuestions = 10; // Assuming 10 questions per test
+        totalCorrect += Math.round((testScore / 100) * testQuestions);
+        totalQuestions += testQuestions;
+      }
+
+      // Check topics (classwork and homework)
+      for (const topic of topics) {
+        if (topic.Classwork && topic.Classwork > 0) {
+          totalActivities += 1;
+          totalMinutes += Math.round((topic.ClassworkTime || 0) / 60);
+          // For classwork, we assume the score is the percentage of correct answers
+          const classworkScore = topic.Classwork;
+          const classworkQuestions = 5; // Assuming 5 questions per classwork
+          totalCorrect += Math.round((classworkScore / 100) * classworkQuestions);
+          totalQuestions += classworkQuestions;
+        }
+        
+        if (topic.Homework && topic.Homework > 0) {
+          totalActivities += 1;
+          totalMinutes += Math.round((topic.HomeworkTime || 0) / 60);
+          // For homework, we assume the score is the percentage of correct answers
+          const homeworkScore = topic.Homework;
+          const homeworkQuestions = 5; // Assuming 5 questions per homework
+          totalCorrect += Math.round((homeworkScore / 100) * homeworkQuestions);
+          totalQuestions += homeworkQuestions;
+        }
+      }
+    }
+
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+    return { accuracy, timeSpent, totalMinutes, totalActivities };
+  };
+
   // Unified accuracy calculation function
   const getUnifiedAccuracy = () => {
-    // Priority: calculated accuracy from practice data > weekly stats > fallback to 0
+    // Priority: realm-specific accuracy > calculated accuracy from practice data > weekly stats > fallback to 0
+    if (realmAccuracy > 0) {
+      return realmAccuracy;
+    }
     if (calculatedAccuracy > 0) {
       return calculatedAccuracy;
     }
@@ -105,7 +168,10 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
 
   // Unified time calculation function
   const getUnifiedTimeSpent = () => {
-    // Priority: calculated time > weekly stats > computed time > fallback
+    // Priority: realm-specific time > calculated time > weekly stats > computed time > fallback
+    if (realmTimeSpent && realmTimeSpent !== '0h 0m') {
+      return realmTimeSpent;
+    }
     if (calculatedTimeSpent && calculatedTimeSpent !== '0h 0m') {
       return calculatedTimeSpent;
     }
@@ -159,30 +225,19 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
             setApiError(null);
             // Removed unused setProgress
             
-            // Fetch practice data
+            // Fetch practice data using the same API as progress page
             try {
               console.log('📡 [Dashboard] Fetching practice progress...');
-              const practiceRes = await getPracticeProgressRequest('flashcards', 'addition', authToken!);
+              const practiceRes = await getProgressRequest(authToken!);
               console.log('✅ [Dashboard] Practice progress response:', {
                 status: practiceRes.status,
-                hasData: !!practiceRes.data?.practiceProgress,
+                hasData: !!practiceRes.data?.practiceStats,
                 timestamp: new Date().toISOString()
               });
 
               if (practiceRes.status === 200) {
-                const practiceData = practiceRes.data.practiceProgress;
+                const practiceStats = practiceRes.data.practiceStats;
                 if (!isMounted) return;
-                
-                const practiceStats = practiceData ? {
-                  totalSessions: practiceData.totalSessions || 0,
-                  totalPracticeTime: practiceData.totalTime || 0,
-                  totalProblemsSolved: practiceData.totalProblemsSolved || 0,
-                  totalQuestionsAttempted: practiceData.totalQuestionsAttempted || 0,
-                  averageTimePerSession: practiceData.averageTimePerSession || 0,
-                  averageProblemsPerSession: practiceData.averageProblemsPerSession || 0,
-                  recentSessions: practiceData.recentSessions || 0,
-                  practiceSessions: practiceData.practiceSessions || []
-                } : null;
                 
                 // Calculate accuracy and time spent from practice data
                 const { accuracy: calculatedAcc, timeSpent: calculatedTime } = calculateStatsFromPracticeData(practiceStats);
@@ -213,6 +268,12 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
               if (progressRes.status === 200 && progressRes.data?.levels) {
                 const levels = progressRes.data.levels as any[];
                 const currentLevelId = dashboardResponse.levelId;
+                
+                // Calculate realm-specific stats
+                const realmStats = calculateRealmSpecificStats(levels, currentLevelId);
+                setRealmAccuracy(realmStats.accuracy);
+                setRealmTimeSpent(realmStats.timeSpent);
+                
                 const levelData = levels.find((lvl: any) => lvl.levelId === currentLevelId);
                 if (levelData && Array.isArray(levelData.classes)) {
                   // Compute aggregate minutes and activities
@@ -249,12 +310,12 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                   const minutes = totalMinutes % 60;
                   setWeeklyStats({
                     sessions: totalActivities,
-                    accuracy: accuracy || 0,
+                    accuracy: realmStats.accuracy, // Use realm-specific accuracy
                     time_spent_hours: hours,
                     time_spent_minutes: minutes,
-                    time_spent_formatted: `${hours}h ${minutes}m`,
+                    time_spent_formatted: realmStats.timeSpent, // Use realm-specific time
                   });
-                  setComputedTimeFormatted(`${hours}h ${minutes}m`);
+                  setComputedTimeFormatted(realmStats.timeSpent);
                 } else {
                   setCurrentLevelProgressPct(0);
                 }

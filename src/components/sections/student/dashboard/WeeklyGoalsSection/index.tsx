@@ -39,10 +39,10 @@ const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {/* Conquests this week */}
+        {/* Practice Mode Played */}
         <div className={cardBase}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">Conquests this week</span>
+            <span className="text-sm">Practice Mode Played</span>
             <span className={badgeBase}>
               {sessionsCompleted}/{sessionsTotal}
             </span>

@@ -1,5 +1,7 @@
 export interface User {
   id: number;
+  userId: number;
+
   name: {
     first: string;
     last: string;

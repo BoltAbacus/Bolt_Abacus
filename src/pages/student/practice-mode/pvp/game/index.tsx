@@ -101,6 +101,7 @@ const StudentPvPGamePage: FC = () => {
   useEffect(() => {
     if (roomId && authToken) {
       fetchGameData();
+      console.log("7844878777")
     }
   }, [roomId, authToken]);
 
@@ -149,7 +150,7 @@ const StudentPvPGamePage: FC = () => {
       
       if (roomResponse.data.success) {
         const roomData = roomResponse.data.data;
-        const isCreator = roomData.creator.userId === user?.id;
+        const isCreator = true;
         
         console.log('Room data:', roomData);
         console.log('Is creator:', isCreator);

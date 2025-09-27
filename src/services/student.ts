@@ -343,3 +343,81 @@ export const getSpeedTrendRequest = async (token: string) => {
   );
   return response;
 };
+
+export const getPracticeAccuracyTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/practiceAccuracyTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getPracticeSpeedTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/practiceSpeedTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getPvpAccuracyTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/pvpAccuracyTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getPvpSpeedTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/pvpSpeedTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+// New progress components APIs
+export const getClassRankRequest = async (token: string) => {
+  const response = await axios.post(
+    '/getClassRank/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getLeaderboardsRequest = async (token: string) => {
+  const response = await axios.post(
+    '/getLeaderboards/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getModeDistributionRequest = async (token: string) => {
+  const response = await axios.post(
+    '/getModeDistribution/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};

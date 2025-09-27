@@ -46,18 +46,49 @@ export const calculateProgressStats = (progress: LevelProgress[]): ProgressStats
   }
 
   const totalLevels = progress.length;
-  const completedLevels = progress.filter(level => 
-    level.FinalTest > 0 && level.OralTest > 0
-  ).length;
   
+  // A level is considered completed ONLY if it has both FinalTest and OralTest completed
+  // AND at least 80% of classes are completed
+  const completedLevels = progress.filter(level => {
+    const hasTestsCompleted = level.FinalTest > 0 && level.OralTest > 0;
+    const totalClassesInLevel = level.classes.length;
+    const completedClassesInLevel = level.classes.filter(cls => cls.Test > 0).length;
+    const classCompletionRate = totalClassesInLevel > 0 ? (completedClassesInLevel / totalClassesInLevel) : 0;
+    
+    // Both conditions must be met for a level to be considered completed
+    return hasTestsCompleted && classCompletionRate >= 0.8;
+  }).length;
+  
+  // Calculate total classes from all levels in progress data
   const totalClasses = progress.reduce((sum, level) => sum + level.classes.length, 0);
+  
+  // Calculate completed classes - a class is completed if it has a test score > 0
+  // OR if it has significant classwork/homework completion
   const completedClasses = progress.reduce((sum, level) => 
-    sum + level.classes.filter(cls => cls.Test > 0).length, 0
+    sum + level.classes.filter(cls => {
+      // Class is completed if test is passed
+      if (cls.Test > 0) return true;
+      
+      // Or if it has significant topic completion (at least 2 topics with >50% completion)
+      const completedTopics = cls.topics.filter(topic => 
+        topic.Classwork > 50 || topic.Homework > 50
+      ).length;
+      
+      return completedTopics >= 2;
+    }).length, 0
+  );
+
+  // Calculate average score from completed levels only (both tests completed)
+  const completedLevelsWithScores = progress.filter(level => 
+    level.FinalTest > 0 && level.OralTest > 0
   );
   
-  const averageScore = progress.reduce((sum, level) => 
-    sum + (level.FinalTest + level.OralTest) / 2, 0
-  ) / totalLevels || 0;
+  const averageScore = completedLevelsWithScores.length > 0 
+    ? completedLevelsWithScores.reduce((sum, level) => 
+        sum + (level.FinalTest + level.OralTest) / 2, 0
+      ) / completedLevelsWithScores.length
+    : 0;
+
   
   const overallProgress = (completedLevels / totalLevels) * 100;
   
@@ -91,11 +122,13 @@ export const calculatePracticeStats = (practiceStats: any): PracticeStats => {
   let totalTimeSeconds = 0;
   let sessions = 0;
 
+
   // Calculate from detailed problem times if available
   if (practiceStats.practiceSessions && Array.isArray(practiceStats.practiceSessions)) {
     sessions = practiceStats.practiceSessions.length;
     for (const session of practiceStats.practiceSessions) {
-      if (session.problemTimes && Array.isArray(session.problemTimes)) {
+      
+      if (session.problemTimes && Array.isArray(session.problemTimes) && session.problemTimes.length > 0) {
         // Use detailed problem times
         for (const problemTime of session.problemTimes) {
           totalQuestions += 1;
@@ -105,19 +138,20 @@ export const calculatePracticeStats = (practiceStats: any): PracticeStats => {
           totalTimeSeconds += problemTime.timeSpent || 0;
         }
       } else {
-        // Fallback to session-level data
-        totalQuestions += session.numberOfQuestions || 0;
-        totalCorrect += session.score || 0;
+        // Use session-level data (this is what we have based on SQL results)
+        totalQuestions += session.totalQuestions || session.numberOfQuestions || 0;
+        totalCorrect += session.score || 0; // Use the actual score from the database
         totalTimeSeconds += session.totalTime || 0;
       }
     }
   } else {
-    // Fallback to aggregated data
-    totalQuestions = practiceStats.totalQuestions || 0;
-    totalCorrect = practiceStats.totalCorrectAnswers || 0;
-    totalTimeSeconds = practiceStats.totalTimeSpent || 0;
-    sessions = practiceStats.totalSessions || 0;
+    // Use aggregated data from backend
+    totalQuestions = practiceStats.totalQuestionsAttempted || practiceStats.totalQuestions || 0;
+    totalCorrect = practiceStats.totalProblemsSolved || practiceStats.totalCorrectAnswers || 0;
+    totalTimeSeconds = practiceStats.totalPracticeTime || practiceStats.totalTimeSpent || 0;
+    sessions = practiceStats.totalSessions || practiceStats.sessions || 0;
   }
+
 
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
   
@@ -146,18 +180,23 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
       levelProgress: 0,
       levelAverageScore: 0,
       levelClassesCompleted: 0,
-      levelTotalClasses: 12,
+      levelTotalClasses: 0,
       levelProblemsSolved: 0,
       levelPracticeTime: 0,
       levelClassesThisWeek: 0,
     };
   }
 
+  // Find the highest level with any actual progress (not just empty data)
+  // Based on SQL data: student has progress in Level 1, Class 2
+  // The backend sends data for all levels (1-6) but most have no progress
+
   // Find the highest level with any progress
   let currentLevel = 0;
   let levelProgress = 0;
   let levelAverageScore = 0;
   let levelClassesCompleted = 0;
+  let levelTotalClasses = 0;
   let levelProblemsSolved = 0;
   let levelPracticeTime = 0;
   let levelClassesThisWeek = 0;
@@ -169,15 +208,25 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
   monday.setDate(today.getDate() - dayOfWeek + 1);
   monday.setHours(0, 0, 0, 0);
 
+  // Find the highest level with any actual progress (not just empty data)
+  let highestLevelWithProgress = 0;
   progress.forEach(level => {
-    // Check if this level has any progress
     const hasProgress = level.FinalTest > 0 || level.OralTest > 0 || 
       level.classes.some(cls => cls.Test > 0 || cls.topics.some(topic => topic.Classwork > 0 || topic.Homework > 0));
     
-    if (hasProgress && level.levelId > currentLevel) {
-      currentLevel = level.levelId;
+    if (hasProgress && level.levelId > highestLevelWithProgress) {
+      highestLevelWithProgress = level.levelId;
+    }
+  });
+
+
+  // Calculate metrics for the highest level with progress
+  if (highestLevelWithProgress > 0) {
+    const currentLevelData = progress.find(level => level.levelId === highestLevelWithProgress);
+    if (currentLevelData) {
+      currentLevel = highestLevelWithProgress;
       
-      // Calculate level-specific metrics
+      // Calculate level-specific metrics for the current level only
       const levelScores: number[] = [];
       const levelTimes: number[] = [];
       let classesCompleted = 0;
@@ -186,30 +235,27 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
       let classesThisWeek = 0;
 
       // Process level tests
-      if (level.FinalTest > 0) {
-        levelScores.push(level.FinalTest);
-        levelTimes.push(level.FinalTestTime);
+      if (currentLevelData.FinalTest > 0) {
+        levelScores.push(currentLevelData.FinalTest);
+        levelTimes.push(currentLevelData.FinalTestTime);
         problemsSolved += 15; // Assuming 15 problems per test
-        practiceTime += level.FinalTestTime;
+        practiceTime += currentLevelData.FinalTestTime;
       }
-      if (level.OralTest > 0) {
-        levelScores.push(level.OralTest);
-        levelTimes.push(level.OralTestTime);
+      if (currentLevelData.OralTest > 0) {
+        levelScores.push(currentLevelData.OralTest);
+        levelTimes.push(currentLevelData.OralTestTime);
         problemsSolved += 15;
-        practiceTime += level.OralTestTime;
+        practiceTime += currentLevelData.OralTestTime;
       }
       
       // Process classes
-      level.classes.forEach(classItem => {
-        let classCompleted = false;
-        
+      currentLevelData.classes.forEach(classItem => {
         // Process class test
         if (classItem.Test > 0) {
           levelScores.push(classItem.Test);
           levelTimes.push(classItem.Time);
           problemsSolved += 15;
           practiceTime += classItem.Time;
-          classCompleted = true;
         }
         
         // Process topics (classwork and homework)
@@ -219,18 +265,23 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
             levelTimes.push(topic.ClassworkTime);
             problemsSolved += 15;
             practiceTime += topic.ClassworkTime;
-            classCompleted = true;
           }
           if (topic.Homework > 0) {
             levelScores.push(topic.Homework);
             levelTimes.push(topic.HomeworkTime);
             problemsSolved += 15;
             practiceTime += topic.HomeworkTime;
-            classCompleted = true;
           }
         });
         
-        if (classCompleted) {
+        // A class is considered completed if:
+        // 1. Test is passed, OR
+        // 2. At least 2 topics have >50% completion
+        const completedTopics = classItem.topics.filter(topic => 
+          topic.Classwork > 50 || topic.Homework > 50
+        ).length;
+        
+        if (classItem.Test > 0 || completedTopics >= 2) {
           classesCompleted++;
           // For now, assume all completed classes were this week
           // In a real implementation, you'd check timestamps
@@ -238,10 +289,14 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
         }
       });
 
-      // Calculate level progress (percentage of classes completed)
-      levelProgress = Math.round((classesCompleted / 12) * 100);
+      // Use actual number of classes in the level instead of hardcoded 12
+      levelTotalClasses = currentLevelData.classes.length;
       
-      // Calculate level average score
+      // Calculate level progress (percentage of classes completed in current level only)
+      levelProgress = levelTotalClasses > 0 ? Math.round((classesCompleted / levelTotalClasses) * 100) : 0;
+
+      
+      // Calculate level average score (from current level only)
       levelAverageScore = levelScores.length > 0 
         ? Math.round(levelScores.reduce((sum, score) => sum + score, 0) / levelScores.length)
         : 0;
@@ -251,14 +306,14 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
       levelPracticeTime = Math.round(practiceTime / 60); // Convert to minutes
       levelClassesThisWeek = classesThisWeek;
     }
-  });
+  }
 
   return {
     currentLevel,
     levelProgress,
     levelAverageScore,
     levelClassesCompleted,
-    levelTotalClasses: 12,
+    levelTotalClasses,
     levelProblemsSolved,
     levelPracticeTime,
     levelClassesThisWeek,
@@ -284,7 +339,7 @@ export const calculateAccuracy = (correct: number, total: number): number => {
 /**
  * Calculate weekly goals from practice stats and progress data
  */
-export const calculateWeeklyGoals = (practiceStats: any, progress: LevelProgress[]): {
+export const calculateWeeklyGoals = (practiceStats: any, _progress: LevelProgress[]): {
   sessionsCompleted: number;
   sessionsTotal: number;
   practiceMinutes: number;
@@ -300,55 +355,47 @@ export const calculateWeeklyGoals = (practiceStats: any, progress: LevelProgress
   weekStart.setDate(today.getDate() - daysToMonday);
   weekStart.setHours(0, 0, 0, 0);
 
-  // Calculate conquests (classes) completed this week from progress data
-  let conquestsCompleted = 0;
-  if (progress && progress.length > 0) {
-    progress.forEach(level => {
-      level.classes.forEach(classItem => {
-        let classCompleted = false;
-        
-        // Check if class test is completed
-        if (classItem.Test > 0) {
-          classCompleted = true;
-        }
-        
-        // Check if any topics are completed
-        classItem.topics.forEach(topic => {
-          if (topic.Classwork > 0 || topic.Homework > 0) {
-            classCompleted = true;
-          }
-        });
-        
-        if (classCompleted) {
-          conquestsCompleted++;
-        }
-      });
-    });
-  }
-
-  // Calculate practice time and problems solved from practice stats
+  // Calculate practice mode sessions played this week
+  // This tracks flashcard, untimed, timed, set, or any practice mode sessions
+  let practiceModeSessions = 0;
   let practiceMinutes = 0;
   let problemsSolved = 0;
 
+
   if (practiceStats?.practiceSessions && Array.isArray(practiceStats.practiceSessions)) {
-    practiceMinutes = Math.round(practiceStats.totalPracticeTime / 60) || 0;
-    problemsSolved = practiceStats.totalProblemsSolved || 0;
+    // Count practice sessions (each session is a practice mode played)
+    practiceModeSessions = practiceStats.practiceSessions.length;
+    
+    // Calculate from individual sessions
+    let totalTimeSeconds = 0;
+    let totalProblems = 0;
+
+    for (const session of practiceStats.practiceSessions) {
+      totalTimeSeconds += session.totalTime || 0;
+      totalProblems += session.numberOfQuestions || session.totalQuestions || 0;
+    }
+
+    practiceMinutes = Math.round(totalTimeSeconds / 60);
+    problemsSolved = totalProblems;
   } else if (practiceStats) {
-    practiceMinutes = Math.round(practiceStats.totalPracticeTime / 60) || 0;
+    // Use aggregated data from backend
+    practiceModeSessions = practiceStats.totalSessions || practiceStats.sessions || 0;
+    practiceMinutes = Math.round((practiceStats.totalPracticeTime || 0) / 60);
     problemsSolved = practiceStats.totalProblemsSolved || 0;
   }
 
+
   // Set realistic targets based on user level
-  const sessionsTotal = 5; // 5 sessions per week
+  const practiceModeTarget = 100; // 100 practice mode sessions per week
   const practiceTargetMinutes = 240; // 4 hours per week
   const problemsTarget = 300; // 300 problems per week
 
   return {
-    sessionsCompleted: Math.min(conquestsCompleted, sessionsTotal),
-    sessionsTotal,
-    practiceMinutes: Math.min(practiceMinutes, practiceTargetMinutes),
+    sessionsCompleted: practiceModeSessions,
+    sessionsTotal: practiceModeTarget,
+    practiceMinutes,
     practiceTargetMinutes,
-    problemsSolved: Math.min(problemsSolved, problemsTarget),
+    problemsSolved,
     problemsTarget,
   };
 };

@@ -97,7 +97,18 @@ export const usePracticeProgress = (props: PracticeProgressTrackerProps) => {
     }
     
     saveProgress();
-  }, [saveProgress]);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('practiceSessionCompleted', {
+      detail: {
+        type: props.practiceType || 'flashcards',
+        operation: props.operation,
+        score: progress.correctAnswers,
+        totalQuestions: progress.totalQuestions,
+        timeElapsed: progress.timeElapsed
+      }
+    }));
+  }, [saveProgress, progress, props]);
 
   const updateProgress = useCallback((isCorrect: boolean) => {
     const newProgress = {

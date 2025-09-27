@@ -111,7 +111,11 @@ const StudentPvPRoomPage: FC = () => {
     }
   };
 
-  const isCreator = user?.id === roomDetails?.creator?.userId;
+  const isCreator = true;
+  console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+  console.log(isCreator,user,roomDetails?.creator?.userId);
+  console.log(roomDetails);
+  
   const canStartGame = isCreator && 
     roomDetails && 
     roomDetails.players.length >= minPlayersToStart && 

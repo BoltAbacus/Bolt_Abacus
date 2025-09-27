@@ -57,6 +57,7 @@ const LoginForm: FC<LoginFormProps> = () => {
           phone: loginResponse.phone,
           organizationName: loginResponse.organizationName,
           role: loginResponse.role,
+          userId: loginResponse.id,
         });
 
         if (loginResponse.role === 'Student') {
