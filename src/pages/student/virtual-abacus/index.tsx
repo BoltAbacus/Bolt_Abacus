@@ -181,7 +181,7 @@ const VirtualAbacus: FC = () => {
                    minWidth: '300px',
                    background: '#1c1c1e',
                    border: '2px solid #FFD700',
-                   borderRadius: '16px'
+                   borderRadius: '26px'
                  }}
                >
         {/* Horizontal beam */}
@@ -213,7 +213,7 @@ const VirtualAbacus: FC = () => {
                   className="absolute left-1/2 -translate-x-1/2"
                   style={{
                     top: 0,
-                     height: FRAME_HEIGHT - 18,
+                     height: FRAME_HEIGHT - 0,
                     width: ROD_WIDTH,
                     background: '#2c2c2e',
                     borderRadius: 6,
@@ -240,7 +240,7 @@ const VirtualAbacus: FC = () => {
                    borderRadius: '4px'
                  }}
                >
-                 <div className="w-4 h-2 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '2px' }} />
+                 <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
                </div>
 
               {/* Lower beads (Earth beads) - move as a group */}
@@ -280,7 +280,7 @@ const VirtualAbacus: FC = () => {
                        borderRadius: '4px'
                      }}
                    >
-                     <div className="w-4 h-2 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '2px' }} />
+                     <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
                    </div>
                  );
               })}

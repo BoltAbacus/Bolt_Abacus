@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AiOutlineCrown, AiOutlinePlayCircle, AiOutlineCopy } from 'react-icons/ai';
 
@@ -45,59 +45,66 @@ const StudentPvPRoomPage: FC = () => {
 
   const minPlayersToStart = 2;
 
+  // Ref to store polling interval
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (roomId) {
       fetchRoomDetails();
       // Poll for room updates every 2 seconds
-      const interval = setInterval(fetchRoomDetails, 2000);
-      return () => clearInterval(interval);
+      pollingRef.current = setInterval(fetchRoomDetails, 2000);
+      return () => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+      };
     }
   }, [roomId]);
 
   const fetchRoomDetails = async () => {
     if (!roomId || !authToken) return;
-    
     try {
-      setLoading(true);
       setError(null);
-      console.log('Fetching room details for room:', roomId);
-      
       const response = await getPVPRoomDetails(roomId, authToken);
-      console.log('Room details response:', response);
-      
       if (response.data?.success && response.data?.data) {
-        setRoomDetails(response.data.data);
+        const details = response.data.data;
+        setRoomDetails(details);
+        // If room status is active, navigate to game page (for all participants)
+        if (details.status === 'active') {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          navigate(`/student/pvp/game/${roomId}`);
+        }
       } else {
         setError(response.data?.message || 'Failed to fetch room details');
       }
     } catch (err) {
       console.error('Error fetching room details:', err);
       setError('Failed to fetch room details');
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleStartGame = async () => {
     if (!roomId || !authToken || !roomDetails) return;
-    
+    // Pause polling while starting game
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+    }
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       console.log('Starting PVP game for room:', roomId);
-      
       const response = await startPVPGame(roomId, authToken);
       console.log('Start game response:', response);
-      
       if (response.data?.success) {
         console.log('Game started successfully, navigating to game page');
-        navigate(`/student/practice-mode/pvp/game/${roomId}`);
+        navigate(`/student/pvp/game/${roomId}`);
       } else {
         setError(response.data?.message || 'Failed to start game');
+        // Resume polling if start failed
+        pollingRef.current = setInterval(fetchRoomDetails, 2000);
       }
     } catch (err) {
       console.error('Error starting game:', err);
       setError('Failed to start game');
+      pollingRef.current = setInterval(fetchRoomDetails, 2000);
     } finally {
       setLoading(false);
     }
@@ -111,14 +118,12 @@ const StudentPvPRoomPage: FC = () => {
     }
   };
 
-  const isCreator = true;
-  console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
-  console.log(isCreator,user,roomDetails?.creator?.userId);
-  console.log(roomDetails);
-  
-  const canStartGame = isCreator && 
-    roomDetails && 
-    roomDetails.players.length >= minPlayersToStart && 
+  // Logic for creator and game start
+  const currentUserId = user?.id ?? (user as any)?.userId;
+  const isCreator = roomDetails?.creator?.userId === currentUserId;
+  const canStartGame = isCreator &&
+    roomDetails &&
+    roomDetails.players.length >= minPlayersToStart &&
     roomDetails.status === 'waiting';
 
   if (!roomDetails) {
@@ -180,16 +185,16 @@ const StudentPvPRoomPage: FC = () => {
               <p className="text-white/60">Questions</p>
               <p className="text-white font-semibold">{roomDetails.number_of_questions}</p>
             </div>
-            <div>
+            {/* <div>
               <p className="text-white/60">Time Per Question</p>
               <p className="text-white font-semibold">
                 {roomDetails.time_per_question === 0 ? 'No Limit' : `${roomDetails.time_per_question}s`}
               </p>
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <p className="text-white/60">Difficulty</p>
               <p className="text-white font-semibold capitalize">{roomDetails.difficulty_level}</p>
-            </div>
+            </div> */}
             <div>
               <p className="text-white/60">Max Players</p>
               <p className="text-white font-semibold">{roomDetails.max_players}</p>

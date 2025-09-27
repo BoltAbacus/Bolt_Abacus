@@ -64,6 +64,8 @@ const StudentPvPGamePage: FC = () => {
   const [loading, setLoading] = useState(false);
   const [waitingForOthers, setWaitingForOthers] = useState(false);
   const [gameResult, setGameResult] = useState<any>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [lastQuestionStartTime, setLastQuestionStartTime] = useState<number | null>(null);
   
   const { startProblem, endProblem, getProblemTimes } = useProblemTimer();
 
@@ -73,6 +75,13 @@ const StudentPvPGamePage: FC = () => {
       const question = gameData.questions[currentQuestionIndex];
       if (question) {
         startProblem(question.question_id.toString());
+        
+        // Track when we reach the last question for timeout fallback
+        if (currentQuestionIndex === gameData.questions.length - 1) {
+          setLastQuestionStartTime(Date.now());
+        } else {
+          setLastQuestionStartTime(null);
+        }
       }
     }
   }, [gameData, currentQuestionIndex, startProblem]);
@@ -522,6 +531,54 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [gameData, currentQuestion]);
 
+  // Timeout fallback for last question - if player has been on last question for too long, try to get results
+  useEffect(() => {
+    if (lastQuestionStartTime && !gameEnded && !loading && !waitingForOthers) {
+      const timeout = setTimeout(async () => {
+        console.log('Last question timeout reached, attempting to get results...');
+        try {
+          const resultResponse = await getPVPGameResult(roomId!, authToken!);
+          if (resultResponse.data.success && resultResponse.data.data) {
+            const result = resultResponse.data.data;
+            setGameResult(result);
+            setGameEnded(true);
+            setWaitingForOthers(false);
+            setLoading(false);
+            setSubmissionError(null); // Clear any submission errors
+            
+            // Update experience
+            const correctExperience = (() => {
+              if (result.is_draw) return 20;
+              else if (result.is_winner) return 50;
+              else return 10;
+            })();
+            
+            updateExperience(correctExperience);
+            
+            try {
+              logActivity({
+                type: 'pvp',
+                title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                xp: correctExperience,
+                meta: { roomId, score, correctAnswers, totalTime }
+              });
+            } catch {}
+            
+            // Force sync with backend to ensure persistence
+            setTimeout(() => {
+              const { syncWithBackend } = useExperienceStore.getState();
+              syncWithBackend();
+            }, 100);
+          }
+        } catch (err) {
+          console.error('Failed to get results on timeout:', err);
+        }
+      }, 30000); // 30 second timeout for last question
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [lastQuestionStartTime, gameEnded, loading, waitingForOthers, roomId, authToken, score, correctAnswers, totalTime, updateExperience]);
+
   // (moved declarations to top to avoid redeclare)
 
   // Convert PvP questions to practice mode format when game data changes
@@ -646,8 +703,13 @@ const StudentPvPGamePage: FC = () => {
     }
   };
 
-  const submitGameResults = async () => {
+  const submitGameResults = async (retryCount = 0) => {
     if (!roomId || !authToken || gameEnded) return;
+    
+    const maxRetries = 3;
+    
+    // Clear any previous submission errors
+    setSubmissionError(null);
     
     try {
       const problemTimes = getProblemTimes();
@@ -660,6 +722,7 @@ const StudentPvPGamePage: FC = () => {
           // Not all players finished yet, show waiting screen
           setWaitingForOthers(true);
           setLoading(false); // Reset loading state
+          setSubmissionError(null); // Clear any submission errors
           
           // Poll for results with timeout
           const pollInterval = setInterval(async () => {
@@ -718,6 +781,7 @@ const StudentPvPGamePage: FC = () => {
           setGameEnded(true);
           setWaitingForOthers(false);
           setLoading(false);
+          setSubmissionError(null); // Clear any submission errors
           
           // Update experience only once
           const correctExperience = (() => {
@@ -743,10 +807,80 @@ const StudentPvPGamePage: FC = () => {
             syncWithBackend();
           }, 100);
         }
+      } else {
+        // API returned success: false
+        console.error('API returned success: false:', response.data);
+        if (retryCount < maxRetries) {
+          console.log(`Retrying submission (${retryCount + 1}/${maxRetries})...`);
+          setTimeout(() => submitGameResults(retryCount + 1), 2000 * (retryCount + 1));
+        } else {
+          // Max retries reached, show error and allow manual retry
+          setSubmissionError('Failed to submit results. Please try again.');
+          setLoading(false);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting game results:', err);
-      setLoading(false);
+      
+      // Check if it's a 500 error or network error that we should retry
+      const shouldRetry = (
+        err?.response?.status === 500 || 
+        err?.code === 'ERR_NETWORK' || 
+        err?.code === 'ECONNABORTED' ||
+        !err?.response?.status
+      ) && retryCount < maxRetries;
+      
+      if (shouldRetry) {
+        console.log(`Retrying submission due to error (${retryCount + 1}/${maxRetries})...`, err.message);
+        setLoading(false); // Reset loading to allow retry
+        setTimeout(() => submitGameResults(retryCount + 1), 2000 * (retryCount + 1));
+      } else {
+        // Max retries reached or non-retryable error
+        console.error('Max retries reached or non-retryable error:', err);
+        setSubmissionError(`Failed to submit results: ${err?.response?.data?.message || err?.message || 'Unknown error'}. Please try again.`);
+        setLoading(false);
+        
+        // If it's a 500 error and we've exhausted retries, try to get results anyway
+        if (err?.response?.status === 500) {
+          console.log('Attempting to get game results despite submission error...');
+          try {
+            const resultResponse = await getPVPGameResult(roomId, authToken);
+            if (resultResponse.data.success && resultResponse.data.data) {
+              const result = resultResponse.data.data;
+              setGameResult(result);
+              setGameEnded(true);
+              setWaitingForOthers(false);
+              setLoading(false);
+              
+              // Update experience
+              const correctExperience = (() => {
+                if (result.is_draw) return 20;
+                else if (result.is_winner) return 50;
+                else return 10;
+              })();
+              
+              updateExperience(correctExperience);
+              
+              try {
+                logActivity({
+                  type: 'pvp',
+                  title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                  xp: correctExperience,
+                  meta: { roomId, score, correctAnswers, totalTime }
+                });
+              } catch {}
+              
+              // Force sync with backend to ensure persistence
+              setTimeout(() => {
+                const { syncWithBackend } = useExperienceStore.getState();
+                syncWithBackend();
+              }, 100);
+            }
+          } catch (resultErr) {
+            console.error('Failed to get results after submission error:', resultErr);
+          }
+        }
+      }
     }
   };
 
@@ -788,70 +922,93 @@ const StudentPvPGamePage: FC = () => {
   }
 
   if (gameEnded && gameResult) {
+    // Motivational quotes
+    const winnerQuotes = [
+      "Success is not the key to happiness. Happiness is the key to success.",
+      "Victory is sweetest when you've known defeat.",
+      "Great job! Every win is a step forward.",
+      "Champions keep playing until they get it right.",
+      "You did it! Keep pushing your limits."
+    ];
+    const loserQuotes = [
+      "Failure is simply the opportunity to begin again, this time more intelligently.",
+      "Don't let a loss define you. Let it motivate you.",
+      "Every defeat is a lesson. Learn and come back stronger.",
+      "Losing is not the opposite of winning, it's part of winning.",
+      "Mistakes are proof that you are trying."
+    ];
+    const drawQuotes = [
+      "A draw is a sign of equal strength. Well played!",
+      "Sometimes, the journey is the reward.",
+      "Both sides showed great skill!",
+      "A tie means both gave their best."
+    ];
+    function getRandomQuote(type: 'winner' | 'loser' | 'draw') {
+      if (type === 'winner') return winnerQuotes[Math.floor(Math.random() * winnerQuotes.length)];
+      if (type === 'loser') return loserQuotes[Math.floor(Math.random() * loserQuotes.length)];
+      return drawQuotes[Math.floor(Math.random() * drawQuotes.length)];
+    }
+
+    const isWinner = !!gameResult.is_winner;
+    const isDraw = !!gameResult.is_draw;
+    const isLoser = !isWinner && !isDraw;
+    const quote = getRandomQuote(isWinner ? 'winner' : isDraw ? 'draw' : 'loser');
+
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="px-4 pt-4 tablet:p-6 desktop:px-12 space-y-6 min-h-screen">
-          <div className="rounded-3xl p-8 border-2 border-white">
-            <div className="text-center">
-              <div className="text-8xl mb-4">
-                {gameResult.is_winner ? '🏆' : gameResult.is_draw ? '🤝' : '😔'}
-              </div>
-              <h1 className="text-5xl font-bold text-white mb-2">
-                {gameResult.is_winner ? 'Victory!' : gameResult.is_draw ? 'Draw!' : 'Defeat'}
-              </h1>
-              <p className="text-xl text-white mb-8">
-                {gameResult.is_winner ? 'Congratulations! You won!' : gameResult.is_draw ? 'It\'s a tie!' : 'Better luck next time!'}
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="p-6 rounded-2xl border-2 border-white">
-                  <div className="text-white font-bold text-lg mb-2">Your Score</div>
-                  <div className="text-4xl font-black text-white">{score}</div>
-                </div>
-                <div className="p-6 rounded-2xl border-2 border-white">
-                  <div className="text-white font-bold text-lg mb-2">Correct Answers</div>
-                  <div className="text-4xl font-black text-white">{correctAnswers}/{gameData?.total_questions}</div>
-                </div>
-                <div className="p-6 rounded-2xl border-2 border-white">
-                  <div className="text-white font-bold text-lg mb-2">Experience Gained</div>
-                  <div className="text-4xl font-black text-white">
-                    +{(() => {
-                      // Fix experience calculation: winner gets 50, loser gets 10, draw gets 20
-                      if (gameResult.is_draw) {
-                        return 20;
-                      } else if (gameResult.is_winner) {
-                        return 50;
-                      } else {
-                        return 10;
-                      }
-                    })()} XP
-                  </div>
-                </div>
-              </div>
+      <div className={`min-h-screen flex items-center justify-center ${isWinner ? 'bg-gradient-to-br from-green-100 via-green-300 to-green-100' : isLoser ? 'bg-gradient-to-br from-red-900 via-red-800 to-red-900' : 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'}`}>
+        <div className="w-full max-w-2xl px-4 py-8 space-y-8">
+          <div className="flex flex-col items-center justify-center">
+            <div className={`text-8xl mb-4 ${isWinner ? 'text-green-600' : isLoser ? 'text-red-400' : 'text-yellow-400'}`}>{gameResult.is_winner ? '🏆' : gameResult.is_draw ? '🤝' : '😔'}</div>
+            <h1 className={`text-5xl font-bold mb-2 ${isWinner ? 'text-green-700' : isLoser ? 'text-red-500' : 'text-yellow-500'}`}>{gameResult.is_winner ? 'Victory!' : gameResult.is_draw ? 'Draw!' : 'Defeat'}</h1>
+            <p className="text-xl mb-4 font-semibold text-gray-900 dark:text-white">
+              {gameResult.is_winner ? 'Congratulations! You won!' : gameResult.is_draw ? 'It\'s a tie!' : 'Better luck next time!'}
+            </p>
+            <p className={`text-lg italic font-medium mb-6 ${isWinner ? 'text-green-700' : isLoser ? 'text-red-300' : 'text-yellow-700'}`}>{quote}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/80 shadow-md`}>
+              <div className="text-gray-700 font-bold text-lg mb-2">Your Score</div>
+              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>{score}</div>
+            </div>
+            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/80 shadow-md`}>
+              <div className="text-gray-700 font-bold text-lg mb-2">Correct Answers</div>
+              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>{correctAnswers}/{gameData?.total_questions}</div>
+            </div>
+            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/20 shadow-md`}>
+              <div className="text-gray-700 font-bold text-lg mb-2">Experience Gained</div>
+              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>+{(() => {
+                if (gameResult.is_draw) {
+                  return 20;
+                } else if (gameResult.is_winner) {
+                  return 50;
+                } else {
+                  return 10;
+                }
+              })()} XP</div>
+            </div>
+          </div>
 
-              {gameResult.winner_name && (
-                <div className="p-4 rounded-2xl border-2 border-white mb-8">
-                  <div className="text-xl text-white">
-                    Winner: <span className="font-bold text-2xl">{gameResult.winner_name}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col tablet:flex-row gap-4 justify-center">
-                <button
-                  onClick={() => navigate('/student/pvp')}
-                  className="bg-white/10 text-white px-8 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition-all duration-300 shadow-lg border border-white"
-                >
-                  Back to PvP
-                </button>
-              <button
-                  onClick={() => navigate('/student/pvp')}
-                  className="bg-white/10 text-white px-8 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition-all duration-300 shadow-lg border border-white"
-              >
-                  Play Again
-              </button>
+          {gameResult.winner_name && (
+            <div className={`p-4 rounded-2xl border-2 mb-8 ${isWinner ? 'border-green-400 bg-green-50' : isLoser ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-yellow-50'} text-center`}>
+              <div className="text-xl font-bold">
+                Winner: <span className="font-bold text-2xl">{gameResult.winner_name}</span>
               </div>
             </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => navigate('/student/pvp')}
+              className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300 shadow-lg border ${isWinner ? 'bg-green-500 text-white border-green-600 hover:bg-green-600' : isLoser ? 'bg-red-500 text-white border-red-600 hover:bg-red-600' : 'bg-yellow-400 text-black border-yellow-500 hover:bg-yellow-500'}`}
+            >
+              Back to PvP
+            </button>
+            <button
+              onClick={() => navigate('/student/pvp')}
+              className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300 shadow-lg border ${isWinner ? 'bg-green-100 text-green-700 border-green-400 hover:bg-green-200' : isLoser ? 'bg-red-100 text-red-700 border-red-400 hover:bg-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-400 hover:bg-yellow-200'}`}
+            >
+              Play Again
+            </button>
           </div>
         </div>
       </div>
@@ -1027,6 +1184,20 @@ const StudentPvPGamePage: FC = () => {
         {/* Action Buttons */}
         <div className="transition-colors text-white p-4 tablet:p-6 rounded-2xl shadow-2xl shadow-black/50 relative overflow-hidden" style={{ backgroundColor: '#161618' }}>
           <div className="relative z-10">
+            {/* Submission Error Display */}
+            {submissionError && (
+              <div className="mb-4 p-4 bg-red-500/10 border border-red-400/50 rounded-xl text-red-200 text-center">
+                <div className="mb-2">❌ {submissionError}</div>
+                <button
+                  onClick={() => submitGameResults()}
+                  disabled={loading}
+                  className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Retrying...' : 'Retry Submission'}
+                </button>
+              </div>
+            )}
+            
             <div className="flex justify-center gap-4">
               {gameData?.game_mode === 'flashcards' ? (
                 /* Flashcard Mode Buttons - Practice Mode Style */
