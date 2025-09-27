@@ -164,6 +164,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
                 batchName={batchName!}
                 progress={studentProgress!}
                 practiceStats={practiceStats}
+                pvpStats={null} // PvP stats will be fetched via trend APIs
               />
             </>
           )}

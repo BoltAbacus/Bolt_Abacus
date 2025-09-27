@@ -171,6 +171,61 @@ export const calculatePracticeStats = (practiceStats: any): PracticeStats => {
 };
 
 /**
+ * PvP stats calculation function
+ */
+export const calculatePvPStats = (pvpStats: any): PracticeStats => {
+  if (!pvpStats) {
+    return {
+      accuracy: 0,
+      timeSpent: '0h 0m',
+      problemsSolved: 0,
+      totalQuestions: 0,
+      practiceMinutes: 0,
+      sessions: 0,
+    };
+  }
+
+  let totalQuestions = 0;
+  let totalCorrect = 0;
+  let totalTimeSeconds = 0;
+  let sessions = 0;
+
+  // Calculate from PvP room results if available
+  if (pvpStats.pvpRoomResults && Array.isArray(pvpStats.pvpRoomResults)) {
+    sessions = pvpStats.pvpRoomResults.length;
+    for (const result of pvpStats.pvpRoomResults) {
+      totalQuestions += result.questions_answered || 0;
+      totalCorrect += result.correct_answers || 0;
+      totalTimeSeconds += result.total_time || 0;
+    }
+  } else {
+    // Use aggregated data from backend
+    totalQuestions = pvpStats.totalQuestionsAttempted || pvpStats.totalQuestions || 0;
+    totalCorrect = pvpStats.totalProblemsSolved || pvpStats.totalCorrectAnswers || 0;
+    totalTimeSeconds = pvpStats.totalPracticeTime || pvpStats.totalTimeSpent || 0;
+    sessions = pvpStats.totalSessions || pvpStats.sessions || 0;
+  }
+
+  const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+  
+  // Format time spent
+  const hours = Math.floor(totalTimeSeconds / 3600);
+  const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
+  const timeSpent = `${hours}h ${minutes}m`;
+  
+  const practiceMinutes = Math.round(totalTimeSeconds / 60);
+
+  return {
+    accuracy,
+    timeSpent,
+    problemsSolved: totalCorrect,
+    totalQuestions,
+    practiceMinutes,
+    sessions,
+  };
+};
+
+/**
  * Unified level stats calculation function
  */
 export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {

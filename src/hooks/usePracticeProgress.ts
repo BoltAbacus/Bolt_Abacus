@@ -24,6 +24,7 @@ export interface PracticeProgressTrackerProps {
   audioMode: boolean;
   audioPace: string;
   showQuestion: boolean;
+  practiceType?: string;
 }
 
 export const usePracticeProgress = (props: PracticeProgressTrackerProps) => {

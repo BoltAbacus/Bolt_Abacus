@@ -10,7 +10,7 @@ import ProgressBar from '@components/atoms/ProgressBar';
 import LineChart from '@components/atoms/LineChart';
 import AchievementNotification from '@components/atoms/AchievementNotification';
 import { useGamification } from '@helpers/gamification';
-import { calculatePracticeStats, calculateLevelStats, calculateProgressStats as computeProgressStats, calculateWeeklyGoals } from '@helpers/progressCalculations';
+import { calculatePracticeStats, calculatePvPStats, calculateLevelStats, calculateProgressStats as computeProgressStats, calculateWeeklyGoals } from '@helpers/progressCalculations';
 import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
 import AchievementsModal from '@components/organisms/AchievementsModal';
 import { ACHIEVEMENTS } from '@constants/achievements';
@@ -37,6 +37,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   batchName,
   progress,
   practiceStats,
+  pvpStats,
 }) => {
   const navigate = useNavigate();
   const { checkAndUnlockAchievements, getMotivationalMessage } = useGamification();
@@ -86,6 +87,11 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
     return calculatePracticeStats(practiceStats);
   }, [practiceStats]);
 
+  // Calculate stats from PvP data using unified calculation
+  const pvpStatsCalculated = useMemo(() => {
+    return calculatePvPStats(pvpStats);
+  }, [pvpStats]);
+
   // Update practice accuracy trend with calculated stats
   useEffect(() => {
     if (practiceStatsCalculated && practiceStatsCalculated.accuracy > 0) {
@@ -113,6 +119,34 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }));
     }
   }, [practiceStatsCalculated]);
+
+  // Update PvP accuracy trend with calculated stats
+  useEffect(() => {
+    if (pvpStatsCalculated && pvpStatsCalculated.accuracy > 0) {
+      setPvpAccuracyTrend(prev => ({
+        ...prev,
+        currentAccuracy: pvpStatsCalculated.accuracy,
+        weeklyProgress: pvpStatsCalculated.accuracy, // Use current accuracy as weekly progress for now
+        dailyAccuracy: [0, 0, 0, 0, 0, 0, pvpStatsCalculated.accuracy] // Set today's accuracy
+      }));
+    }
+  }, [pvpStatsCalculated]);
+
+  // Update PvP speed trend with calculated stats
+  useEffect(() => {
+    if (pvpStatsCalculated && pvpStatsCalculated.practiceMinutes > 0) {
+      const speed = pvpStatsCalculated.totalQuestions > 0 && pvpStatsCalculated.practiceMinutes > 0 
+        ? Math.round((pvpStatsCalculated.totalQuestions / pvpStatsCalculated.practiceMinutes) * 60) 
+        : 0;
+      
+      setPvpSpeedTrend(prev => ({
+        ...prev,
+        currentSpeed: speed,
+        weeklyProgress: speed, // Use current speed as weekly progress for now
+        dailySpeed: [0, 0, 0, 0, 0, 0, speed] // Set today's speed
+      }));
+    }
+  }, [pvpStatsCalculated]);
 
   // Calculate current level specific metrics using unified calculation
   const currentLevelStats = useMemo(() => {
@@ -193,6 +227,13 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       fetchTrendData();
     }
   }, [practiceStats]);
+
+  // Refetch trend data when PvP stats change
+  useEffect(() => {
+    if (pvpStats) {
+      fetchTrendData();
+    }
+  }, [pvpStats]);
 
   const motivationalMessage = useMemo(() => {
     return getMotivationalMessage(progressStats);
