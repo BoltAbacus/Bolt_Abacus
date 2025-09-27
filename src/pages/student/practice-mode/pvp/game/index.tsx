@@ -713,7 +713,27 @@ const StudentPvPGamePage: FC = () => {
     
     try {
       const problemTimes = getProblemTimes();
+      console.log('🎮 PVP SUBMIT GAME RESULTS:', {
+        roomId,
+        score,
+        correctAnswers,
+        totalTime,
+        problemTimesCount: problemTimes.length,
+        retryCount
+      });
+      console.log('📊 PVP SUBMISSION DATA BREAKDOWN:', {
+        'Room ID': roomId,
+        'Final Score': score,
+        'Correct Answers': correctAnswers,
+        'Total Time (seconds)': totalTime,
+        'Speed (problems/min)': totalTime > 0 ? (correctAnswers / (totalTime / 60)).toFixed(1) : 0,
+        'Problem Times Logged': problemTimes.length,
+        'Detailed Times': problemTimes
+      });
+      
       const response = await submitPVPGameResult(roomId, score, correctAnswers, totalTime, authToken, problemTimes);
+      console.log('🎮 PVP SUBMIT RESPONSE:', response.data);
+      console.log('✅ PVP GAME RESULT SUBMITTED SUCCESSFULLY - Similar to practice mode submission');
       
       if (response.data.success) {
         const result = response.data.data;

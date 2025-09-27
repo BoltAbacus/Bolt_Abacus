@@ -164,7 +164,9 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
     try {
       // Fetch practice accuracy trend
+      console.log('📊 Fetching practice accuracy trend...');
       const practiceAccuracyResponse = await getPracticeAccuracyTrendRequest(authToken);
+      console.log('📊 Practice accuracy trend response:', practiceAccuracyResponse.data);
       if (practiceAccuracyResponse.data) {
         setPracticeAccuracyTrend({
           currentAccuracy: practiceAccuracyResponse.data.currentAccuracy || 0,
@@ -175,7 +177,9 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch practice speed trend
+      console.log('📊 Fetching practice speed trend...');
       const practiceSpeedResponse = await getPracticeSpeedTrendRequest(authToken);
+      console.log('📊 Practice speed trend response:', practiceSpeedResponse.data);
       if (practiceSpeedResponse.data) {
         setPracticeSpeedTrend({
           currentSpeed: practiceSpeedResponse.data.currentSpeed || 0,
@@ -186,7 +190,9 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch PvP accuracy trend
+      console.log('📊 Fetching PvP accuracy trend...');
       const pvpAccuracyResponse = await getPvpAccuracyTrendRequest(authToken);
+      console.log('📊 PvP accuracy trend response:', pvpAccuracyResponse.data);
       if (pvpAccuracyResponse.data) {
         setPvpAccuracyTrend({
           currentAccuracy: pvpAccuracyResponse.data.currentAccuracy || 0,
@@ -197,14 +203,20 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch PvP speed trend
+      console.log('📊 Fetching PvP speed trend...');
       const pvpSpeedResponse = await getPvpSpeedTrendRequest(authToken);
+      console.log('📊 PvP speed trend response:', pvpSpeedResponse.data);
       if (pvpSpeedResponse.data) {
-        setPvpSpeedTrend({
+        const trendData = {
           currentSpeed: pvpSpeedResponse.data.currentSpeed || 0,
           weeklyProgress: pvpSpeedResponse.data.weeklyProgress || 0,
           dailySpeed: pvpSpeedResponse.data.dailySpeed || [0, 0, 0, 0, 0, 0, 0],
           labels: pvpSpeedResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
-        });
+        };
+        console.log('📊 Setting PvP speed trend state:', trendData);
+        setPvpSpeedTrend(trendData);
+      } else {
+        console.warn('📊 No PvP speed trend data received');
       }
     } catch (error) {
       console.error('Error fetching trend data:', error);
@@ -218,12 +230,14 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
 
   // Fetch trend data when component mounts
   useEffect(() => {
+    console.log('📊 PROGRESS PAGE: Component mounted, fetching trend data...');
     fetchTrendData();
   }, [authToken]);
 
   // Refetch trend data when practice stats change
   useEffect(() => {
     if (practiceStats) {
+      console.log('📊 PROGRESS PAGE: Practice stats changed, refetching trend data...', practiceStats);
       fetchTrendData();
     }
   }, [practiceStats]);
@@ -231,6 +245,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   // Refetch trend data when PvP stats change
   useEffect(() => {
     if (pvpStats) {
+      console.log('📊 PROGRESS PAGE: PvP stats changed, refetching trend data...', pvpStats);
       fetchTrendData();
     }
   }, [pvpStats]);
