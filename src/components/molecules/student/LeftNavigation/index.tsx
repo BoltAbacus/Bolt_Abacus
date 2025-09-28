@@ -45,6 +45,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userManuallyToggled, setUserManuallyToggled] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -69,6 +70,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
                                     location.pathname.includes('/pvp/room/') ||
                                     location.pathname.includes('/pvp/game/');
     
+    // Only auto-collapse/expand when navigating to different page types, not on every re-render
     if (isQuizTestOrPracticePage && !isCollapsed && !userManuallyToggled) {
       // Auto-collapse when entering quiz/test/practice pages
       setIsCollapsed(true);
@@ -83,7 +85,7 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
     if (!isQuizTestOrPracticePage) {
       setUserManuallyToggled(false);
     }
-  }, [location.pathname, isCollapsed, onCollapseChange, userManuallyToggled]);
+  }, [location.pathname]); // Remove isCollapsed and onCollapseChange from dependencies to prevent infinite loops
 
   // Listen for PvP sidebar collapse events
   useEffect(() => {
@@ -145,10 +147,21 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
   };
 
   const handleCollapseToggle = () => {
+    // Prevent multiple rapid clicks
+    if (isToggling) return;
+    
+    setIsToggling(true);
     const newCollapsedState = !isCollapsed;
+    
+    // Update states immediately for better UX
     setIsCollapsed(newCollapsedState);
+    setUserManuallyToggled(true);
     onCollapseChange?.(newCollapsedState);
-    setUserManuallyToggled(true); // Mark that user manually toggled
+    
+    // Reset toggling state after animation
+    setTimeout(() => {
+      setIsToggling(false);
+    }, 300);
   };
 
   const handleMobileMenuToggle = () => {
@@ -192,14 +205,23 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
         <div className="hidden tablet:block fixed top-4 left-4 z-50">
           <button
             onClick={handleCollapseToggle}
-            className="p-3 rounded-lg bg-[#161618] text-white hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200 border border-[#212124] shadow-lg"
+            disabled={isToggling}
+            className={`p-3 rounded-lg bg-[#161618] text-white border border-[#212124] shadow-lg transition-all duration-200 ${
+              isToggling 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-[#facb25] hover:text-[#000000]'
+            }`}
           >
-            <span className="text-lg">☰</span>
+            {isToggling ? (
+              <span className="text-lg animate-spin">⟳</span>
+            ) : (
+              <span className="text-lg">☰</span>
+            )}
           </button>
         </div>
       ) : (
         // Show normal sidebar
-        <div className={`hidden tablet:block fixed left-0 top-0 h-screen bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] flex flex-col ${
+        <div className={`hidden tablet:flex fixed left-0 top-0 h-screen bg-[#161618] text-white transition-all duration-300 z-50 border-r border-[#212124] flex-col ${
           isCollapsed ? 'w-16' : 'w-64'
         }`}>
           {/* Header */}
@@ -223,9 +245,20 @@ const LeftNavigation: FC<LeftNavigationProps> = ({ onCollapseChange, classLink }
             )}
             <button
               onClick={handleCollapseToggle}
-              className="p-2 rounded-lg hover:bg-[#facb25] hover:text-[#000000] transition-all duration-200"
+              disabled={isToggling}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isToggling 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:bg-[#facb25] hover:text-[#000000]'
+              }`}
             >
-              {isCollapsed ? <span className="text-lg">☰</span> : <span className="text-lg">✕</span>}
+              {isToggling ? (
+                <span className="text-lg animate-spin">⟳</span>
+              ) : isCollapsed ? (
+                <span className="text-lg">☰</span>
+              ) : (
+                <span className="text-lg">✕</span>
+              )}
             </button>
           </div>
 
