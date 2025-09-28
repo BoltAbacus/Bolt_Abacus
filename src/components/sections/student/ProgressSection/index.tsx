@@ -205,6 +205,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       console.log('📊 Fetching PvP speed trend...');
       const pvpSpeedResponse = await getPvpSpeedTrendRequest(authToken);
       console.log('📊 PvP speed trend response:', pvpSpeedResponse.data);
+      console.log('📊 PvP speed trend response status:', pvpSpeedResponse.status);
       if (pvpSpeedResponse.data) {
         const trendData = {
           currentSpeed: pvpSpeedResponse.data.currentSpeed || 0,
@@ -213,6 +214,8 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
           labels: pvpSpeedResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
         };
         console.log('📊 Setting PvP speed trend state:', trendData);
+        console.log('📊 PvP speed trend dailySpeed array:', trendData.dailySpeed);
+        console.log('📊 PvP speed trend currentSpeed:', trendData.currentSpeed);
         setPvpSpeedTrend(trendData);
       } else {
         console.warn('📊 No PvP speed trend data received');
