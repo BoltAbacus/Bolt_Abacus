@@ -226,11 +226,17 @@ const StudentPvPGamePage: FC = () => {
                 // Initialize game timer based on game mode
                 let totalGameTime = 300; // Default 5 minutes
                 if (gameData.game_mode === 'flashcards' || gameData.game_mode === 'norushmastery' || gameData.game_mode === 'custom') {
-                  // For flashcards, no rush mastery, and custom challenge: 5 minutes total
-                  totalGameTime = 300;
+                  // For flashcards, no rush mastery, and custom challenge: NO TIME LIMIT
+                  totalGameTime = 0; // No time limit - game runs indefinitely
+                  console.log(`🎮 NO LIMIT MODE: ${gameData.game_mode} - No time limit`);
+                } else if (gameData.time_per_question === 0) {
+                  // If time per question is 0, treat as no time limit
+                  totalGameTime = 0; // No time limit
+                  console.log(`🎮 NO TIME LIMIT: TimePerQuestion=0 - No time limit`);
                 } else {
-                  // For other modes: time per question × total questions
+                  // For time attack and other timed modes: time per question × total questions
                   totalGameTime = (gameData.total_questions * gameData.time_per_question) || 300;
+                  console.log(`🎮 TIMED MODE: TimePerQuestion=${gameData.time_per_question}s, Questions=${gameData.total_questions}, TotalTime=${totalGameTime}s`);
                 }
                 setGameTimeLeft(totalGameTime);
               }
@@ -307,16 +313,18 @@ const StudentPvPGamePage: FC = () => {
       setCountdown(3);
       // Initialize game timer based on game mode
       let totalGameTime = 300; // Default 5 minutes
-      if (mockGameData.game_mode === 'flashcards') {
-        // For flashcards: speed × number of questions
-        const flashcardSpeed = mockGameData.room_settings?.flashcard_speed || 2500;
-        totalGameTime = (flashcardSpeed / 1000) * mockGameData.total_questions;
-      } else if (mockGameData.game_mode === 'norushmastery') {
-        // For No Rush Mastery: 5 minutes total
-        totalGameTime = 300;
+      if (mockGameData.game_mode === 'flashcards' || mockGameData.game_mode === 'norushmastery' || mockGameData.game_mode === 'custom') {
+        // For flashcards, no rush mastery, and custom challenge: NO TIME LIMIT
+        totalGameTime = 0; // No time limit - game runs indefinitely
+        console.log(`🎮 MOCK NO LIMIT MODE: ${mockGameData.game_mode} - No time limit`);
+      } else if (mockGameData.time_per_question === 0) {
+        // If time per question is 0, treat as no time limit
+        totalGameTime = 0; // No time limit
+        console.log(`🎮 MOCK NO TIME LIMIT: TimePerQuestion=0 - No time limit`);
       } else {
-        // For other modes: time per question × total questions
+        // For time attack and other timed modes: time per question × total questions
         totalGameTime = (mockGameData.total_questions * mockGameData.time_per_question) || 300;
+        console.log(`🎮 MOCK TIMED MODE: TimePerQuestion=${mockGameData.time_per_question}s, Questions=${mockGameData.total_questions}, TotalTime=${totalGameTime}s`);
       }
       setGameTimeLeft(totalGameTime);
     }
@@ -428,16 +436,18 @@ const StudentPvPGamePage: FC = () => {
         setCountdown(3);
         // Initialize game timer based on game mode
         let totalGameTime = 300; // Default 5 minutes
-        if (fallbackGameData.game_mode === 'flashcards') {
-          // For flashcards: speed × number of questions
-          const flashcardSpeed = fallbackGameData.room_settings?.flashcard_speed || 2500;
-          totalGameTime = (flashcardSpeed / 1000) * fallbackGameData.total_questions;
-        } else if (fallbackGameData.game_mode === 'norushmastery') {
-          // For No Rush Mastery: 5 minutes total
-          totalGameTime = 300;
+        if (fallbackGameData.game_mode === 'flashcards' || fallbackGameData.game_mode === 'norushmastery' || fallbackGameData.game_mode === 'custom') {
+          // For flashcards, no rush mastery, and custom challenge: NO TIME LIMIT
+          totalGameTime = 0; // No time limit - game runs indefinitely
+          console.log(`🎮 FALLBACK NO LIMIT MODE: ${fallbackGameData.game_mode} - No time limit`);
+        } else if (fallbackGameData.time_per_question === 0) {
+          // If time per question is 0, treat as no time limit
+          totalGameTime = 0; // No time limit
+          console.log(`🎮 FALLBACK NO TIME LIMIT: TimePerQuestion=0 - No time limit`);
         } else {
-          // For other modes: time per question × total questions
+          // For time attack and other timed modes: time per question × total questions
           totalGameTime = (fallbackGameData.total_questions * fallbackGameData.time_per_question) || 300;
+          console.log(`🎮 FALLBACK TIMED MODE: TimePerQuestion=${fallbackGameData.time_per_question}s, Questions=${fallbackGameData.total_questions}, TotalTime=${totalGameTime}s`);
         }
         setGameTimeLeft(totalGameTime);
       }
@@ -498,30 +508,53 @@ const StudentPvPGamePage: FC = () => {
     return () => clearTimeout(t);
   }, [countdown, gameData?.time_per_question]);
 
+  // Per-question timer effect - only for time attack mode with time limit
   useEffect(() => {
     if (countdown !== null) return; // pause during countdown
-    if (gameData?.game_mode === 'flashcards') return; // Skip for flashcards
+    if (gameData?.game_mode !== 'timeattack') return; // Only for time attack mode
+    if (gameData?.time_per_question === 0) return; // Skip if no time limit
     if (timeLeft > 0 && !gameEnded && currentQuestion) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !gameEnded && currentQuestion) {
-      console.log('Time up, auto-submitting');
-      handleAnswerSubmit(); // Auto-submit when time runs out
+      console.log('⏰ PER-QUESTION TIME UP: Auto-skipping to next question');
+      console.log(`⏰ Current question: ${currentQuestionIndex + 1}, Total questions: ${gameData?.total_questions}`);
+      // Auto-skip to next question when per-question time runs out
+      if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+        console.log('⏰ Moving to next question');
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setTimeLeft(gameData?.time_per_question || 30);
+        setUserAnswer(''); // Clear answer
+      } else {
+        // Last question - auto-submit
+        console.log('⏰ Last question - auto-submitting');
+        // Force submit with empty answer if no answer provided
+        if (!userAnswer.trim()) {
+          console.log('⏰ Last question - submitting with empty answer (score 0)');
+        }
+        handleAnswerSubmit(true); // Force submit for auto-submit
+      }
     }
-  }, [timeLeft, gameEnded, currentQuestion, countdown, gameData?.game_mode]);
+  }, [timeLeft, gameEnded, currentQuestion, countdown, gameData?.game_mode, gameData?.time_per_question, currentQuestionIndex, gameData?.total_questions]);
 
-  // Game timer effect - overall timer for all modes
+  // Game timer effect - overall timer for timed modes only
   useEffect(() => {
     if (countdown !== null) return; // pause during countdown
     if (gameData?.game_mode === 'timeattack') return; // Skip for time attack (uses different timer)
+    if (gameData?.game_mode === 'flashcards' || gameData?.game_mode === 'norushmastery' || gameData?.game_mode === 'custom') return; // Skip for no-limit modes
+    if (gameData?.time_per_question === 0) return; // Skip if no time limit
+    
     if (gameTimeLeft > 0 && !gameEnded) {
       const timer = setTimeout(() => setGameTimeLeft(gameTimeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (gameTimeLeft === 0 && !gameEnded) {
-      console.log('Game time up, auto-submitting');
-      handleAnswerSubmit(); // Auto-submit when total game time runs out
+      console.log('🎮 ROOM TIME UP: Auto-submitting final score for all players');
+      console.log(`🎮 Current question: ${currentQuestionIndex + 1}, Total questions: ${gameData?.total_questions}`);
+      // Auto-submit when total game time runs out
+      // This will submit whatever the current state is (including blank answers)
+      handleAnswerSubmit(true); // Force submit for room time auto-submit
     }
-  }, [gameTimeLeft, gameEnded, countdown, gameData?.game_mode]);
+  }, [gameTimeLeft, gameEnded, countdown, gameData?.game_mode, gameData?.time_per_question, currentQuestionIndex, gameData?.total_questions]);
 
   // If we have game data but no current question, try to show the first question
   useEffect(() => {
@@ -534,50 +567,145 @@ const StudentPvPGamePage: FC = () => {
   // Timeout fallback for last question - if player has been on last question for too long, try to get results
   useEffect(() => {
     if (lastQuestionStartTime && !gameEnded && !loading && !waitingForOthers) {
-      const timeout = setTimeout(async () => {
-        console.log('Last question timeout reached, attempting to get results...');
+      // Check immediately and then set up timeout
+      const checkResults = async () => {
+        console.log('🎮 LAST QUESTION: Checking for results...');
         try {
           const resultResponse = await getPVPGameResult(roomId!, authToken!);
           if (resultResponse.data.success && resultResponse.data.data) {
             const result = resultResponse.data.data;
-            setGameResult(result);
-            setGameEnded(true);
-            setWaitingForOthers(false);
-            setLoading(false);
-            setSubmissionError(null); // Clear any submission errors
+            console.log('🎮 LAST QUESTION RESULTS:', result);
             
-            // Update experience
-            const correctExperience = (() => {
-              if (result.is_draw) return 20;
-              else if (result.is_winner) return 50;
-              else return 10;
-            })();
-            
-            updateExperience(correctExperience);
-            
-            try {
-              logActivity({
-                type: 'pvp',
-                title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
-                xp: correctExperience,
-                meta: { roomId, score, correctAnswers, totalTime }
-              });
-            } catch {}
-            
-            // Force sync with backend to ensure persistence
-            setTimeout(() => {
-              const { syncWithBackend } = useExperienceStore.getState();
-              syncWithBackend();
-            }, 100);
+            if (result.is_winner !== null || result.finished_players >= result.total_players) {
+              console.log('🎮 LAST QUESTION: Game finished, showing results');
+              setGameResult(result);
+              setGameEnded(true);
+              setWaitingForOthers(false);
+              setLoading(false);
+              setSubmissionError(null);
+              
+              // Update experience
+              const correctExperience = (() => {
+                if (result.is_draw) return 20;
+                else if (result.is_winner) return 50;
+                else return 10;
+              })();
+              
+              updateExperience(correctExperience);
+              
+              try {
+                logActivity({
+                  type: 'pvp',
+                  title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                  xp: correctExperience,
+                  meta: { roomId, score, correctAnswers, totalTime }
+                });
+              } catch {}
+              
+              // Force sync with backend
+              setTimeout(() => {
+                const { syncWithBackend } = useExperienceStore.getState();
+                syncWithBackend();
+              }, 100);
+              
+              // Notify other pages
+              try {
+                window.dispatchEvent(new Event('practiceSessionCompleted'));
+              } catch {}
+              
+              return true; // Results found
+            }
           }
         } catch (err) {
-          console.error('Failed to get results on timeout:', err);
+          console.error('Failed to get results:', err);
         }
-      }, 30000); // 30 second timeout for last question
+        return false; // No results yet
+      };
+      
+      // Check immediately
+      checkResults();
+      
+      // Set up timeout for additional checks
+      const timeout = setTimeout(async () => {
+        console.log('🎮 LAST QUESTION TIMEOUT: Attempting to get results...');
+        await checkResults();
+      }, 3000); // 3 second timeout for last question
       
       return () => clearTimeout(timeout);
     }
   }, [lastQuestionStartTime, gameEnded, loading, waitingForOthers, roomId, authToken, score, correctAnswers, totalTime, updateExperience]);
+
+  // Additional polling for waiting players - more aggressive checking
+  useEffect(() => {
+    if (waitingForOthers && !gameEnded && roomId && authToken) {
+      console.log('🎮 WAITING POLLING: Starting aggressive polling for waiting players');
+      
+      const aggressivePolling = setInterval(async () => {
+        try {
+          console.log('🎮 AGGRESSIVE POLLING: Checking for results...');
+          const pollResponse = await getPVPGameResult(roomId, authToken);
+          
+          if (pollResponse.data.success && pollResponse.data.data) {
+            const result = pollResponse.data.data;
+            console.log('🎮 AGGRESSIVE POLLING RESULT:', result);
+            
+            // Check if game is finished
+            if (result.is_winner !== null || result.finished_players >= result.total_players) {
+              console.log('🎮 AGGRESSIVE POLLING SUCCESS: Game finished!');
+              clearInterval(aggressivePolling);
+              setGameResult(result);
+              setGameEnded(true);
+              setWaitingForOthers(false);
+              setLoading(false);
+              setSubmissionError(null);
+              
+              // Update experience
+              const correctExperience = (() => {
+                if (result.is_draw) return 20;
+                else if (result.is_winner) return 50;
+                else return 10;
+              })();
+              
+              updateExperience(correctExperience);
+              
+              try {
+                logActivity({
+                  type: 'pvp',
+                  title: result.is_draw ? 'PvP Match ended in a Draw' : result.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                  xp: correctExperience,
+                  meta: { roomId, score, correctAnswers, totalTime }
+                });
+              } catch {}
+              
+              // Force sync with backend
+              setTimeout(() => {
+                const { syncWithBackend } = useExperienceStore.getState();
+                syncWithBackend();
+              }, 100);
+              
+              // Notify other pages
+              try {
+                window.dispatchEvent(new Event('practiceSessionCompleted'));
+              } catch {}
+            }
+          }
+        } catch (err) {
+          console.error('🎮 AGGRESSIVE POLLING ERROR:', err);
+        }
+      }, 1000); // Check every 1 second
+      
+      // Cleanup after 30 seconds
+      const timeout = setTimeout(() => {
+        console.log('🎮 AGGRESSIVE POLLING: Timeout reached, stopping polling');
+        clearInterval(aggressivePolling);
+      }, 30000);
+      
+      return () => {
+        clearInterval(aggressivePolling);
+        clearTimeout(timeout);
+      };
+    }
+  }, [waitingForOthers, gameEnded, roomId, authToken, score, correctAnswers, totalTime, updateExperience]);
 
   // (moved declarations to top to avoid redeclare)
 
@@ -654,27 +782,35 @@ const StudentPvPGamePage: FC = () => {
     moveFlashcardQuestion();
   };
 
-  const handleAnswerSubmit = async () => {
+  const handleAnswerSubmit = async (forceSubmit = false) => {
     if (!roomId || !authToken || !currentQuestion || loading) return;
     
-    // For flashcards, allow empty answers (score 0)
-    if (gameData?.game_mode === 'flashcards' && !userAnswer.trim()) {
-      console.log('Flashcard empty answer - scoring 0');
-    } else if (!userAnswer.trim()) {
-      return; // For other modes, require an answer
+    // Allow empty answers for auto-submit scenarios or flashcards
+    if (!userAnswer.trim() && !forceSubmit && gameData?.game_mode !== 'flashcards') {
+      console.log('🎮 Empty answer - not submitting (manual submission)');
+      return; // For manual submission, require an answer (except flashcards)
+    }
+    
+    if (!userAnswer.trim()) {
+      console.log('🎮 Empty answer - submitting with score 0');
     }
     
     setLoading(true);
     try {
       let isCorrect = false;
-      const timeTaken = gameData?.time_per_question - timeLeft || 0;
+      // Use actual time spent from problemTimes instead of countdown calculation
+      const currentProblemTimes = getProblemTimes();
+      const problemTime = currentProblemTimes.find((p: any) => p.questionId === currentQuestion.question_id.toString());
+      const timeTaken = problemTime ? problemTime.timeSpent : 0;
+      console.log('🎮 PVP TIMING DEBUG: time_per_question=', gameData?.time_per_question, 'timeLeft=', timeLeft, 'timeTaken=', timeTaken, 'problemTime=', problemTime);
       
       if (userAnswer.trim()) {
         const answer = parseFloat(userAnswer.trim());
         isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
       } else {
-        // Empty answer for flashcards - score 0
+        // Empty answer - score 0 (for all modes)
         isCorrect = false;
+        console.log('🎮 Empty answer - scoring 0');
       }
       
       // End timing for this problem
@@ -685,16 +821,23 @@ const StudentPvPGamePage: FC = () => {
         setCorrectAnswers(prev => prev + 1);
       }
       
-      setTotalTime(prev => prev + timeTaken);
+      setTotalTime(prev => {
+        const newTotal = prev + timeTaken;
+        console.log('🎮 PVP TOTAL TIME UPDATE: prev=', prev, 'timeTaken=', timeTaken, 'newTotal=', newTotal);
+        return newTotal;
+      });
 
       // Move to next question or end game
+      console.log(`🎮 HANDLE ANSWER SUBMIT: Current question: ${currentQuestionIndex + 1}, Total questions: ${gameData?.total_questions}`);
       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+        console.log('🎮 Moving to next question');
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setTimeLeft(gameData?.time_per_question || 30);
         setUserAnswer('');
         setLoading(false); // Reset loading for next question
       } else {
         // Game finished, submit results
+        console.log('🎮 Last question - submitting game results');
         await submitGameResults();
       }
     } catch (err) {
@@ -713,13 +856,83 @@ const StudentPvPGamePage: FC = () => {
     
     try {
       const problemTimes = getProblemTimes();
+      console.log('🎮 PVP SUBMIT DEBUG: score=', score, 'correctAnswers=', correctAnswers, 'totalTime=', totalTime, 'problemTimes=', problemTimes);
       const response = await submitPVPGameResult(roomId, score, correctAnswers, totalTime, authToken, problemTimes);
       
       if (response.data.success) {
         const result = response.data.data;
+        console.log('🎮 SUBMISSION RESPONSE:', result);
+        
+        // Add a small delay and retry to handle race conditions
+        if (result.is_winner === null && result.finished_players < result.total_players) {
+          console.log('🎮 INITIAL CHECK: Not all players finished, waiting 1 second and checking again...');
+          
+          // Wait 1 second and check again to handle race conditions
+          setTimeout(async () => {
+            try {
+              const retryResponse = await getPVPGameResult(roomId, authToken);
+              if (retryResponse.data.success && retryResponse.data.data) {
+                const retryResult = retryResponse.data.data;
+                console.log('🎮 RETRY CHECK:', retryResult);
+                
+                if (retryResult.is_winner !== null || retryResult.finished_players >= retryResult.total_players) {
+                  // All players finished, show results immediately
+                  console.log('🎮 RETRY SUCCESS: All players finished, showing results');
+                  setGameResult(retryResult);
+                  setGameEnded(true);
+                  setWaitingForOthers(false);
+                  setLoading(false);
+                  setSubmissionError(null);
+                  
+                  // Update experience
+                  const correctExperience = (() => {
+                    if (retryResult.is_draw) return 20;
+                    else if (retryResult.is_winner) return 50;
+                    else return 10;
+                  })();
+                  
+                  updateExperience(correctExperience);
+                  
+                  try {
+                    logActivity({
+                      type: 'pvp',
+                      title: retryResult.is_draw ? 'PvP Match ended in a Draw' : retryResult.is_winner ? 'PvP Victory' : 'PvP Defeat',
+                      xp: correctExperience,
+                      meta: { roomId, score, correctAnswers, totalTime }
+                    });
+                  } catch {}
+                  
+                  // Force sync with backend
+                  setTimeout(() => {
+                    const { syncWithBackend } = useExperienceStore.getState();
+                    syncWithBackend();
+                  }, 100);
+                  
+                  // Notify other pages
+                  try {
+                    window.dispatchEvent(new Event('practiceSessionCompleted'));
+                  } catch {}
+                  
+                  return; // Exit early, don't proceed to waiting screen
+                }
+              }
+            } catch (retryErr) {
+              console.error('Retry check failed:', retryErr);
+            }
+            
+            // If retry didn't work, proceed with waiting screen
+            console.log('🎮 RETRY FAILED: Proceeding with waiting screen');
+            setWaitingForOthers(true);
+            setLoading(false);
+            setSubmissionError(null);
+          }, 1000);
+          
+          return; // Exit early, don't proceed to the original waiting logic
+        }
         
         if (result.is_winner === null && result.finished_players < result.total_players) {
           // Not all players finished yet, show waiting screen
+          console.log(`🎮 WAITING FOR OTHERS: Finished players: ${result.finished_players}, Total players: ${result.total_players}`);
           setWaitingForOthers(true);
           setLoading(false); // Reset loading state
           setSubmissionError(null); // Clear any submission errors
@@ -728,11 +941,18 @@ const StudentPvPGamePage: FC = () => {
           const pollInterval = setInterval(async () => {
             try {
               const pollResponse = await getPVPGameResult(roomId, authToken);
-              if (pollResponse.data.success && pollResponse.data.data && pollResponse.data.data.is_winner !== null) {
-                clearInterval(pollInterval);
-                setGameResult(pollResponse.data.data);
-                setGameEnded(true);
-                setWaitingForOthers(false);
+              console.log('🎮 POLLING CHECK:', pollResponse.data.data);
+              
+              if (pollResponse.data.success && pollResponse.data.data) {
+                const result = pollResponse.data.data;
+                
+                // Check if game is finished (either winner determined or all players finished)
+                if (result.is_winner !== null || result.finished_players >= result.total_players) {
+                  console.log('🎮 POLLING SUCCESS: Game finished, showing results');
+                  clearInterval(pollInterval);
+                  setGameResult(result);
+                  setGameEnded(true);
+                  setWaitingForOthers(false);
                 
                 // Update experience only once
                 const correctExperience = (() => {
@@ -765,10 +985,11 @@ const StudentPvPGamePage: FC = () => {
                   window.dispatchEvent(new Event('practiceSessionCompleted'));
                 } catch {}
               }
-            } catch (err) {
-              console.error('Error polling results:', err);
             }
-          }, 1000); // Increased polling interval to reduce server load
+          } catch (err) {
+            console.error('Error polling results:', err);
+          }
+          }, 500); // Faster polling for better responsiveness
           
           // Set timeout to prevent infinite polling
           setTimeout(() => {
@@ -782,6 +1003,7 @@ const StudentPvPGamePage: FC = () => {
           
         } else {
           // All players finished, show results
+          console.log('🎮 ALL PLAYERS FINISHED: Showing results immediately');
           setGameResult(result);
           setGameEnded(true);
           setWaitingForOthers(false);
@@ -1108,17 +1330,18 @@ const StudentPvPGamePage: FC = () => {
                   })()}
                 </div>
               </div>
-              {gameData?.game_mode === 'timeattack' ? (
+              {/* Only show timer for timed modes */}
+              {gameData?.game_mode === 'timeattack' && gameData?.time_per_question > 0 ? (
                 <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
                   <AiOutlineClockCircle className="text-xl" />
                   <span className="text-2xl font-bold">{timeLeft}s</span>
                 </div>
-              ) : gameData?.game_mode !== 'flashcards' && (
+              ) : (gameData?.game_mode !== 'flashcards' && gameData?.game_mode !== 'norushmastery' && gameData?.game_mode !== 'custom' && gameData?.time_per_question > 0) ? (
                 <div className="flex items-center gap-2 bg-gold text-black px-4 py-2 rounded-full">
                   <AiOutlineClockCircle className="text-xl" />
                   <span className="text-2xl font-bold">{Math.floor(gameTimeLeft / 60)}:{(gameTimeLeft % 60).toString().padStart(2, '0')}</span>
                 </div>
-              )}
+              ) : null}
             </div>
             
             {/* Progress Bar */}
@@ -1136,22 +1359,6 @@ const StudentPvPGamePage: FC = () => {
           <div className="w-full max-w-4xl">
             {gameData?.game_mode === 'flashcards' ? (
               <>
-                {/* Practice Mode Style Header */}
-                <div className="flex justify-between items-center mb-6">
-                  <div className="text-white">
-                    <h2 className="text-xl font-bold">Flashcard Practice</h2>
-                    <p className="text-sm text-gray-400">
-                      Question {currentFlashcardIndex + 1} of {quizQuestions.length}
-                    </p>
-                  </div>
-                  <div className="text-white text-right">
-                    <div className="text-2xl font-bold">
-                      {Math.floor(gameTimeLeft / 60)}:{(gameTimeLeft % 60).toString().padStart(2, '0')}
-                    </div>
-                    <div className="text-sm text-gray-400">Game Time Remaining</div>
-                  </div>
-                </div>
-
                 {/* FlashCardBox with Practice Mode Structure */}
                 <div className="tablet:px-4">
                   <FlashCardBox
@@ -1248,12 +1455,15 @@ const StudentPvPGamePage: FC = () => {
                     onClick={() => {
                       if (loading) return; // Prevent multiple clicks
                       setUserAnswer('');
+                      console.log(`🎮 SKIP BUTTON: Current question: ${currentQuestionIndex + 1}, Total questions: ${gameData?.total_questions}`);
                       // Move to next question without submitting
                       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
+                        console.log('🎮 Skip - Moving to next question');
                         setCurrentQuestionIndex(currentQuestionIndex + 1);
                         setTimeLeft(gameData?.time_per_question || 30);
                       } else {
                         // Last question - submit with empty answer
+                        console.log('🎮 Skip - Last question, submitting');
                         handleAnswerSubmit();
                       }
                     }}
@@ -1265,12 +1475,14 @@ const StudentPvPGamePage: FC = () => {
                   </button>
                   
                   <button
-                    onClick={handleAnswerSubmit}
-                    disabled={loading || !userAnswer.trim()}
+                    onClick={async () => {
+                      await handleAnswerSubmit(false);
+                    }}
+                    disabled={loading}
                     className="px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#ffba08', color: '#000000' }}
                   >
-                    {loading ? 'Submitting...' : 'Next'}
+                    {loading ? 'Submitting...' : (currentQuestionIndex >= (gameData?.total_questions || 1) - 1) ? 'Submit' : 'Next'}
                   </button>
                 </>
               )}

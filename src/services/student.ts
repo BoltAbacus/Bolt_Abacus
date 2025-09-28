@@ -388,6 +388,28 @@ export const getPvpSpeedTrendRequest = async (token: string) => {
   return response;
 };
 
+export const getPvpQuestionsCompletedTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/pvpQuestionsCompletedTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
+export const getPvpEfficiencyTrendRequest = async (token: string) => {
+  const response = await axios.post(
+    '/pvpEfficiencyTrend/',
+    {},
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  return response;
+};
+
 // New progress components APIs
 export const getClassRankRequest = async (token: string) => {
   const response = await axios.post(

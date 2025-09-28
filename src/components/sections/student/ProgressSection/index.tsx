@@ -16,7 +16,7 @@ import AchievementsModal from '@components/organisms/AchievementsModal';
 import { ACHIEVEMENTS } from '@constants/achievements';
 import { STUDENT_ROADMAP } from '@constants/routes';
 import { useAuthStore } from '@store/authStore';
-import { getPracticeAccuracyTrendRequest, getPracticeSpeedTrendRequest, getPvpAccuracyTrendRequest, getPvpSpeedTrendRequest } from '@services/student';
+import { getPracticeAccuracyTrendRequest, getPracticeSpeedTrendRequest, getPvpAccuracyTrendRequest, getPvpSpeedTrendRequest, getPvpQuestionsCompletedTrendRequest, getPvpEfficiencyTrendRequest } from '@services/student';
 import { getLevelName } from '@helpers/levelNames';
 import ClassRankCard from '@components/sections/student/dashboard/ClassRankCard';
 import LeaderboardsCard from '@components/sections/student/dashboard/LeaderboardsCard';
@@ -76,6 +76,20 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
     currentSpeed: 0,
     weeklyProgress: 0,
     dailySpeed: [0, 0, 0, 0, 0, 0, 0],
+    labels: ['6d ago', '', '', '', '', '', 'Today']
+  });
+
+  const [pvpQuestionsCompletedTrend, setPvpQuestionsCompletedTrend] = useState({
+    currentQuestions: 0,
+    weeklyProgress: 0,
+    dailyQuestions: [0, 0, 0, 0, 0, 0, 0],
+    labels: ['6d ago', '', '', '', '', '', 'Today']
+  });
+
+  const [pvpEfficiencyTrend, setPvpEfficiencyTrend] = useState({
+    currentEfficiency: 0,
+    weeklyProgress: 0,
+    dailyEfficiency: [0, 0, 0, 0, 0, 0, 0],
     labels: ['6d ago', '', '', '', '', '', 'Today']
   });
 
@@ -219,6 +233,32 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         setPvpSpeedTrend(trendData);
       } else {
         console.warn('📊 No PvP speed trend data received');
+      }
+
+      // Fetch PvP questions completed trend
+      console.log('📊 Fetching PvP questions completed trend...');
+      const pvpQuestionsResponse = await getPvpQuestionsCompletedTrendRequest(authToken);
+      console.log('📊 PvP questions completed trend response:', pvpQuestionsResponse.data);
+      if (pvpQuestionsResponse.data) {
+        setPvpQuestionsCompletedTrend({
+          currentQuestions: pvpQuestionsResponse.data.currentQuestions || 0,
+          weeklyProgress: pvpQuestionsResponse.data.weeklyProgress || 0,
+          dailyQuestions: pvpQuestionsResponse.data.dailyQuestions || [0, 0, 0, 0, 0, 0, 0],
+          labels: pvpQuestionsResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
+        });
+      }
+
+      // Fetch PvP efficiency trend
+      console.log('📊 Fetching PvP efficiency trend...');
+      const pvpEfficiencyResponse = await getPvpEfficiencyTrendRequest(authToken);
+      console.log('📊 PvP efficiency trend response:', pvpEfficiencyResponse.data);
+      if (pvpEfficiencyResponse.data) {
+        setPvpEfficiencyTrend({
+          currentEfficiency: pvpEfficiencyResponse.data.currentEfficiency || 0,
+          weeklyProgress: pvpEfficiencyResponse.data.weeklyProgress || 0,
+          dailyEfficiency: pvpEfficiencyResponse.data.dailyEfficiency || [0, 0, 0, 0, 0, 0, 0],
+          labels: pvpEfficiencyResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
+        });
       }
     } catch (error) {
       console.error('Error fetching trend data:', error);
@@ -383,7 +423,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       </div>
 
       {/* Trend Cards (4 graphs) */}
-      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6 items-center justify-center">
         {/* Practice Accuracy Trend */}
         <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center justify-between mb-4">
@@ -496,7 +536,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         </div>
 
         {/* PvP Speed Trend */}
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
+        {/* <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-[#facb25]">PvP Speed</h3>
@@ -528,6 +568,80 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
             </div>
             <div className="text-xs text-gray-400">
               {pvpSpeedTrend.dailySpeed.filter(speed => speed > 0).length} active days
+            </div>
+          </div>
+        </div> */}
+
+        {/* PvP Questions Completed Trend */}
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-[#facb25]">PvP Questions Completed</h3>
+              <p className="text-xs text-yellow-400 mt-1">📊 Questions answered correctly in PvP</p>
+              {pvpQuestionsCompletedTrend.currentQuestions === 0 && (
+                <p className="text-xs text-[#818181] mt-1">Complete some PvP battles to see your progress!</p>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-purple-400">{pvpQuestionsCompletedTrend.currentQuestions}</div>
+              <div className="text-xs text-[#818181]">Questions Today</div>
+            </div>
+          </div>
+          <LineChart
+            data={pvpQuestionsCompletedTrend.dailyQuestions}
+            labels={pvpQuestionsCompletedTrend.labels}
+            stroke="#facb25"
+            gradientColors={{ start: "#facb25", end: "#d4a017" }}
+            yTicks={pvpQuestionsCompletedTrend.dailyQuestions}
+            valueFormatter={(v) => `${v}`}
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>6d ago</span>
+            <span>Today</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="text-sm text-purple-300 font-semibold">
+              Weekly Total <span className="text-white">{pvpQuestionsCompletedTrend.weeklyProgress}</span>
+            </div>
+            <div className="text-xs text-gray-400">
+              {pvpQuestionsCompletedTrend.dailyQuestions.filter(q => q > 0).length} active days
+            </div>
+          </div>
+        </div>
+
+        {/* PvP Efficiency Trend */}
+        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 tablet:col-span-2 tablet:mx-32">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-[#facb25]">PvP Efficiency</h3>
+              <p className="text-xs text-yellow-400 mt-1">📊 How well you perform in PvP battles</p>
+              {pvpEfficiencyTrend.currentEfficiency === 0 && (
+                <p className="text-xs text-[#818181] mt-1">Complete some PvP battles to see your efficiency!</p>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-orange-400">{pvpEfficiencyTrend.currentEfficiency}%</div>
+              <div className="text-xs text-[#818181]">Current Efficiency</div>
+            </div>
+          </div>
+          <LineChart
+            data={pvpEfficiencyTrend.dailyEfficiency}
+            labels={pvpEfficiencyTrend.labels}
+            stroke="#facb25"
+            gradientColors={{ start: "#facb25", end: "#d4a017" }}
+            yTicks={pvpEfficiencyTrend.dailyEfficiency}
+            valueFormatter={(v) => `${v}%`}
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>6d ago</span>
+            <span>Today</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="text-sm text-orange-300 font-semibold">
+              Weekly Average <span className="text-white">{pvpEfficiencyTrend.weeklyProgress}%</span>
+            </div>
+            <div className="text-xs text-gray-400">
+              {pvpEfficiencyTrend.dailyEfficiency.filter(eff => eff > 0).length} active days
             </div>
           </div>
         </div>

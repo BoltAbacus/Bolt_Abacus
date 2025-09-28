@@ -208,13 +208,14 @@ const ClassAccordionV2: FC<ClassAccordionV2Props> = ({
                   progress?.topics
                 )}
               </div>
-              <div className="tablet:mt-0 mt-4">
+              {/* Test button section commented out as requested by client */}
+              {/* <div className="tablet:mt-0 mt-4">
                 {createTestAccordionButton(
                   levelId,
                   progress?.classId || 0,
                   progress?.topics[0]
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

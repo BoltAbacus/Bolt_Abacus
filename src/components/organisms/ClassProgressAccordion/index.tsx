@@ -206,7 +206,8 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
                   );
                 })}
               </div>
-              <div className="flex gap-10 px-1">
+              {/* Test section commented out as requested by client */}
+              {/* <div className="flex gap-10 px-1">
                 <div className="flex items-center font-semibold text-[#6D6D6D] tablet:text-lg gap-2">
                   <FaClock className="text-sm" />
                   Test
@@ -217,7 +218,7 @@ const ClassProgressAccordion: FC<ClassProgressAccordionProps> = ({
                     score={classProgress.Test}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
