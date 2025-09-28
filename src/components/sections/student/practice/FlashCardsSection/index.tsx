@@ -150,6 +150,9 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
         xp: undefined,
         meta: { operation, numberOfDigits, numberOfQuestions, problemTimes }
       });
+      try {
+        window.dispatchEvent(new Event('practiceSessionCompleted'));
+      } catch {}
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);

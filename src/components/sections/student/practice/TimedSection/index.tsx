@@ -118,6 +118,10 @@ const TimedPracticeSection: FC<TimedPracticeSectionProps> = ({ operation }) => {
         parseFloat(avg.toFixed(2)),
         authToken!
       );
+      // Fire a global event so Progress page can refresh Weekly Goals instantly
+      try {
+        window.dispatchEvent(new Event('practiceSessionCompleted'));
+      } catch {}
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);

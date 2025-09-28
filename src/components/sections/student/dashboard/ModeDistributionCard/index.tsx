@@ -180,15 +180,56 @@ const ModeDistributionCard: FC<ModeDistributionCardProps> = ({ className = '' })
     );
   }
 
+  const favoriteMode = modeDistribution[0]; // First item is the most played
+
   return (
     <div className={`bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-[#facb25]">Mode Distribution</h3>
-          <p className="text-xs text-yellow-400 mt-1">📊 Your practice mode breakdown</p>
+      {/* Favorite Mode Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-[#facb25]">Favorite Mode</h3>
+            <p className="text-xs text-yellow-400 mt-1">📊 Your most played practice type</p>
+          </div>
+          <div className="text-2xl">{getModeIcon(favoriteMode?.mode || '')}</div>
         </div>
-        <div className="text-2xl">📊</div>
+        
+        {favoriteMode && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">{getModeIcon(favoriteMode.mode)}</span>
+                <div>
+                  <p className="font-semibold text-[#facb25]">
+                    {favoriteMode.mode}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {favoriteMode.count} sessions ({favoriteMode.percentage}%)
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-[#facb25] to-[#d4a017] h-2 rounded-full transition-all duration-300"
+                style={{ width: `${favoriteMode.percentage}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Mode Distribution Section */}
+      <div className="border-t border-gray-700 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-[#facb25]">Mode Distribution</h3>
+            <p className="text-xs text-yellow-400 mt-1">📊 Your practice mode breakdown</p>
+          </div>
+          <div className="text-2xl">📊</div>
+        </div>
       
       {/* Pie Chart */}
       <div className="flex justify-center mb-6">
@@ -223,13 +264,14 @@ const ModeDistributionCard: FC<ModeDistributionCardProps> = ({ className = '' })
         ))}
       </div>
       
-      {/* Summary */}
-      <div className="mt-4 pt-3 border-t border-gray-700">
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>Total Sessions</span>
-          <span className="font-semibold text-[#facb25]">
-            {modeDistribution.reduce((sum, mode) => sum + mode.count, 0)}
-          </span>
+        {/* Summary */}
+        <div className="mt-4 pt-3 border-t border-gray-700">
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>Total Sessions</span>
+            <span className="font-semibold text-[#facb25]">
+              {modeDistribution.reduce((sum, mode) => sum + mode.count, 0)}
+            </span>
+          </div>
         </div>
       </div>
     </div>

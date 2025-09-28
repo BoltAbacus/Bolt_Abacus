@@ -7,36 +7,61 @@ import { getPVPRoomDetails, startPVPGame } from '@services/pvp';
 
 interface RoomDetails {
   room_id: string;
-  creator: {
+  // Support both API response formats
+  creator_id?: number;
+  creator_name?: string;
+  creator?: {
     userId: number;
+    id?: number;
     firstName: string;
     lastName: string;
   };
   max_players: number;
+  current_players: number;
   number_of_questions: number;
   time_per_question: number;
-  difficulty_level: string;
-  game_mode: string;
-  operation: string;
+  difficulty_level?: string;
+  game_mode?: string;
+  operation?: string;
+  level_id?: number;
+  class_id?: number;
+  topic_id?: number;
+  // Support both API response formats for players
   players: Array<{
-    player: {
+    user_id?: number;
+    name?: string;
+    status?: string;
+    is_ready: boolean;
+    score?: number;
+    player?: {
       userId: number;
       firstName: string;
       lastName: string;
     };
-    is_ready: boolean;
-    score: number;
-    correct_answers: number;
-    total_time: number;
+    correct_answers?: number;
+    total_time?: number;
   }>;
   status: string;
   created_at: string;
 }
 
+// Helper function to extract user ID from JWT token
+const getUserIdFromToken = (token: string | null): number | null => {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.userId || payload.user_id || payload.id || null;
+  } catch {
+    return null;
+  }
+};
+
 const StudentPvPRoomPage: FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const { user, authToken } = useAuthStore();
+  
+
   
   const [roomDetails, setRoomDetails] = useState<RoomDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,12 +144,24 @@ const StudentPvPRoomPage: FC = () => {
   };
 
   // Logic for creator and game start
-  const currentUserId = user?.id ?? (user as any)?.userId;
-  const isCreator = roomDetails?.creator?.userId === currentUserId;
+  // Try multiple ways to get user ID, including from JWT token
+  const currentUserId = user?.id ?? user?.userId ?? (user as any)?.user_id ?? (user as any)?.ID ?? getUserIdFromToken(authToken);
+  
+  // Handle both API response formats
+  const creatorUserId = roomDetails?.creator_id ?? roomDetails?.creator?.userId ?? roomDetails?.creator?.id;
+  
+  // Handle potential type mismatches (string vs number)
+  const isCreator = currentUserId != null && creatorUserId != null && 
+    (currentUserId === creatorUserId || 
+     String(currentUserId) === String(creatorUserId) ||
+     Number(currentUserId) === Number(creatorUserId));
+  
   const canStartGame = isCreator &&
     roomDetails &&
     roomDetails.players.length >= minPlayersToStart &&
     roomDetails.status === 'waiting';
+
+
 
   if (!roomDetails) {
     return (
@@ -208,7 +245,7 @@ const StudentPvPRoomPage: FC = () => {
           <div className="space-y-3">
             {roomDetails.players.map((playerData, index) => (
               <div
-                key={playerData.player.userId}
+                key={playerData.user_id || playerData.player?.userId || index}
                 className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10"
               >
                 <div className="flex items-center gap-3">
@@ -219,20 +256,26 @@ const StudentPvPRoomPage: FC = () => {
                   </div>
                   <div>
                     <p className="text-white font-semibold">
-                      {playerData.player.firstName} {playerData.player.lastName}
+                      {playerData.name || (playerData.player ? `${playerData.player.firstName} ${playerData.player.lastName}` : 'Unknown Player')}
                     </p>
                     <p className="text-white/60 text-sm">
                       {playerData.is_ready ? '✅ Ready' : '⏳ Waiting...'}
                     </p>
                   </div>
                 </div>
-                {playerData.player.userId === roomDetails.creator.userId && (
+                {(playerData.user_id === creatorUserId || 
+                  playerData.player?.userId === creatorUserId ||
+                  playerData.player?.userId === roomDetails?.creator_id ||
+                  playerData.player?.userId === roomDetails?.creator?.userId ||
+                  playerData.player?.userId === roomDetails?.creator?.id) && (
                   <span className="text-gold text-sm font-semibold">👑 Creator</span>
                 )}
               </div>
             ))}
           </div>
         </div>
+
+
 
         {/* Start Game Button */}
         <div className="text-center">
@@ -256,6 +299,13 @@ const StudentPvPRoomPage: FC = () => {
               {loading ? 'Starting Game...' : 'Start Game'}
             </button>
           )}
+          
+          {!isCreator && (
+            <div className="text-white/60 text-lg">
+              👑 Waiting for the room creator to start the game...
+            </div>
+          )}
+
         </div>
       </div>
     </div>

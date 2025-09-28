@@ -18,7 +18,6 @@ import { STUDENT_ROADMAP } from '@constants/routes';
 import { useAuthStore } from '@store/authStore';
 import { getPracticeAccuracyTrendRequest, getPracticeSpeedTrendRequest, getPvpAccuracyTrendRequest, getPvpSpeedTrendRequest } from '@services/student';
 import { getLevelName } from '@helpers/levelNames';
-import FavoriteModeCard from '@components/sections/student/dashboard/FavoriteModeCard';
 import ClassRankCard from '@components/sections/student/dashboard/ClassRankCard';
 import LeaderboardsCard from '@components/sections/student/dashboard/LeaderboardsCard';
 import ModeDistributionCard from '@components/sections/student/dashboard/ModeDistributionCard';
@@ -519,8 +518,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       </div>
 
       {/* New Progress Components */}
-      <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-6">
-        <FavoriteModeCard />
+      <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-6">
         <ClassRankCard />
         <LeaderboardsCard />
         <ModeDistributionCard />

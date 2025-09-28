@@ -158,6 +158,10 @@ const UnTimedPracticeSection: FC<UnTimedPracticeSectionProps> = ({
         xp: undefined,
         meta: { operation, numberOfDigitsLeft, numberOfQuestions, problemTimes }
       });
+      // Notify other pages (like Progress) to refresh weekly goals/stats immediately
+      try {
+        window.dispatchEvent(new Event('practiceSessionCompleted'));
+      } catch {}
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);
