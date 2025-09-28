@@ -147,7 +147,7 @@ const StudentDetailsModal: FC<StudentDetailsModalProps> = ({ isOpen, onClose, st
       if (hasAny && lvl.levelId > currentLevel) {
         currentLevel = lvl.levelId;
         const completedInLevel = lvl.classes.filter((c) => (c as any).Test > 0 || (c.topics || []).some((t: any) => t.Classwork > 0 || t.Homework > 0)).length;
-        currentLevelPct = Math.round((completedInLevel / 12) * 100);
+        currentLevelPct = Math.round((completedInLevel / 10) * 100);
       }
     });
     const averageScore = levelScores.length > 0 ? Math.round(levelScores.reduce((s, v) => s + v, 0) / levelScores.length) : 0;

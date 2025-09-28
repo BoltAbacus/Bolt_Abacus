@@ -74,7 +74,7 @@ export const calculateProgressStats = (progress: LevelProgress[]): ProgressStats
         topic.Classwork > 50 || topic.Homework > 50
       ).length;
       
-      return completedTopics >= 2;
+      return completedTopics >= 3;
     }).length, 0
   );
 
@@ -336,7 +336,7 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
           topic.Classwork > 50 || topic.Homework > 50
         ).length;
         
-        if (classItem.Test > 0 || completedTopics >= 2) {
+        if (classItem.Test > 0 || completedTopics >= 3) {
           classesCompleted++;
           // For now, assume all completed classes were this week
           // In a real implementation, you'd check timestamps

@@ -124,7 +124,7 @@ export const createClassAccordionsV2 = (
     );
   }
 
-  for (let i = progress.length + 1; i < 13; i += 1) {
+  for (let i = progress.length + 1; i < 11; i += 1) {
     if (level === 1 && i === 1) continue;
     classAccordions.push(
       <ClassAccordionV2 key={i} levelId={level} type="locked" classId={i} />

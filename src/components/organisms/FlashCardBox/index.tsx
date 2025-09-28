@@ -68,7 +68,6 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showAllNumbers, setShowAllNumbers] = useState(false);
   const [completedNumbers, setCompletedNumbers] = useState<number[]>([]);
 
   // Audio reading functionality
@@ -108,7 +107,6 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
   useEffect(() => {
     setCurrentIndex(0);
     setCurrentNumber(quizQuestion.question.numbers[0]);
-    setShowAllNumbers(false);
     setCompletedNumbers([]);
     if (propShowQuestion === undefined) {
       setShowQuestion(!audioMode);
@@ -129,9 +127,9 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
           setCompletedNumbers(prev => [...prev, quizQuestion.question.numbers[prevIndex]]);
           return nextIndex;
         } else {
-          // All numbers have been shown, now show all together
+          // All numbers have been shown, stop at the last operand without stacking
           setCompletedNumbers(prev => [...prev, quizQuestion.question.numbers[prevIndex]]);
-          setShowAllNumbers(true);
+          // Don't set showAllNumbers to true - keep showing only the current (last) operand
           clearInterval(interval);
           return prevIndex;
         }
@@ -190,26 +188,14 @@ const FlashCardBox: FC<FlashCardBoxProps> = ({
             {/* Show numbers in rows */}
             <div className="flex flex-col items-end gap-2 tracking-widest">
               {showQuestion ? (
-                showAllNumbers ? (
-                  // Show all numbers at once
-                  quizQuestion.question.numbers.map((number, index) => (
-                    <div
-                      key={index}
-                      className="border-2 border-gold rounded-lg font-bold text-gold p-4 tablet:p-6"
-                    >
-                      <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(number).toString()}</p>
-                    </div>
-                  ))
-                ) : (
-                  // Show current number only
-                  <div
-                    key={currentIndex}
-                    className={`border-2 border-gold rounded-lg font-bold text-gold
-                                ${animate ? 'animate-fadeIn' : 'opacity-0'} p-4 tablet:p-6`}
-                  >
-                    <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(currentNumber).toString()}</p>
-                  </div>
-                )
+                // Always show only the current number (never show all stacked)
+                <div
+                  key={currentIndex}
+                  className={`border-2 border-gold rounded-lg font-bold text-gold
+                              ${animate ? 'animate-fadeIn' : 'opacity-0'} p-4 tablet:p-6`}
+                >
+                  <p className="text-3xl tablet:text-4xl desktop:text-5xl">{BigInt(currentNumber).toString()}</p>
+                </div>
               ) : (
                 <div className="border-2 border-grey rounded-lg font-bold text-grey p-4">
                   <p className="text-xl">🔊 Listen</p>

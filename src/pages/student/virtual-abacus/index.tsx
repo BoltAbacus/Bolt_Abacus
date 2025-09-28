@@ -196,13 +196,15 @@ const VirtualAbacus: FC = () => {
               background: '#FFD700',
               border: 'none',
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              opacity: 0.5,
             }}
           />
         </div>
 
         {/* Rods and beads */}
         <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8" style={{ zIndex: 5 }}>
-          {abacusState.map((rod, rodIndex) => (
+          {abacusState.map((rod, rodIndex) => {
+            return (
             <div
               key={rodIndex}
               className="relative flex flex-col items-center"
@@ -221,6 +223,8 @@ const VirtualAbacus: FC = () => {
                     boxShadow: '0 0 8px rgba(0,0,0,0.3)',
                   }}
                 />
+
+
 
                {/* Upper bead (Heaven bead) */}
                <div
@@ -286,7 +290,40 @@ const VirtualAbacus: FC = () => {
               })}
 
             </div>
-          ))}
+            );
+          })}
+        </div>
+
+        {/* White dots for place value guidance - rendered separately to appear above beam */}
+        <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8" style={{ zIndex: 30 }}>
+          {abacusState.map((_, rodIndex) => {
+            const positionFromRight = rodCount - 1 - rodIndex;
+            const shouldHaveDot = positionFromRight % 3 === 0;
+            
+            return (
+              <div
+                key={`dot-${rodIndex}`}
+                className="relative flex flex-col items-center"
+                style={{ height: FRAME_HEIGHT, width: BEAD_SIZE + 12 }}
+              >
+                {shouldHaveDot && (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2"
+                    style={{
+                      top: BEAM_Y - 0, // Position on the beam line
+                      width: 10,
+                      height: 10,
+                      background: 'white',
+                      borderRadius: '50%',
+                      zIndex: 35,
+                      boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)',
+                      border: '1px solid rgba(255,255,255,0.9)',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
               </div>
             </div>
