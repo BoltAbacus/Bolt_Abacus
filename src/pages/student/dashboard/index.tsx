@@ -194,7 +194,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       try {
         console.log('🚀 Loading dashboard...');
         
-        // 1. Fetch XP using simple API first
+        // 1. Fetch XP using simple API first (most reliable)
         console.log('🔥 [NEW CODE] Fetching XP from simple API...', new Date().toISOString());
         try {
           const xpRes = await axios.post('/getUserXPSimple/', {}, {

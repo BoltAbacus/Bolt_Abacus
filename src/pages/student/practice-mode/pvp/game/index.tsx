@@ -759,6 +759,11 @@ const StudentPvPGamePage: FC = () => {
                   const { syncWithBackend } = useExperienceStore.getState();
                   syncWithBackend();
                 }, 100);
+                
+                // Notify other pages (like Progress) to refresh PvP stats immediately
+                try {
+                  window.dispatchEvent(new Event('practiceSessionCompleted'));
+                } catch {}
               }
             } catch (err) {
               console.error('Error polling results:', err);
@@ -806,6 +811,11 @@ const StudentPvPGamePage: FC = () => {
             const { syncWithBackend } = useExperienceStore.getState();
             syncWithBackend();
           }, 100);
+          
+          // Notify other pages (like Progress) to refresh PvP stats immediately
+          try {
+            window.dispatchEvent(new Event('practiceSessionCompleted'));
+          } catch {}
         }
       } else {
         // API returned success: false

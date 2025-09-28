@@ -1,4 +1,4 @@
-import { FC, useMemo, useEffect, useState } from 'react';
+import { FC, useMemo, useEffect, useState, useCallback } from 'react';
 import { FaTrophy, FaStar, FaMedal, FaFire } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ import ProgressBar from '@components/atoms/ProgressBar';
 import LineChart from '@components/atoms/LineChart';
 import AchievementNotification from '@components/atoms/AchievementNotification';
 import { useGamification } from '@helpers/gamification';
-import { calculatePracticeStats, calculatePvPStats, calculateLevelStats, calculateProgressStats as computeProgressStats, calculateWeeklyGoals } from '@helpers/progressCalculations';
+import { calculatePracticeStats, calculatePvPStats, calculateLevelStats, calculateProgressStats as computeProgressStats } from '@helpers/progressCalculations';
 import WeeklyGoalsSection from '@components/sections/student/dashboard/WeeklyGoalsSection';
 import AchievementsModal from '@components/organisms/AchievementsModal';
 import { ACHIEVEMENTS } from '@constants/achievements';
@@ -46,11 +46,12 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   const authToken = useAuthStore((state) => state.authToken);
   
   // Weekly stats for Weekly Goals
-  const { fetchWeeklyStats } = useWeeklyStatsStore() as any;
+  const { fetchWeeklyStats, sessions, time_spent_hours, time_spent_minutes, problems_solved } = useWeeklyStatsStore() as any;
 
   useEffect(() => {
     fetchWeeklyStats?.();
   }, [fetchWeeklyStats]);
+
   
   // Trend data state for 4 graphs
   const [practiceAccuracyTrend, setPracticeAccuracyTrend] = useState({
@@ -154,13 +155,10 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
     return calculateLevelStats(progress || []);
   }, [progress]);
 
-  // Calculate weekly goals using unified calculation
-  const weeklyGoals = useMemo(() => {
-    return calculateWeeklyGoals(practiceStats, progress || []);
-  }, [practiceStats, progress]);
+  // Weekly goals are now calculated from the weekly stats store (backend data)
 
   // Fetch real trend data from backend
-  const fetchTrendData = async () => {
+  const fetchTrendData = useCallback(async () => {
     if (!authToken) return;
 
     try {
@@ -222,7 +220,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
     } catch (error) {
       console.error('Error fetching trend data:', error);
     }
-  };
+  }, [authToken]);
 
   // Check and unlock achievements when progress changes
   useEffect(() => {
@@ -250,6 +248,21 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       fetchTrendData();
     }
   }, [pvpStats]);
+
+  // Listen for practice session completion events to refresh weekly stats and trends
+  useEffect(() => {
+    const handlePracticeSessionComplete = () => {
+      console.log('🔄 [Progress Section] Practice session completed, refreshing weekly stats and trends...');
+      fetchWeeklyStats?.();
+      fetchTrendData();
+    };
+
+    window.addEventListener('practiceSessionCompleted', handlePracticeSessionComplete);
+    
+    return () => {
+      window.removeEventListener('practiceSessionCompleted', handlePracticeSessionComplete);
+    };
+  }, [fetchWeeklyStats, fetchTrendData]);
 
   const motivationalMessage = useMemo(() => {
     return getMotivationalMessage(progressStats);
@@ -347,12 +360,12 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       {/* Weekly Goals (moved from Dashboard) */}
       <div className="bg-[#1b1b1b] p-6 rounded-lg border border-lightGold">
         <WeeklyGoalsSection 
-          sessionsCompleted={weeklyGoals.sessionsCompleted}
-          sessionsTotal={weeklyGoals.sessionsTotal}
-          practiceMinutes={weeklyGoals.practiceMinutes}
-          practiceTargetMinutes={weeklyGoals.practiceTargetMinutes}
-          problemsSolved={weeklyGoals.problemsSolved}
-          problemsTarget={weeklyGoals.problemsTarget}
+          sessionsCompleted={sessions || 0}
+          sessionsTotal={100}
+          practiceMinutes={time_spent_hours * 60 + time_spent_minutes || 0}
+          practiceTargetMinutes={240}
+          problemsSolved={problems_solved || 0}
+          problemsTarget={300}
         />
       </div>
 

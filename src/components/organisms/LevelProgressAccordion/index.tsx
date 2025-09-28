@@ -185,58 +185,6 @@ const LevelProgressAccordion: FC<LevelProgressAccordionProps> = ({
               </div>
             </div>
           </div>
-          
-          {/* Realm Tests Section */}
-          <div className="mt-6 p-4 bg-[#2a2a2a] rounded-lg">
-            <h4 className="text-lg font-semibold text-white mb-4">Realm Tests</h4>
-            <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-3 bg-[#1b1b1b] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    levelProgress.OralTest > 0 ? 'bg-green-500' : 'bg-gray-600'
-                  }`}>
-                    {levelProgress.OralTest > 0 ? (
-                      <FaCheckCircle className="text-white text-sm" />
-                    ) : (
-                      <FaLock className="text-white text-sm" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Oral Test</p>
-                    <p className="text-sm text-gray-300">
-                      {levelProgress.OralTest > 0 ? `${levelProgress.OralTest}%` : 'Not completed'}
-                    </p>
-                  </div>
-                </div>
-                {levelProgress.OralTest > 0 && (
-                  <ProgressBar percentage={levelProgress.OralTest} type="green" />
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-[#1b1b1b] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    levelProgress.FinalTest > 0 ? 'bg-green-500' : 'bg-gray-600'
-                  }`}>
-                    {levelProgress.FinalTest > 0 ? (
-                      <FaCheckCircle className="text-white text-sm" />
-                    ) : (
-                      <FaLock className="text-white text-sm" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Final Test</p>
-                    <p className="text-sm text-gray-300">
-                      {levelProgress.FinalTest > 0 ? `${levelProgress.FinalTest}%` : 'Not completed'}
-                    </p>
-                  </div>
-                </div>
-                {levelProgress.FinalTest > 0 && (
-                  <ProgressBar percentage={levelProgress.FinalTest} type="purple" />
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

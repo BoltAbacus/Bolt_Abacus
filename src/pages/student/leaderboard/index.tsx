@@ -8,7 +8,6 @@ import StudentDetailsModal from '@components/organisms/StudentDetailsModal';
 import { dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { useStreakStore } from '@store/streakStore';
-import { useExperienceStore } from '@store/experienceStore';
 import { ERRORS, MESSAGES } from '@constants/app';
 import { LOGIN_PAGE, STUDENT_DASHBOARD } from '@constants/routes';
 import axios from '@helpers/axios';
@@ -33,63 +32,29 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
     level: 1,
     rank: 0,
     totalPlayers: 0,
-    xpToNextLevel: 100,
-    currentLevelXP: 0
+    nextLevelXP: 100
   });
-  
-
-  
-  const { experience_points, level, fetchExperience } = useExperienceStore();
 
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
-        // Fetch current user's actual level ID from dashboard for realm name display
-        let currentUserActualLevelId = 1;
-        let currentUserId = null;
-        
-        try {
-          if (authToken) {
-            // Get current user ID from token
-            const payload = JSON.parse(atob(authToken.split('.')[1]));
-            currentUserId = payload.userId || payload.user_id || payload.id || null;
-            
-            // Get actual level ID from dashboard
-            const dashboardRes = await dashboardRequestV2(authToken);
-            if (dashboardRes.status === 200) {
-              currentUserActualLevelId = dashboardRes.data.levelId;
-              console.log('🎯 Current user actual level ID for realm:', currentUserActualLevelId);
-            }
-          }
-        } catch (error) {
-          console.log('Failed to get current user level, using default:', error);
-        }
-
         // Use the PVP backend leaderboard API
         const res = await axios.post('/getPVPLeaderboard/', {}, {
           headers: { 'AUTH-TOKEN': authToken },
         });
         if (res.status === 200 && res.data.success && res.data.data.leaderboard) {
           // Transform PVP leaderboard data to match expected format
-          const leaderboardData = res.data.data.leaderboard.map((player: any) => {
-            // For the current user, use the actual level ID from dashboard for correct realm display
-            // For other users, use the XP level (we don't have their actual level IDs from this API)
-            const isCurrentUser = player.user_id === currentUserId;
-            const levelForRealmDisplay = isCurrentUser ? currentUserActualLevelId : (player.level || 1);
-            
-            return {
-              rank: player.rank,
-              name: player.name,
-              xp: player.experience_points,
-              level: player.level || 1, // XP-calculated level for general use
-              realmLevel: levelForRealmDisplay, // Actual level for realm name display
-              // Streak is resolved later if the player is the logged-in user; others default 0
-              streak: 0,
-              userId: player.user_id
-            };
-          });
+          const leaderboardData = res.data.data.leaderboard.map((player: any) => ({
+            rank: player.rank,
+            name: player.name,
+            xp: player.experience_points,
+            level: player.level,
+            // Streak is resolved later if the player is the logged-in user; others default 0
+            streak: 0,
+            userId: player.user_id
+          }));
           // Fetch streaks for all students in parallel
           try {
             const streaks = await Promise.allSettled(
@@ -124,116 +89,79 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
 
     const fetchUserStats = async () => {
       try {
-        // Fetch fresh experience data using the experience store
-        await fetchExperience();
-        
-        // Get leaderboard to calculate rank
-        try {
-          const leaderboardRes = await axios.post('/getPVPLeaderboard/', {}, {
-            headers: { 'AUTH-TOKEN': authToken },
-          });
+        // Get user experience data from simple API
+        const expRes = await axios.post('/getUserXPSimple/', {}, {
+          headers: { 'AUTH-TOKEN': authToken },
+        });
+        if (expRes.status === 200 && expRes.data.success) {
+          const expData = expRes.data.data;
           
-          if (leaderboardRes.status === 200 && leaderboardRes.data.success && leaderboardRes.data.data.leaderboard) {
-            // Use JWT token to get current user ID (same as PVP room logic)
-            const getUserIdFromToken = (token: string | null): number | null => {
-              if (!token) return null;
-              try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.userId || payload.user_id || payload.id || null;
-              } catch {
-                return null;
-              }
-            };
-            
-            const currentUserId = getUserIdFromToken(authToken);
-            const userRankIndex = leaderboardRes.data.data.leaderboard.findIndex(
-              (player: any) => player.user_id === currentUserId
-            );
-            const userRank = userRankIndex !== -1 ? userRankIndex + 1 : 0;
-            
-            // Calculate current level XP and progress
-            const currentXP = experience_points;
-            const currentLevel = level;
-            
-            // Level calculation: every 100 XP = next level
-            // Level 1: 0-99 XP, Level 2: 100-199 XP, etc.
-            const currentLevelBaseXP = (currentLevel - 1) * 100;
-            const currentLevelXP = currentXP - currentLevelBaseXP;
-            const xpNeeded = 100 - currentLevelXP;
-            
-            setUserStats({
-              totalXP: currentXP,
-              level: currentLevel,
-              rank: userRank,
-              totalPlayers: leaderboardRes.data.data.total_players || leaderboardRes.data.data.leaderboard.length,
-              xpToNextLevel: xpNeeded > 0 ? xpNeeded : 0,
-              currentLevelXP: currentLevelXP
-            });
-          } else {
-            // No leaderboard data, just use experience store data
-            const currentXP = experience_points;
-            const currentLevel = level;
-            const currentLevelBaseXP = (currentLevel - 1) * 100;
-            const currentLevelXP = currentXP - currentLevelBaseXP;
-            const xpNeeded = 100 - currentLevelXP;
-            
-            setUserStats({
-              totalXP: currentXP,
-              level: currentLevel,
+          // Get leaderboard to calculate rank
+          try {
+            const leaderboardRes = await axios.post('/getPVPLeaderboard/', {}, {
+          headers: { 'AUTH-TOKEN': authToken },
+        });
+            if (leaderboardRes.status === 200 && leaderboardRes.data.success && leaderboardRes.data.data.leaderboard) {
+              const currentUserId = useAuthStore.getState().user?.id;
+              const userRank = leaderboardRes.data.data.leaderboard.findIndex(
+                (player: any) => player.user_id === currentUserId
+              ) + 1;
+              
+              setUserStats({
+                totalXP: expData.experience_points,
+                level: expData.level,
+                rank: userRank || 0,
+                totalPlayers: leaderboardRes.data.data.total_players,
+                nextLevelXP: expData.xp_to_next_level
+              });
+            } else {
+              setUserStats({
+                totalXP: expData.experience_points,
+                level: expData.level,
+                rank: 0,
+                totalPlayers: 0,
+                nextLevelXP: expData.xp_to_next_level
+              });
+            }
+          } catch (leaderboardError) {
+            console.error('Error fetching leaderboard for rank:', leaderboardError);
+          setUserStats({
+            totalXP: expData.experience_points,
+            level: expData.level,
               rank: 0,
               totalPlayers: 0,
-              xpToNextLevel: xpNeeded > 0 ? xpNeeded : 0,
-              currentLevelXP: currentLevelXP
+            nextLevelXP: expData.xp_to_next_level
             });
           }
-        } catch (leaderboardError) {
-          console.error('Error fetching leaderboard for rank:', leaderboardError);
-          // Fallback to experience store data only
-          const currentXP = experience_points;
-          const currentLevel = level;
-          const currentLevelBaseXP = (currentLevel - 1) * 100;
-          const currentLevelXP = currentXP - currentLevelBaseXP;
-          const xpNeeded = 100 - currentLevelXP;
-          
+          // Try to fetch streak for the current user and merge into leaderboard entry
+          try {
+            const streakRes = await axios.get('/streak/', { headers: { 'AUTH-TOKEN': authToken } });
+            const currentUserId = useAuthStore.getState().user?.id;
+            if (currentUserId && streakRes?.data) {
+              const currentStreak = (streakRes.data?.currentStreak) ?? (streakRes.data?.data?.currentStreak) ?? 0;
+              setLeaderboard((prev) => prev.map((p) => p.userId === currentUserId ? { ...p, streak: currentStreak } : p));
+            }
+          } catch (e) {
+            // ignore streak failure
+          }
+        } else {
           setUserStats({
-            totalXP: currentXP,
-            level: currentLevel,
+            totalXP: 0,
+            level: 1,
             rank: 0,
             totalPlayers: 0,
-            xpToNextLevel: xpNeeded > 0 ? xpNeeded : 0,
-            currentLevelXP: currentLevelXP
+            nextLevelXP: 100
           });
-        }
-        
-        // Try to fetch streak for the current user and merge into leaderboard entry
-        try {
-          const streakRes = await axios.get('/streak/', { headers: { 'AUTH-TOKEN': authToken } });
-          const getUserIdFromToken = (token: string | null): number | null => {
-            if (!token) return null;
-            try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
-              return payload.userId || payload.user_id || payload.id || null;
-            } catch {
-              return null;
-            }
-          };
-          const currentUserId = getUserIdFromToken(authToken);
-          if (currentUserId && streakRes?.data) {
-            const currentStreak = (streakRes.data?.currentStreak) ?? (streakRes.data?.data?.currentStreak) ?? 0;
-            setLeaderboard((prev) => prev.map((p) => p.userId === currentUserId ? { ...p, streak: currentStreak } : p));
-          }
-        } catch (e) {
-          // ignore streak failure
         }
       } catch (error) {
         console.error('Error fetching user stats:', error);
+        // Use default values if API fails
         setUserStats({
           totalXP: 0,
           level: 1,
           rank: 0,
           totalPlayers: 0,
-          xpToNextLevel: 100,
-          currentLevelXP: 0
+          nextLevelXP: 100
         });
       }
     };
@@ -243,10 +171,10 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
       fetchUserStats();
     } else {
       // Use fallback data if not authenticated
-      setLeaderboard([]);
+      setLeaderboard(leaderboard);
       setLoading(false);
     }
-  }, [authToken, isAuthenticated, fetchExperience, experience_points, level]);
+  }, [authToken, isAuthenticated]);
 
   const [selectedStudent, setSelectedStudent] = useState<typeof leaderboard[number] | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -380,7 +308,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                             <div className="text-lg font-bold" style={{ color: '#ffffff' }}>
                               {leaderboard.length > 0 ? Math.max(...leaderboard.map(s => s.level)) : '0'}
                             </div>
-                            <div className="text-xs" style={{ color: '#f472b6' }}>Highest Level</div>
+                            <div className="text-xs" style={{ color: '#f472b6' }}>Max Realm</div>
                           </div>
                         </div>
                       </div>
@@ -510,31 +438,7 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                                                 color: '#60a5fa',
                                                 boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
                                               }}>
-                                          ⭐ {(() => {
-                                            // For current user: use actual level ID from dashboard for accurate realm
-                                            // For other users: map their XP level to realm level (1-10 cycle) 
-                                            const isCurrentUser = student.userId === (() => {
-                                              try {
-                                                if (authToken) {
-                                                  const payload = JSON.parse(atob(authToken.split('.')[1]));
-                                                  return payload.userId || payload.user_id || payload.id || null;
-                                                }
-                                              } catch {
-                                                return null;
-                                              }
-                                              return null;
-                                            })();
-                                            
-                                            if (isCurrentUser && student.realmLevel) {
-                                              // Current user - use actual level from dashboard
-                                              return getLevelName(student.realmLevel);
-                                            } else {
-                                              // Other users - map XP level to realm level (1-10 cycle)
-                                              const xpLevel = student.level || 1;
-                                              const realmLevel = ((xpLevel - 1) % 10) + 1;
-                                              return getLevelName(realmLevel);
-                                            }
-                                          })()}
+                                          ⭐ {getLevelName(student.level)}
                                         </span>
                                         <span className="text-xs px-3 py-1 rounded-full backdrop-blur-sm border border-orange-400/50" 
                                               style={{ 
@@ -725,20 +629,12 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium" style={{ color: '#22d3ee' }}>Next Level</span>
                             <span className="text-sm font-semibold" style={{ color: '#ffffff' }}>
-                              {userStats.xpToNextLevel} XP needed
+                              {userStats.nextLevelXP} XP needed
                             </span>
                           </div>
-                          <div className="w-full h-3 rounded-full" style={{ backgroundColor: 'rgba(33, 33, 36, 0.8)' }}>
-                            <div 
-                              className="h-full rounded-full bg-white transition-all duration-500" 
-                              style={{ 
-                                width: `${Math.min(100, Math.max(0, (userStats.currentLevelXP / 100) * 100))}%`,
-                                minWidth: userStats.currentLevelXP > 0 ? '2px' : '0px'
-                              }}
-                            ></div>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {userStats.currentLevelXP}/100 XP ({Math.round((userStats.currentLevelXP / 100) * 100)}%)
+                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'rgba(33, 33, 36, 0.8)' }}>
+                            <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600" 
+                                 style={{ width: `${Math.min(100, ((userStats.totalXP % 1000) / 1000) * 100)}%` }}></div>
                           </div>
                         </div>
                       </div>
