@@ -110,14 +110,27 @@ const AddQuestionSection: FC<AddQuestionSectionProps> = () => {
       const classId = parseInt(value, 10);
       const classSchema = levelSchema?.find((cls) => cls.classId === classId);
 
+      // Always generate Topics 1-5 to support uploading questions even if TopicDetails don't exist yet
       const options: LabelValuePair[] = [];
-      classSchema?.topicIds?.map((id) => {
+      for (let topicId = 1; topicId <= 5; topicId++) {
         options.push({
-          label: `Topic ${id}`,
-          value: id,
+          label: `Topic ${topicId}`,
+          value: topicId.toString(),
         });
-        return null;
-      });
+      }
+      
+      // If backend has more topics beyond 5, add them too
+      if (classSchema?.topicIds) {
+        classSchema.topicIds.forEach((id) => {
+          if (id > 5 && !options.find(opt => opt.value === id.toString())) {
+            options.push({
+              label: `Topic ${id}`,
+              value: id.toString(),
+            });
+          }
+        });
+      }
+      
       setTopicIdOptions(options);
 
       formMethods.resetField('topicId');

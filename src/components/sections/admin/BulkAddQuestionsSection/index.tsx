@@ -111,12 +111,21 @@ const BulkAddQuestionsSection: FC<BulkAddQuestionsSectionProps> = () => {
       const classSchema = levelSchema?.find((cls) => cls.classId === classId);
 
       const options: LabelValuePair[] = [];
-      classSchema?.topicIds?.map((id) => {
+      // Always include topics 1-5
+      for (let i = 1; i <= 5; i++) {
         options.push({
-          label: `Topic ${id}`,
-          value: id,
+          label: `Topic ${i}`,
+          value: i,
         });
-        return null;
+      }
+      // Add any additional topics from backend
+      classSchema?.topicIds?.forEach((id) => {
+        if (id > 5 && !options.find(option => option.value === id)) {
+          options.push({
+            label: `Topic ${id}`,
+            value: id,
+          });
+        }
       });
       setTopicIdOptions(options);
 
