@@ -1,9 +1,9 @@
 export const getLevelName = (levelId: string | number): string => {
   const levelNames = [
-    'Earth Realm',
-    'Water Realm', 
-    'Fire Realm',
-    'Wind Realm',
+    'Wind Realm',      // Level 1 (moved from Level 4)
+    'Water Realm',     // Level 2 (unchanged)
+    'Fire Realm',      // Level 3 (unchanged)
+    'Earth Realm',     // Level 4 (moved from Level 1)
     'Lightning Realm',
     'Crystal Realm',
     'Shadow Realm',

@@ -1,6 +1,6 @@
 export const levels = [
   {
-    title: 'Earth Realm',
+    title: 'Wind Realm',
     points: [
       'Introduction to Abacus',
       'Addition & Subtraction of 2 Digit Numbers',
@@ -15,7 +15,7 @@ export const levels = [
     points: ['Addition & Subtraction of 3 Digit Numbers'],
   },
   {
-    title: 'Wind Realm',
+    title: 'Earth Realm',
     points: [
       'Addition & Subtraction ( Earth, Water & Fire Realms Mixed )',
       'Multiplication ( 2 digits x 1 Digit )',

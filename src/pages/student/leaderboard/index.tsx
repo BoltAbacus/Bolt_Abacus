@@ -37,27 +37,54 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
     currentLevelXP: 0
   });
   
-  const { experience_points, level, xp_to_next_level, fetchExperience } = useExperienceStore();
+
+  
+  const { experience_points, level, fetchExperience } = useExperienceStore();
 
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
+        // Fetch current user's actual level ID from dashboard for realm name display
+        let currentUserActualLevelId = 1;
+        let currentUserId = null;
+        
+        try {
+          if (authToken) {
+            // Get current user ID from token
+            const payload = JSON.parse(atob(authToken.split('.')[1]));
+            currentUserId = payload.userId || payload.user_id || payload.id || null;
+            
+            // Get actual level ID from dashboard
+            const dashboardRes = await dashboardRequestV2(authToken);
+            if (dashboardRes.status === 200) {
+              currentUserActualLevelId = dashboardRes.data.levelId;
+              console.log('🎯 Current user actual level ID for realm:', currentUserActualLevelId);
+            }
+          }
+        } catch (error) {
+          console.log('Failed to get current user level, using default:', error);
+        }
+
         // Use the PVP backend leaderboard API
         const res = await axios.post('/getPVPLeaderboard/', {}, {
           headers: { 'AUTH-TOKEN': authToken },
         });
         if (res.status === 200 && res.data.success && res.data.data.leaderboard) {
-          // Transform PVP leaderboard data to match expected format with correct level calculation
+          // Transform PVP leaderboard data to match expected format
           const leaderboardData = res.data.data.leaderboard.map((player: any) => {
-            // Fix level calculation: every 100 XP = next level
-            const correctLevel = Math.floor(player.experience_points / 100) + 1;
+            // For the current user, use the actual level ID from dashboard for correct realm display
+            // For other users, use the XP level (we don't have their actual level IDs from this API)
+            const isCurrentUser = player.user_id === currentUserId;
+            const levelForRealmDisplay = isCurrentUser ? currentUserActualLevelId : (player.level || 1);
+            
             return {
               rank: player.rank,
               name: player.name,
               xp: player.experience_points,
-              level: correctLevel, // Use corrected level calculation
+              level: player.level || 1, // XP-calculated level for general use
+              realmLevel: levelForRealmDisplay, // Actual level for realm name display
               // Streak is resolved later if the player is the logged-in user; others default 0
               streak: 0,
               userId: player.user_id
@@ -483,7 +510,31 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
                                                 color: '#60a5fa',
                                                 boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
                                               }}>
-                                          ⭐ {getLevelName(student.level)}
+                                          ⭐ {(() => {
+                                            // For current user: use actual level ID from dashboard for accurate realm
+                                            // For other users: map their XP level to realm level (1-10 cycle) 
+                                            const isCurrentUser = student.userId === (() => {
+                                              try {
+                                                if (authToken) {
+                                                  const payload = JSON.parse(atob(authToken.split('.')[1]));
+                                                  return payload.userId || payload.user_id || payload.id || null;
+                                                }
+                                              } catch {
+                                                return null;
+                                              }
+                                              return null;
+                                            })();
+                                            
+                                            if (isCurrentUser && student.realmLevel) {
+                                              // Current user - use actual level from dashboard
+                                              return getLevelName(student.realmLevel);
+                                            } else {
+                                              // Other users - map XP level to realm level (1-10 cycle)
+                                              const xpLevel = student.level || 1;
+                                              const realmLevel = ((xpLevel - 1) % 10) + 1;
+                                              return getLevelName(realmLevel);
+                                            }
+                                          })()}
                                         </span>
                                         <span className="text-xs px-3 py-1 rounded-full backdrop-blur-sm border border-orange-400/50" 
                                               style={{ 

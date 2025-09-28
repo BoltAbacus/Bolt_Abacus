@@ -37,10 +37,10 @@ export const getDayOptions = () => {
 
 export const getLevelOptions = () => {
   const levelNames = [
-    'Earth Realm',
+    'Wind Realm',
     'Water Realm', 
     'Fire Realm',
-    'Wind Realm',
+    'Earth Realm',
     'Lightning Realm',
     'Crystal Realm',
     'Shadow Realm',
