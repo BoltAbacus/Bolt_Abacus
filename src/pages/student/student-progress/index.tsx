@@ -9,6 +9,7 @@ import StudentProgressSection from '@components/sections/student/ProgressSection
 
 import { useAuthStore } from '@store/authStore';
 import { getProgressRequest } from '@services/student';
+import axios from '@helpers/axios';
 import {
   GetStudentProgressResponse,
   LevelProgress,
@@ -34,6 +35,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
   const [studentProgress, setStudentProgress] = useState<LevelProgress[]>();
   const [batchName, setBatchName] = useState<string>();
   const [practiceStats, setPracticeStats] = useState<PracticeStats>();
+  const [experiencePoints, setExperiencePoints] = useState<number>(0);
 
   // Function to fetch student progress data
   const getStudentProgressData = useCallback(async () => {
@@ -65,6 +67,24 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
           setBatchName(getStudentProgressResponse.batchName);
           setPracticeStats(getStudentProgressResponse.practiceStats);
           console.log('✅ [Progress Page] State updated successfully');
+
+          // Fetch XP from simple XP API (same as dashboard uses)
+          try {
+            console.log('🚀 [Progress Page] Fetching XP from getUserXPSimple API...');
+            const xpRes = await axios.post('/getUserXPSimple/', {}, {
+              headers: { 'AUTH-TOKEN': authToken },
+            });
+            
+            if (xpRes.status === 200 && xpRes.data.success && xpRes.data.data) {
+              const freshXP = xpRes.data.data.experience_points;
+              console.log('✅ [Progress Page] XP fetched successfully:', freshXP);
+              setExperiencePoints(freshXP);
+            } else {
+              console.log('⚠️ [Progress Page] Invalid XP API response');
+            }
+          } catch (xpError) {
+            console.error('❌ [Progress Page] XP fetch failed:', xpError);
+          }
         }
       } catch (error) {
         console.error('❌ [Progress Page] API Error:', {
@@ -165,6 +185,7 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
                 progress={studentProgress!}
                 practiceStats={practiceStats}
                 pvpStats={null} // PvP stats will be fetched via trend APIs
+                experiencePoints={experiencePoints}
               />
             </>
           )}

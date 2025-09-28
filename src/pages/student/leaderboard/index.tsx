@@ -89,8 +89,8 @@ const StudentLeaderboardPage: FC<StudentLeaderboardPageProps> = () => {
 
     const fetchUserStats = async () => {
       try {
-        // Get user experience data
-        const expRes = await axios.post('/getUserExperience/', {}, {
+        // Get user experience data from simple API
+        const expRes = await axios.post('/getUserXPSimple/', {}, {
           headers: { 'AUTH-TOKEN': authToken },
         });
         if (expRes.status === 200 && expRes.data.success) {

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getUserExperience, ExperienceData } from '@services/experience';
+import { ExperienceData } from '@services/experience';
 import { useAuthStore } from './authStore';
+import axios from '@helpers/axios';
 
 interface ExperienceState {
   experience_points: number;
@@ -30,29 +31,38 @@ export const useExperienceStore = create<ExperienceState>()(
       fetchExperience: async () => {
         const authToken = useAuthStore.getState().authToken;
         if (!authToken) {
+          console.log('🔥 [Experience Store] No auth token');
           set({ error: 'No authentication token' });
           return;
         }
 
+        console.log('🔥 [Experience Store] Fetching experience...');
         set({ isLoading: true, error: null });
         try {
-          const response = await getUserExperience(authToken);
-          if (response.success) {
+          const response = await axios.post('/getUserXPSimple/', {}, {
+            headers: { 'AUTH-TOKEN': authToken },
+          });
+          const responseData = response.data;
+          console.log('🔥 [Experience Store] Response:', responseData);
+          if (responseData.success) {
+            console.log('🔥 [Experience Store] Setting XP:', responseData.data.experience_points);
             set({
-              experience_points: response.data.experience_points,
-              level: response.data.level,
-              xp_to_next_level: response.data.xp_to_next_level,
+              experience_points: responseData.data.experience_points,
+              level: responseData.data.level,
+              xp_to_next_level: responseData.data.xp_to_next_level || 100,
               isLoading: false,
               error: null,
             });
+            console.log('🔥 [Experience Store] XP set successfully');
           } else {
+            console.log('🔥 [Experience Store] Response not successful:', responseData);
             set({
               isLoading: false,
               error: 'Failed to fetch experience data',
             });
           }
         } catch (error) {
-          console.error('Error fetching experience:', error);
+          console.error('🔥 [Experience Store] Error fetching experience:', error);
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Failed to fetch experience',
@@ -61,6 +71,7 @@ export const useExperienceStore = create<ExperienceState>()(
       },
 
       setExperience: (experienceData: ExperienceData) => {
+        console.log('🔥 [Experience Store] setExperience called with:', experienceData);
         set({
           experience_points: experienceData.experience_points,
           level: experienceData.level,
@@ -86,13 +97,16 @@ export const useExperienceStore = create<ExperienceState>()(
             return;
           }
           
-          const response = await getUserExperience(authToken);
+          const response = await axios.post('/getUserXPSimple/', {}, {
+            headers: { 'AUTH-TOKEN': authToken },
+          });
+          const responseData = response.data;
 
-          if (response.success) {
+          if (responseData.success) {
             set({
-              experience_points: response.data.experience_points,
-              level: response.data.level,
-              xp_to_next_level: response.data.xp_to_next_level,
+              experience_points: responseData.data.experience_points,
+              level: responseData.data.level,
+              xp_to_next_level: responseData.data.xp_to_next_level || 100,
               isLoading: false,
               error: null,
             });

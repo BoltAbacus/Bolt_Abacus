@@ -10,23 +10,18 @@ import SpotlightCard from '@components/atoms/SpotlightCard';
 import TodoListSection from '@components/sections/student/dashboard/TodoListSection';
 import ShortcutsGrid from '@components/sections/student/dashboard/ShortcutsGrid';
 import SplitText from '@components/atoms/SplitText';
-import CountUp from '@components/atoms/CountUp';
 import JoinClassButton from '@components/atoms/JoinClassButton';
-// WeeklyGoalsSection moved to Progress page
-// import AchievementsSection from '@components/sections/student/dashboard/AchievementsSection';
 
 import { getProgressRequest, dashboardRequestV2 } from '@services/student';
 import { useAuthStore } from '@store/authStore';
 import { getLevelName } from '@helpers/levelNames';
 import { useStreakStore } from '@store/streakStore';
-import { useExperienceStore } from '@store/experienceStore';
 import { useWeeklyStatsStore } from '@store/weeklyStatsStore';
 import { useTodoListStore } from '@store/todoListStore';
 import { getActivities, ActivityItem } from '@helpers/activity';
 import { calculatePracticeStats } from '@helpers/progressCalculations';
 import axios from '@helpers/axios';
 import { STUDENT_LEADERBOARD, LOGIN_PAGE } from '@constants/routes';
-// import StreakTest from '@components/atoms/StreakTest';
 import { MESSAGES, ERRORS } from '@constants/app';
 import { STUDENT_DASHBOARD } from '@constants/routes';
 import { DashboardResponseV2 } from '@interfaces/apis/student';
@@ -39,7 +34,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const user = useAuthStore((state) => state.user);
 
   const [loading, setLoading] = useState(true);
-  // Removed unused progress state
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [currentLevelProgressPct, setCurrentLevelProgressPct] = useState<number>(0);
   const [currentLevel, setCurrentLevel] = useState<number>(1);
@@ -48,7 +42,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [fallBackLink, setFallBackLink] = useState<string>(STUDENT_DASHBOARD);
   const [fallBackAction, setFallBackAction] = useState<string>(MESSAGES.TRY_AGAIN);
   const { currentStreak, fetchStreak, updateStreak } = useStreakStore();
-  const { experience_points, syncWithBackend } = useExperienceStore();
+  const [experiencePoints, setExperiencePoints] = useState<number>(0);
   const { accuracy, time_spent_formatted, setWeeklyStats } = useWeeklyStatsStore() as any;
   const [computedTimeFormatted, setComputedTimeFormatted] = useState<string>('0h 0m');
   const [calculatedAccuracy, setCalculatedAccuracy] = useState<number>(0);
@@ -184,204 +178,91 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
     return '0h 0m';
   };
 
+  // SINGLE useEffect - NO MORE MULTIPLE CALLS
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
     let isMounted = true;
     
-    const getDashboardData = async () => {
-      console.log('🔄 [Dashboard] Starting data fetch...');
-      
-      // Skip weekly stats API here to avoid overwriting with zeros; we compute from practice/progress
-      
-      console.log('🔄 [Dashboard] Auth check:', {
-        isAuthenticated,
-        hasAuthToken: !!authToken,
-        timestamp: new Date().toISOString()
-      });
+    const loadDashboard = async () => {
+      if (!isAuthenticated || !authToken) {
+        setLoading(false);
+        setApiError(ERRORS.AUTHENTICATION_ERROR);
+        setFallBackLink(LOGIN_PAGE);
+        setFallBackAction(MESSAGES.GO_LOGIN);
+        return;
+      }
 
-      if (isAuthenticated) {
+      try {
+        console.log('🚀 Loading dashboard...');
+        
+        // 1. Fetch XP using simple API first (most reliable)
+        console.log('🔥 [NEW CODE] Fetching XP from simple API...', new Date().toISOString());
         try {
-          console.log('📡 [Dashboard] Making API request to dashboard...');
-          const res = await dashboardRequestV2(authToken!);
-          console.log('✅ [Dashboard] Dashboard API response received:', {
-            status: res.status,
-            dataKeys: Object.keys(res.data || {}),
-            timestamp: new Date().toISOString()
+          const xpRes = await axios.post('/getUserXPSimple/', {}, {
+            headers: { 'AUTH-TOKEN': authToken },
           });
+          
+          if (xpRes.status === 200 && xpRes.data.success && xpRes.data.data) {
+            const xp = xpRes.data.data.experience_points;
+            console.log('🔥 [NEW CODE] XP from getUserXPSimple:', xp);
+            setExperiencePoints(xp);
+          }
+        } catch (error) {
+          console.log('🔥 [NEW CODE] Simple XP API failed, trying leaderboard...', error);
+        }
+        
+        // 2. Also fetch leaderboard for the leaderboard display
+        console.log('🔥 [NEW CODE] Fetching leaderboard data...');
+        const leaderboardRes = await axios.post('/getPVPLeaderboard/', {}, {
+          headers: { 'AUTH-TOKEN': authToken },
+        });
+        
+        let leaderboardData: any[] = [];
+        if (leaderboardRes.status === 200 && leaderboardRes.data.success && leaderboardRes.data.data.leaderboard) {
+          leaderboardData = leaderboardRes.data.data.leaderboard;
+        }
 
-          if (res.status === 200) {
-            const dashboardResponse: DashboardResponseV2 = res.data;
-            if (!isMounted) return;
+        // 3. Fetch dashboard data
+        const res = await dashboardRequestV2(authToken);
+        if (!isMounted) return;
+
+        if (res.status === 200) {
+          const dashboardResponse: DashboardResponseV2 = res.data;
+          setCurrentLevel(dashboardResponse.levelId);
+          setClassLink(dashboardResponse.latestLink);
+          setApiError(null);
+
+          // 3. Fetch practice data ONCE
+          const practiceRes = await getProgressRequest(authToken);
+          if (!isMounted) return;
+
+          if (practiceRes.status === 200) {
+            const practiceStats = practiceRes.data.practiceStats;
+            const { accuracy: calculatedAcc, timeSpent: calculatedTime } = calculateStatsFromPracticeData(practiceStats);
+            setCalculatedAccuracy(calculatedAcc);
+            setCalculatedTimeSpent(calculatedTime);
+            console.log('⏱️ Time Spent:', calculatedTime);
             
-            console.log('📊 [Dashboard] Processing dashboard data:', {
-              levelId: dashboardResponse.levelId,
-              hasLatestLink: !!dashboardResponse.latestLink,
-              levelsPercentageKeys: Object.keys(dashboardResponse.levelsPercentage || {}),
-              timestamp: new Date().toISOString()
+            setDashboardData({
+              ...dashboardResponse,
+              practiceStats
             });
+          } else {
+            setDashboardData(dashboardResponse);
+          }
 
-            setCurrentLevel(dashboardResponse.levelId);
-            setClassLink(dashboardResponse.latestLink);
-            setApiError(null);
-            // Removed unused setProgress
-            
-            // Fetch practice data using the same API as progress page
-            try {
-              console.log('📡 [Dashboard] Fetching practice progress...');
-              const practiceRes = await getProgressRequest(authToken!);
-              console.log('✅ [Dashboard] Practice progress response:', {
-                status: practiceRes.status,
-                hasData: !!practiceRes.data?.practiceStats,
-                timestamp: new Date().toISOString()
-              });
-
-              if (practiceRes.status === 200) {
-                const practiceStats = practiceRes.data.practiceStats;
-                if (!isMounted) return;
-                
-                // Calculate accuracy and time spent from practice data
-                const { accuracy: calculatedAcc, timeSpent: calculatedTime } = calculateStatsFromPracticeData(practiceStats);
-                setCalculatedAccuracy(calculatedAcc);
-                setCalculatedTimeSpent(calculatedTime);
-                
-                setDashboardData({
-                  ...dashboardResponse,
-                  practiceStats
-                });
-                console.log('✅ [Dashboard] Practice stats processed successfully', {
-                  calculatedAccuracy: calculatedAcc,
-                  calculatedTimeSpent: calculatedTime
-                });
-              } else {
-                setDashboardData(dashboardResponse);
-                console.log('⚠️ [Dashboard] Practice stats failed, using dashboard data only');
-              }
-            } catch (practiceError) {
-              console.warn('⚠️ [Dashboard] Practice data fetch failed:', practiceError);
-              setDashboardData(dashboardResponse);
-            }
-            
-            // Compute current level progress from detailed progress data
-            try {
-              const progressRes = await getProgressRequest(authToken!);
-              if (!isMounted) return;
-              if (progressRes.status === 200 && progressRes.data?.levels) {
-                const levels = progressRes.data.levels as any[];
-                const currentLevelId = dashboardResponse.levelId;
-                
-                // Calculate realm-specific stats
-                const realmStats = calculateRealmSpecificStats(levels, currentLevelId);
-                setRealmAccuracy(realmStats.accuracy);
-                setRealmTimeSpent(realmStats.timeSpent);
-                
-                const levelData = levels.find((lvl: any) => lvl.levelId === currentLevelId);
-                if (levelData && Array.isArray(levelData.classes)) {
-                  // Compute aggregate minutes and activities
-                  let totalMinutes = 0;
-                  let totalActivities = 0;
-                  let classesCompleted = 0;
-                  const totalClassesInLevel = levelData.classes.length; // Use actual number of classes in the level
-                  for (const classItem of levelData.classes) {
-                    const topics = Array.isArray(classItem.topics) ? classItem.topics : [];
-                    let classCompleted = false;
-                    if (classItem.Test && classItem.Test > 0) {
-                      classCompleted = true;
-                      totalActivities += 1;
-                      totalMinutes += Math.round((classItem.Time || 0) / 60);
-                    }
-                    for (const topic of topics) {
-                      if (topic.Classwork && topic.Classwork > 0) {
-                        classCompleted = true;
-                        totalActivities += 1;
-                        totalMinutes += Math.round((topic.ClassworkTime || 0) / 60);
-                      }
-                      if (topic.Homework && topic.Homework > 0) {
-                        classCompleted = true;
-                        totalActivities += 1;
-                        totalMinutes += Math.round((topic.HomeworkTime || 0) / 60);
-                      }
-                    }
-                    if (classCompleted) classesCompleted += 1;
-                  }
-                  const pct = totalClassesInLevel > 0 ? Math.min(100, Math.round((classesCompleted / totalClassesInLevel) * 100)) : 0;
-                  setCurrentLevelProgressPct(pct);
-                  // Provide fallback weekly stats when API fails later
-                  const hours = Math.floor(totalMinutes / 60);
-                  const minutes = totalMinutes % 60;
-                  setWeeklyStats({
-                    sessions: totalActivities,
-                    accuracy: realmStats.accuracy, // Use realm-specific accuracy
-                    time_spent_hours: hours,
-                    time_spent_minutes: minutes,
-                    time_spent_formatted: realmStats.timeSpent, // Use realm-specific time
-                  });
-                  setComputedTimeFormatted(realmStats.timeSpent);
-                } else {
-                  setCurrentLevelProgressPct(0);
-                }
-              }
-            } catch (e) {
-              // Fallback to provided percentage if detailed call fails
-              const fallbackPct = Math.min(100, Math.round((dashboardResponse.levelsPercentage?.[dashboardResponse.levelId] || 0) * 100));
-              setCurrentLevelProgressPct(fallbackPct);
-            }
-            
-            // Fetch streak data
-            console.log('🔄 [Dashboard] Fetching streak data...');
-            try {
-              await fetchStreak();
-              console.log('✅ [Dashboard] Streak data fetched successfully');
-            } catch (streakError) {
-              console.error('❌ [Dashboard] Streak fetch failed:', streakError);
-            }
-            
-            // Update streak for daily activity
-            console.log('🔄 [Dashboard] Updating streak for daily activity...');
-            try {
-              await updateStreak();
-              console.log('✅ [Dashboard] Streak updated successfully');
-            } catch (streakUpdateError) {
-              console.error('❌ [Dashboard] Streak update failed:', streakUpdateError);
-            }
-            
-            // Sync experience data from backend
-            console.log('🔄 [Dashboard] Syncing experience data...');
-            try {
-              await syncWithBackend();
-              console.log('✅ [Dashboard] Experience data synced successfully');
-            } catch (expError) {
-              console.error('❌ [Dashboard] Experience sync failed:', expError);
-            }
-            
-            // Skip weeklyStats API (unstable). Using computed fallback above.
-            
-            // Fetch todo list
-            console.log('🔄 [Dashboard] Fetching todo list...');
-            try {
-              await fetchTodoList();
-              console.log('✅ [Dashboard] Todo list fetched successfully');
-            } catch (todoError) {
-              console.error('❌ [Dashboard] Todo list fetch failed:', todoError);
-            }
-            
-            // Load recent activities from archives
-            console.log('🔄 [Dashboard] Loading recent activities...');
-            try {
+          // 4. Load other data in parallel (non-blocking) - NO OVERRIDES
+          Promise.allSettled([
+            fetchStreak().catch(() => {}),
+            updateStreak().catch(() => {}),
+            fetchTodoList().catch(() => {}),
+            (async () => {
               const activities = getActivities();
-              setRecentActivities(activities.slice(0, 4)); // Get latest 4 activities
-              console.log('✅ [Dashboard] Recent activities loaded successfully');
-            } catch (activityError) {
-              console.error('❌ [Dashboard] Activities load failed:', activityError);
-            }
-            
-            // Load top 5 leaderboard
-            console.log('🔄 [Dashboard] Loading top leaderboard...');
-            try {
-              const res = await axios.post('/getPVPLeaderboard/', {}, {
-                headers: { 'AUTH-TOKEN': authToken },
-              });
-              if (res.status === 200 && res.data.success && res.data.data.leaderboard) {
-                const top5 = res.data.data.leaderboard.slice(0, 5).map((player: any) => ({
+              setRecentActivities(activities.slice(0, 4));
+            })(),
+            (async () => {
+              // Leaderboard already fetched above, just process the top 5
+              if (leaderboardData.length > 0) {
+                const top5 = leaderboardData.slice(0, 5).map((player: any) => ({
                   rank: player.rank,
                   name: player.name,
                   xp: player.experience_points,
@@ -389,73 +270,35 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                   userId: player.user_id
                 }));
                 setTopLeaderboard(top5);
-                console.log('✅ [Dashboard] Top leaderboard loaded successfully');
-              } else {
-                setTopLeaderboard([]);
+                console.log('🏆 Leaderboard loaded:', top5.length, 'players');
               }
-            } catch (leaderboardError) {
-              console.error('❌ [Dashboard] Leaderboard load failed:', leaderboardError);
-              setTopLeaderboard([]);
-            }
-            
-            console.log('✅ [Dashboard] All data processing completed successfully');
-          }
-        } catch (error) {
-          console.error('❌ [Dashboard] API Error:', {
-            error,
-            isAxiosError: isAxiosError(error),
-            status: isAxiosError(error) ? error.response?.status : 'unknown',
-            message: isAxiosError(error) ? error.message : 'Unknown error',
-            responseData: isAxiosError(error) ? error.response?.data : null,
-            timestamp: new Date().toISOString()
-          });
+            })()
+          ]);
 
-          if (isAxiosError(error)) {
-            const status = error.response?.status;
-            if (status === 401) {
-              console.error('🚫 [Dashboard] Authentication Error:', {
-                status,
-                message: error.response?.data?.error || error.response?.data?.message || ERRORS.SERVER_ERROR
-              });
-              setApiError(
-                error.response?.data?.error ||
-                  error.response?.data?.message ||
-                  ERRORS.SERVER_ERROR
-              );
-              setFallBackLink(LOGIN_PAGE);
-              setFallBackAction(MESSAGES.GO_LOGIN);
-            } else {
-              console.error('🔥 [Dashboard] Server Error:', {
-                status,
-                message: error.message
-              });
-              setApiError(ERRORS.SERVER_ERROR);
-            }
-          } else {
-            console.error('💥 [Dashboard] Unknown Error:', error);
-            setApiError(ERRORS.SERVER_ERROR);
-          }
-        } finally {
-          setLoading(false);
-          console.log('🏁 [Dashboard] Data fetch completed');
+          console.log('✅ Dashboard loaded successfully');
         }
-      } else {
-        console.warn('⚠️ [Dashboard] User not authenticated, redirecting to login');
+      } catch (error) {
+        console.error('❌ Dashboard Error:', error);
+        if (isAxiosError(error) && error.response?.status === 401) {
+          setApiError(ERRORS.AUTHENTICATION_ERROR);
+          setFallBackLink(LOGIN_PAGE);
+          setFallBackAction(MESSAGES.GO_LOGIN);
+        } else {
+          setApiError(ERRORS.SERVER_ERROR);
+        }
+      } finally {
         setLoading(false);
-        setApiError(ERRORS.AUTHENTICATION_ERROR);
-        setFallBackLink(LOGIN_PAGE);
-        setFallBackAction(MESSAGES.GO_LOGIN);
       }
     };
     
-    getDashboardData();
-    intervalId = setInterval(getDashboardData, 10000); // Poll every 10 seconds
+    loadDashboard();
     return () => {
       isMounted = false;
-      if (intervalId) clearInterval(intervalId);
     };
-  }, [authToken, isAuthenticated, updateStreak, syncWithBackend, fetchStreak, fetchTodoList]);
+  }, [authToken, isAuthenticated]);
 
+  console.log('🔥 [NEW CODE] Current XP:', experiencePoints, new Date().toISOString());
+  
   return (
     <div className="min-h-screen">
       {loading ? (
@@ -506,12 +349,9 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                       <div className="flex flex-col tablet:flex-row tablet:items-center space-y-2 tablet:space-y-0 tablet:space-x-3">
                          <span className="bg-[#212124] hover:bg-[#3a3a3d] group-hover:bg-[#2a2a2d] text-white font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105">
                           <span className="text-lg mr-1">⚡</span>
-                          <CountUp 
-                            to={experience_points} 
-                            duration={2}
-                            separator=","
-                            className="font-bold"
-                          /> XP
+                          <span className="font-bold">
+                            {experiencePoints}
+                          </span> XP
                         </span>
                          <span className="bg-[#212124] hover:bg-[#3a3a3d] group-hover:bg-[#2a2a2d] text-white font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105">
                           <span className="text-lg mr-1">🔥</span>
@@ -685,23 +525,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                      </div>
                    </SpotlightCard>
                  </div>
-                 
-                  {/* ACHIEVEMENTS SECTION COMMENTED OUT - CLIENT DOES NOT WANT THIS FEATURE */}
-                  {/* <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-gold/8 via-transparent to-gold/5 animate-pulse"></div>
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-500 via-gray-400 to-gray-300"></div>
-                    
-                    <div className="relative z-10">
-                      <AchievementsSection />
-                    </div>
-                  </div> */}
-                
-                {/* 🧪 STREAK TEST COMPONENT COMMENTED OUT - NOT NEEDED */}
-                {/* <div className="bg-[#080808] hover:bg-[#1b1b1b] transition-colors backdrop-blur-xl text-white p-8 rounded-2xl border border-gold/50 shadow-2xl shadow-black/50 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <StreakTest />
-                  </div>
-                </div> */}
               </div>
             </>
           )}

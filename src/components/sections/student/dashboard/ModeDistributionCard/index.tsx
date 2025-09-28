@@ -137,7 +137,7 @@ const ModeDistributionCard: FC<ModeDistributionCardProps> = ({ className = '' })
           x={centerX}
           y={centerY + 10}
           textAnchor="middle"
-          className="text-xs fill-gray-400"
+          className="text-xs fill-white"
         >
           Sessions
         </text>
@@ -215,7 +215,7 @@ const ModeDistributionCard: FC<ModeDistributionCardProps> = ({ className = '' })
               <p className="text-sm font-semibold text-[#facb25]">
                 {mode.percentage}%
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-red">
                 {mode.count} sessions
               </p>
             </div>

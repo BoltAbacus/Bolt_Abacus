@@ -31,6 +31,7 @@ export interface StudentProgressSectionProps {
   progress: LevelProgress[] | undefined;
   practiceStats?: PracticeStats;
   pvpStats?: any;
+  experiencePoints?: number;
 }
 
 const StudentProgressSection: FC<StudentProgressSectionProps> = ({
@@ -38,6 +39,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   progress,
   practiceStats,
   pvpStats,
+  experiencePoints = 0,
 }) => {
   const navigate = useNavigate();
   const { checkAndUnlockAchievements, getMotivationalMessage } = useGamification();
@@ -255,7 +257,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
   }, [progressStats, getMotivationalMessage]);
 
   return (
-    <div className={`${styles.progressSection} flex flex-col gap-6 p-6 tablet:p-10 desktop:px-24`}>
+    <div className={`${styles.progressSection} flex flex-col gap-6 p-6 tablet:p-10 desktop:px-4`}>
       <AchievementNotification />
       {/* Header with Gamification Elements */}
       <div className="flex flex-col gap-4">
@@ -269,7 +271,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
           </div>
           <div className="flex gap-4">
             <StreakCard />
-            <CoinsDisplay />
+            <CoinsDisplay experiencePoints={experiencePoints} />
           </div>
         </div>
       </div>
