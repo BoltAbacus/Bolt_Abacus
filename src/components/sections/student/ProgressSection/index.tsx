@@ -648,11 +648,11 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       </div>
 
       {/* New Progress Components */}
-      <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-6">
         <ClassRankCard />
         <LeaderboardsCard />
         <ModeDistributionCard />
-      </div>
+      </div> */}
 
       {/* Activity Summary
       {(practiceAccuracyTrend.currentAccuracy > 0 || pvpAccuracyTrend.currentAccuracy > 0) && (
