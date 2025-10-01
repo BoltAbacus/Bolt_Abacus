@@ -103,9 +103,10 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-1 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm"
+          className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm min-h-[40px] min-w-[40px] flex items-center justify-center tablet:px-4"
         >
-          ➕
+          <span className="tablet:mr-1">➕</span>
+          <span className="hidden tablet:inline">Add</span>
         </button>
       </div>
       
@@ -113,46 +114,56 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
        {/* Add Goal Form */}
        {showAddForm && (
          <div className="mb-4 p-3 bg-[#080808]/30 rounded-lg border border-gold/30">
-           <div className="flex space-x-2">
+           <div className="flex flex-col space-y-2">
+             {/* Goal input - full width on mobile */}
              <input
                type="text"
                value={newGoal}
                onChange={(e) => setNewGoal(e.target.value)}
                onKeyPress={handleKeyPress}
                placeholder="Add a new goal..."
-               className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs"
+               className="w-full bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm"
              />
-             <input
-               type="date"
-               value={goalDate}
-               onChange={(e) => setGoalDate(e.target.value)}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
-             />
-             <input
-               type="time"
-               value={goalTime}
-               onChange={(e) => setGoalTime(e.target.value)}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-1 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-xs [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
-             />
-             <button
-               onClick={handleAddGoal}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center"
-               title="Add goal"
-             >
-               ➕
-             </button>
-             <button
-               onClick={() => {
-                 setShowAddForm(false);
-                 setNewGoal('');
-                 setGoalDate('');
-                 setGoalTime('');
-               }}
-               className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-2 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center"
-               title="Cancel"
-             >
-               ❌
-             </button>
+             
+             {/* Date and time inputs - responsive layout */}
+             <div className="flex flex-col tablet:flex-row gap-2">
+               <input
+                 type="date"
+                 value={goalDate}
+                 onChange={(e) => setGoalDate(e.target.value)}
+                 className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
+               />
+               <input
+                 type="time"
+                 value={goalTime}
+                 onChange={(e) => setGoalTime(e.target.value)}
+                 className="flex-1 bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-3 py-2 rounded border border-gold/40 ring-1 ring-gold/20 focus:outline-none focus:border-gold/d40 backdrop-blur-sm transition-colors text-sm [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
+               />
+             </div>
+             
+             {/* Action buttons - responsive layout */}
+             <div className="flex gap-2">
+               <button
+                 onClick={handleAddGoal}
+                 className="flex-1 bg-gold hover:bg-lightGold text-black px-4 py-2 rounded-lg transition-colors text-sm font-semibold flex items-center justify-center min-h-[40px]"
+                 title="Add goal"
+               >
+                 <span className="mr-1">➕</span>
+                 Add Goal
+               </button>
+               <button
+                 onClick={() => {
+                   setShowAddForm(false);
+                   setNewGoal('');
+                   setGoalDate('');
+                   setGoalTime('');
+                 }}
+                 className="bg-[#080808]/50 hover:bg-[#191919]/50 text-white px-4 py-2 rounded-lg border border-gold/50 ring-1 ring-gold/20 backdrop-blur-sm transition-colors text-sm flex items-center justify-center min-h-[40px]"
+                 title="Cancel"
+               >
+                 Cancel
+               </button>
+             </div>
            </div>
          </div>
        )}
@@ -178,23 +189,23 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                     type="checkbox"
                     checked={!!todo.completed}
                     onChange={() => toggleComplete(todo.id)}
-                    className="mt-1 h-4 w-4 accent-gold cursor-pointer"
+                    className="mt-1 h-4 w-4 accent-gold cursor-pointer flex-shrink-0"
                     title="Mark complete"
                   />
                   <div className="flex-1 min-w-0">
-                     <div className="flex items-center space-x-2 mb-1">
-                       <span className="text-lg">{getTypeIcon(todo.type)}</span>
-                       <span className={`text-xs ${getPriorityColor(todo.priority)}`}>
+                     <div className="flex items-center flex-wrap gap-1 mb-1">
+                       <span className="text-lg flex-shrink-0">{getTypeIcon(todo.type)}</span>
+                       <span className={`text-xs flex-shrink-0 ${getPriorityColor(todo.priority)}`}>
                          {getPriorityIcon(todo.priority)}
                        </span>
-                       <h3 className={`text-sm font-semibold ${
+                       <h3 className={`text-sm font-semibold break-words ${
                          todo.completed ? 'line-through text-gray-400' : 'text-white'
                        }`}>
                          {todo.title}
                        </h3>
                      </div>
                      {formatDateTime(todo) && (
-                       <div className="text-xs text-gray-400 mb-1">
+                       <div className="text-xs text-gray-400 mb-1 break-words">
                          📅 {formatDateTime(todo)}
                        </div>
                      )}
@@ -208,7 +219,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                          🔔 Due Today
                        </div>
                      )}
-                    <p className={`text-xs ${
+                    <p className={`text-xs break-words ${
                       todo.completed ? 'text-gray-500' : 'text-gray-300'
                     }`}>
                       {todo.description}
@@ -217,7 +228,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
                   {todo.type === 'personal' && (
                     <button
                       onClick={() => handleRemoveGoal(todo.id)}
-                      className="flex-shrink-0 text-red-400 hover:text-red-300 transition-colors p-1"
+                      className="flex-shrink-0 text-red-400 hover:text-red-300 transition-colors p-1 min-h-[32px] min-w-[32px] flex items-center justify-center"
                       title="Remove goal"
                     >
                       🗑️

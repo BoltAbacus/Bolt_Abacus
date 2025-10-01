@@ -29,7 +29,7 @@ const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
     'w-full h-2 rounded-full bg-[#0e0e0e]/80 border border-gold/20 ring-1 ring-white/5 overflow-hidden';
   const barBase = 'h-2 bg-gold rounded-full shadow-[0_0_12px_rgba(255,186,8,0.25)]';
   const badgeBase =
-    'px-2 py-0.5 text-[10px] font-semibold rounded-md bg-[#2a2a2a] text-white/80 border border-white/10';
+    'px-2 py-0.5 text-xs tablet:text-[10px] font-semibold rounded-md bg-[#2a2a2a] text-white/80 border border-white/10 min-w-fit';
 
   return (
     <div className={`text-white ${className}`}>
@@ -38,11 +38,11 @@ const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
         <h2 className="text-lg font-bold">This Week's Goals</h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
         {/* Practice Mode Played */}
         <div className={cardBase}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">Practice Mode Played</span>
+            <span className="text-sm tablet:text-sm">Practice Mode Played</span>
             <span className={badgeBase}>
               {sessionsCompleted}/{sessionsTotal}
             </span>
@@ -55,7 +55,7 @@ const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
         {/* Practice Time */}
         <div className={cardBase}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">Practice Time</span>
+            <span className="text-sm tablet:text-sm">Practice Time</span>
             <span className={badgeBase}>
               {practiceMinutes}/{practiceTargetMinutes}m
             </span>
@@ -68,7 +68,7 @@ const WeeklyGoalsSection: FC<WeeklyGoalsSectionProps> = ({
         {/* Problems Solved */}
         <div className={cardBase}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">Problems Solved</span>
+            <span className="text-sm tablet:text-sm">Problems Solved</span>
             <span className={badgeBase}>
               {problemsSolved}/{problemsTarget}
             </span>
