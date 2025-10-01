@@ -168,15 +168,6 @@ const VirtualAbacus: FC = () => {
           </div>
         </div>
 
-        {/* Display */}
-        <div className="bg-[#1c1c1e] hover:bg-[#2c2c2e] backdrop-blur-xl p-6 rounded-2xl shadow-xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,186,8,0.25)] mb-6 relative overflow-hidden" style={{ border: 'none' }}>
-          <div className="relative z-10">
-            <div className="text-right text-4xl font-mono text-[#FFD700] font-bold">
-              {displayValue}
-            </div>
-          </div>
-        </div>
-
         {/* Abacus Frame with Controls */}
          <div className="bg-[#1c1c1e] hover:bg-[#1c1c1e] p-4 tablet:p-6 rounded-2xl shadow-xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,186,8,0.25)] mb-6 tablet:mb-8 relative overflow-hidden" style={{ border: 'none' }}>
           <div className="relative z-10 flex flex-col tablet:flex-row tablet:items-start gap-4 tablet:gap-6">
@@ -241,10 +232,10 @@ const VirtualAbacus: FC = () => {
 
                {/* Upper bead (Heaven bead) */}
                <div
-                 className={`absolute w-9 h-9 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                 className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
                    rod.upperBead.isActive
-                     ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
-                     : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
+                     ? 'bg-[#FFD700]'
+                     : 'bg-[#48484a] hover:bg-[#636366]'
                  }`}
                  onClick={(e) => {
                    e.preventDefault();
@@ -254,14 +245,16 @@ const VirtualAbacus: FC = () => {
                  }}
                  style={{
                    left: '50%',
-                   transform: 'translateX(-50%)',
+                   transform: 'translateX(-50%) rotate(45deg)',
                    top: rod.upperBead.isActive ? BEAM_Y - BEAD_SIZE - 6 : 24,
                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                    zIndex: 50,
-                   pointerEvents: 'auto'
+                   pointerEvents: 'auto',
+                   border: 'none',
+                   borderRadius: '4px'
                  }}
                >
-                 <div className="w-4 h-2 rounded-full bg-white opacity-30 pointer-events-none" />
+                 <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
                </div>
 
               {/* Lower beads (Earth beads) - move as a group */}
@@ -285,10 +278,10 @@ const VirtualAbacus: FC = () => {
                  return (
                    <div
                      key={beadIndex}
-                     className={`absolute w-9 h-9 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                     className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
                        isActive
-                         ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
-                         : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
+                         ? 'bg-[#FFD700]'
+                         : 'bg-[#48484a] hover:bg-[#636366]'
                      }`}
                      onClick={(e) => {
                        e.preventDefault();
@@ -298,14 +291,16 @@ const VirtualAbacus: FC = () => {
                      }}
                      style={{
                        left: '50%',
-                       transform: 'translateX(-50%)',
+                       transform: 'translateX(-50%) rotate(45deg)',
                        top,
                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                        zIndex: 50,
-                       pointerEvents: 'auto'
+                       pointerEvents: 'auto',
+                       border: 'none',
+                       borderRadius: '4px'
                      }}
                    >
-                     <div className="w-4 h-2 rounded-full bg-white opacity-30 pointer-events-none" />
+                     <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
                    </div>
                  );
               })}
