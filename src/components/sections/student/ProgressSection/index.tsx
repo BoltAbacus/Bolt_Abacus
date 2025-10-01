@@ -610,7 +610,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
         </div>
 
         {/* PvP Efficiency Trend */}
-        <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 tablet:col-span-2 tablet:mx-32">
+        {/* <div className="bg-[#212124] p-6 rounded-lg border border-[#facb25]/20 tablet:col-span-2 tablet:mx-32">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-[#facb25]">PvP Efficiency</h3>
@@ -644,7 +644,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
               {pvpEfficiencyTrend.dailyEfficiency.filter(eff => eff > 0).length} active days
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* New Progress Components */}
