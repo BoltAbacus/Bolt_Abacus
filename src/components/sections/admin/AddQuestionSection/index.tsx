@@ -18,6 +18,7 @@ import ErrorMessage from '@components/atoms/ErrorMessage';
 import SuccessMessage from '@components/atoms/SuccessMessage';
 
 import { useAuthStore } from '@store/authStore';
+import { getClassDisplayName } from '@helpers/classNames';
 import { getLevelSchemaRequest } from '@services/admin';
 import { addQuestionsRequest } from '@services/question';
 import { addQuestionSchema } from '@validations/admin';
@@ -66,7 +67,7 @@ const AddQuestionSection: FC<AddQuestionSectionProps> = () => {
         const options: LabelValuePair[] = [];
         getLevelSchemaResponse.schema?.map((classSchema) => {
           options.push({
-            label: `Class ${classSchema.classId}`,
+            label: getClassDisplayName(classSchema.classId),
             value: classSchema.classId,
           });
           return null;

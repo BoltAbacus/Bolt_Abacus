@@ -10,6 +10,7 @@ import ClassAccordionRow from '@components/molecules/ClassAccordionRow';
 
 import { ClassProgressV2, TopicProgressV2 } from '@interfaces/apis/student';
 import { getButtonTypeForScore } from '@helpers/report';
+import { getClassDisplayName } from '@helpers/classNames';
 
 import { PASS_MARKS } from '@constants/app';
 
@@ -124,7 +125,7 @@ const ClassAccordionV2: FC<ClassAccordionV2Props> = ({
     >
       <div className="tablet:gap-10 flex tablet:flex-row flex-col gap-5">
         <div className="tablet:gap-10 flex tablet:flex-row flex-col flex-1 tablet:justify-center tablet:items-center gap-5">
-          <p className="font-medium text-lg">Class {classId}</p>
+          <p className="font-medium text-lg">{getClassDisplayName(classId)}</p>
           <div className="flex flex-1 justify-center items-center">
             {type === 'inprogress' && (
               <ProgressBar

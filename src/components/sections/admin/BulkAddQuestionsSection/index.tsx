@@ -18,6 +18,7 @@ import {
   questionsToQuestionsAPI,
 } from '@helpers/bulkUpload';
 import { useAuthStore } from '@store/authStore';
+import { getClassDisplayName } from '@helpers/classNames';
 import { bulkAddQuestionSchema } from '@validations/admin';
 import { getLevelSchemaRequest } from '@services/admin';
 import { bulkAddQuestionsRequest } from '@services/question';
@@ -66,7 +67,7 @@ const BulkAddQuestionsSection: FC<BulkAddQuestionsSectionProps> = () => {
         const options: LabelValuePair[] = [];
         getLevelSchemaResponse.schema?.map((classSchema) => {
           options.push({
-            label: `Class ${classSchema.classId}`,
+            label: getClassDisplayName(classSchema.classId),
             value: classSchema.classId,
           });
           return null;

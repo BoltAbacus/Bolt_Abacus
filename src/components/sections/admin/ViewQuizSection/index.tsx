@@ -10,6 +10,7 @@ import SuccessMessage from '@components/atoms/SuccessMessage';
 import QuizQuestionsTable from '@components/organisms/QuizQuestionsTable';
 
 import { useAuthStore } from '@store/authStore';
+import { getClassDisplayName } from '@helpers/classNames';
 import { viewQuizFormSchema } from '@validations/admin';
 import { getLevelSchemaRequest } from '@services/admin';
 import { getAllQuizQuestionsRequest } from '@services/question';
@@ -57,7 +58,7 @@ const ViewQuizSection: FC<ViewQuizSectionProps> = () => {
         const options: LabelValuePair[] = [];
         getLevelSchemaResponse.schema?.map((classSchema) => {
           options.push({
-            label: `Class ${classSchema.classId}`,
+            label: getClassDisplayName(classSchema.classId),
             value: classSchema.classId,
           });
           return null;

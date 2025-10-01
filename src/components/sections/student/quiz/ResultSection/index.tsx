@@ -7,6 +7,7 @@ import QuizResultTable from '@components/organisms/QuizResultTable';
 import { QuizPageParams } from '@interfaces/RouteParams';
 import { QuestionResult } from '@interfaces/apis/student';
 import QuizActionButton from '@components/atoms/QuizActionButton';
+import { getClassDisplayName } from '@helpers/classNames';
 import { MESSAGES } from '@constants/app';
 import { STUDENT_LEVEL } from '@constants/routes';
 import { secondsToMinutesSeconds } from '@helpers/timer';
@@ -27,10 +28,10 @@ const ResultSection: FC<ResultSectionProps> = ({
   const params = useParams<QuizPageParams>();
   const links =
     params.topicId === undefined
-      ? [`Level ${params.levelId}`, `Class ${params.classId}`]
+      ? [`Level ${params.levelId}`, getClassDisplayName(parseInt(params.classId || '1'))]
       : [
           `Level ${params.levelId}`,
-          `Class ${params.classId}`,
+          getClassDisplayName(parseInt(params.classId || '1')),
           `Topic ${params.topicId}`,
         ];
 

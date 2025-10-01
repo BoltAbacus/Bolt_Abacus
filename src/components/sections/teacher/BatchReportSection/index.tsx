@@ -9,6 +9,7 @@ import ErrorMessage from '@components/atoms/ErrorMessage';
 import BatchReportTable from '@components/organisms/BatchReportTable';
 
 import { useAuthStore } from '@store/authStore';
+import { getClassDisplayName } from '@helpers/classNames';
 import { getBatchReportSchema } from '@validations/teacher';
 import { ClassSchema, GetLevelSchemaResponse } from '@interfaces/apis/admin';
 import {
@@ -59,7 +60,7 @@ const BatchReportSection: FC<BatchReportSectionProps> = ({ batchId }) => {
         const options: LabelValuePair[] = [];
         getLevelSchemaResponse.schema?.map((classSchema) => {
           options.push({
-            label: `Class ${classSchema.classId}`,
+            label: getClassDisplayName(classSchema.classId),
             value: classSchema.classId,
           });
           return null;
