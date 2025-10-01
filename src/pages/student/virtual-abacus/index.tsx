@@ -14,6 +14,7 @@ export interface StudentVirtualAbacusPageProps {}
 // Virtual Abacus Component
 const VirtualAbacus: FC = () => {
   const [_, setValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState('0');
   const [rodCount, setRodCount] = useState(13);
   
   // Soroban layout constants
@@ -55,6 +56,7 @@ const VirtualAbacus: FC = () => {
 
   // Toggle upper bead (heaven bead)
   const toggleUpperBead = (rodIndex: number) => {
+    console.log('Upper bead clicked:', rodIndex);
     setAbacusState(prev => {
       const newState = prev.map((rod, index) =>
         index === rodIndex
@@ -63,12 +65,14 @@ const VirtualAbacus: FC = () => {
       );
       const newValue = calculateValue(newState);
       setValue(newValue);
+      setDisplayValue(newValue.toLocaleString());
       return newState;
     });
   };
 
   // Toggle lower beads (earth beads) - they move as a group
   const toggleLowerBeads = (rodIndex: number, targetCount: number) => {
+    console.log('Lower bead clicked:', rodIndex, 'target:', targetCount);
     setAbacusState(prev => {
       const newState = prev.map((rod, index) => {
         if (index !== rodIndex) return rod;
@@ -80,6 +84,7 @@ const VirtualAbacus: FC = () => {
       
       const newValue = calculateValue(newState);
       setValue(newValue);
+      setDisplayValue(newValue.toLocaleString());
       return newState;
     });
   };
@@ -87,6 +92,7 @@ const VirtualAbacus: FC = () => {
   const resetAbacus = () => {
     setAbacusState(createRods(rodCount));
     setValue(0);
+    setDisplayValue('0');
   };
 
 
@@ -162,6 +168,15 @@ const VirtualAbacus: FC = () => {
           </div>
         </div>
 
+        {/* Display */}
+        <div className="bg-[#1c1c1e] hover:bg-[#2c2c2e] backdrop-blur-xl p-6 rounded-2xl shadow-xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,186,8,0.25)] mb-6 relative overflow-hidden" style={{ border: 'none' }}>
+          <div className="relative z-10">
+            <div className="text-right text-4xl font-mono text-[#FFD700] font-bold">
+              {displayValue}
+            </div>
+          </div>
+        </div>
+
         {/* Abacus Frame with Controls */}
          <div className="bg-[#1c1c1e] hover:bg-[#1c1c1e] p-4 tablet:p-6 rounded-2xl shadow-xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,186,8,0.25)] mb-6 tablet:mb-8 relative overflow-hidden" style={{ border: 'none' }}>
           <div className="relative z-10 flex flex-col tablet:flex-row tablet:items-start gap-4 tablet:gap-6">
@@ -186,11 +201,11 @@ const VirtualAbacus: FC = () => {
                >
         {/* Horizontal beam */}
         <div
-          className="absolute left-0 right-0 flex items-center justify-center"
+          className="absolute left-0 right-0 flex items-center justify-center pointer-events-none"
           style={{ top: BEAM_Y, height: 12, zIndex: 10 }}
         >
           <div
-            className="h-3 shadow-lg"
+            className="h-3 shadow-lg pointer-events-none"
             style={{
               width: '100%',
               background: '#FFD700',
@@ -202,17 +217,17 @@ const VirtualAbacus: FC = () => {
         </div>
 
         {/* Rods and beads */}
-        <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8" style={{ zIndex: 5 }}>
+        <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8 pointer-events-none" style={{ zIndex: 5 }}>
           {abacusState.map((rod, rodIndex) => {
             return (
             <div
               key={rodIndex}
-              className="relative flex flex-col items-center"
+              className="relative flex flex-col items-center pointer-events-none"
               style={{ height: FRAME_HEIGHT, width: BEAD_SIZE + 12 }}
             >
               {/* Rod */}
                 <div
-                  className="absolute left-1/2 -translate-x-1/2"
+                  className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                   style={{
                     top: 0,
                      height: FRAME_HEIGHT - 0,
@@ -224,27 +239,29 @@ const VirtualAbacus: FC = () => {
                   }}
                 />
 
-
-
                {/* Upper bead (Heaven bead) */}
                <div
-                 className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
+                 className={`absolute w-9 h-9 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                    rod.upperBead.isActive
-                     ? 'bg-[#FFD700]'
-                     : 'bg-[#48484a] hover:bg-[#636366]'
+                     ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
+                     : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
                  }`}
-                 onClick={() => toggleUpperBead(rodIndex)}
+                 onClick={(e) => {
+                   e.preventDefault();
+                   e.stopPropagation();
+                   console.log('Upper bead clicked:', rodIndex);
+                   toggleUpperBead(rodIndex);
+                 }}
                  style={{
                    left: '50%',
-                   transform: 'translateX(-50%) rotate(45deg)',
+                   transform: 'translateX(-50%)',
                    top: rod.upperBead.isActive ? BEAM_Y - BEAD_SIZE - 6 : 24,
                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                   zIndex: 15,
-                   border: 'none',
-                   borderRadius: '4px'
+                   zIndex: 50,
+                   pointerEvents: 'auto'
                  }}
                >
-                 <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
+                 <div className="w-4 h-2 rounded-full bg-white opacity-30 pointer-events-none" />
                </div>
 
               {/* Lower beads (Earth beads) - move as a group */}
@@ -268,23 +285,27 @@ const VirtualAbacus: FC = () => {
                  return (
                    <div
                      key={beadIndex}
-                     className={`absolute w-9 h-9 cursor-pointer shadow-lg flex items-center justify-center ${
+                     className={`absolute w-9 h-9 rounded-full cursor-pointer shadow-lg border-2 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                        isActive
-                         ? 'bg-[#FFD700]'
-                         : 'bg-[#48484a] hover:bg-[#636366]'
+                         ? 'bg-gradient-to-b from-[#FFD700] to-[#bfa14a] border-[#bfa14a]'
+                         : 'bg-gradient-to-b from-[#fffbe6] to-[#8B4513] border-[#654321] hover:brightness-110'
                      }`}
-                     onClick={() => toggleLowerBeads(rodIndex, beadIndex + 1)}
+                     onClick={(e) => {
+                       e.preventDefault();
+                       e.stopPropagation();
+                       console.log('Lower bead clicked:', rodIndex, 'target:', beadIndex + 1);
+                       toggleLowerBeads(rodIndex, beadIndex + 1);
+                     }}
                      style={{
                        left: '50%',
-                       transform: 'translateX(-50%) rotate(45deg)',
+                       transform: 'translateX(-50%)',
                        top,
                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                       zIndex: 15,
-                       border: 'none',
-                       borderRadius: '4px'
+                       zIndex: 50,
+                       pointerEvents: 'auto'
                      }}
                    >
-                     <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
+                     <div className="w-4 h-2 rounded-full bg-white opacity-30 pointer-events-none" />
                    </div>
                  );
               })}
@@ -295,7 +316,7 @@ const VirtualAbacus: FC = () => {
         </div>
 
         {/* White dots for place value guidance - rendered separately to appear above beam */}
-        <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8" style={{ zIndex: 30 }}>
+        <div className="absolute left-0 top-0 w-full h-full flex justify-evenly px-8 pointer-events-none" style={{ zIndex: 30 }}>
           {abacusState.map((_, rodIndex) => {
             const positionFromRight = rodCount - 1 - rodIndex;
             const shouldHaveDot = positionFromRight % 3 === 0;
@@ -303,19 +324,19 @@ const VirtualAbacus: FC = () => {
             return (
               <div
                 key={`dot-${rodIndex}`}
-                className="relative flex flex-col items-center"
+                className="relative flex flex-col items-center pointer-events-none"
                 style={{ height: FRAME_HEIGHT, width: BEAD_SIZE + 12 }}
               >
                 {shouldHaveDot && (
                   <div
-                    className="absolute left-1/2 -translate-x-1/2"
+                    className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                     style={{
                       top: BEAM_Y - 0, // Position on the beam line
                       width: 10,
                       height: 10,
                       background: 'white',
                       borderRadius: '50%',
-                      zIndex: 35,
+                      zIndex: 15, // Lower than beads (50) to ensure beads are clickable
                       boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)',
                       border: '1px solid rgba(255,255,255,0.9)',
                     }}
