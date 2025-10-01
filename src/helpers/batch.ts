@@ -64,7 +64,7 @@ export const getLevelOptions = () => {
 export const getClassOptions = () => {
   const options: LabelValuePair[] = [];
 
-  for (let i = 1; i <= 10; i += 1) {
+  for (let i = 1; i <= 12; i += 1) {
     options.push({
       label: i.toString(),
       value: i,

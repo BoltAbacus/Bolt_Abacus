@@ -69,12 +69,12 @@ export const calculateProgressStats = (progress: LevelProgress[]): ProgressStats
       // Class is completed if test is passed
       if (cls.Test > 0) return true;
       
-      // Or if it has significant topic completion (at least 4 topics with >50% completion)
+      // Or if it has significant topic completion (at least 2 topics with >50% completion)
       const completedTopics = cls.topics.filter(topic => 
         topic.Classwork > 50 || topic.Homework > 50
       ).length;
       
-      return completedTopics >= 4;
+      return completedTopics >= 2;
     }).length, 0
   );
 
@@ -336,7 +336,7 @@ export const calculateLevelStats = (progress: LevelProgress[]): LevelStats => {
           topic.Classwork > 50 || topic.Homework > 50
         ).length;
         
-        if (classItem.Test > 0 || completedTopics >= 4) {
+        if (classItem.Test > 0 || completedTopics >= 2) {
           classesCompleted++;
           // For now, assume all completed classes were this week
           // In a real implementation, you'd check timestamps
