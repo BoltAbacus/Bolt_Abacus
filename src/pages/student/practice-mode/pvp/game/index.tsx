@@ -66,6 +66,8 @@ const StudentPvPGamePage: FC = () => {
   const [gameResult, setGameResult] = useState<any>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [lastQuestionStartTime, setLastQuestionStartTime] = useState<number | null>(null);
+  const [resultHydrated, setResultHydrated] = useState<boolean>(false);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
   
   const { startProblem, endProblem, getProblemTimes } = useProblemTimer();
 
@@ -502,6 +504,7 @@ const StudentPvPGamePage: FC = () => {
       console.log('Countdown finished, starting game');
       setCountdown(null);
       setTimeLeft(gameData?.time_per_question || 30);
+      setGameStartTime(Date.now()); // Track when the game actually starts
       return;
     }
     const t = setTimeout(() => setCountdown((c) => (c ?? 0) - 1), 1000);
@@ -707,6 +710,32 @@ const StudentPvPGamePage: FC = () => {
     }
   }, [waitingForOthers, gameEnded, roomId, authToken, score, correctAnswers, totalTime, updateExperience]);
 
+  // Results hydration: ensure leaderboard is populated and times are non-zero without rendering hooks conditionally
+  useEffect(() => {
+    if (!gameEnded || !gameResult || !roomId || !authToken) return;
+    if (resultHydrated) return;
+    const playersArr: any[] = Array.isArray((gameResult as any).players) ? (gameResult as any).players : [];
+    const noPlayers = playersArr.length === 0;
+    const allZeroTimes = playersArr.length > 0 && playersArr.every((p: any) => !p?.total_time || p.total_time === 0);
+    if (noPlayers || allZeroTimes) {
+      const t = setTimeout(async () => {
+        try {
+          const refRes = await getPVPGameResult(roomId!, authToken!);
+          if (refRes.data?.success && refRes.data?.data) {
+            setGameResult(refRes.data.data);
+          }
+        } catch (e) {
+          console.log('Result hydration fetch failed', e);
+        } finally {
+          setResultHydrated(true);
+        }
+      }, 1200);
+      return () => clearTimeout(t);
+    } else {
+      setResultHydrated(true);
+    }
+  }, [authToken, roomId, gameEnded, gameResult, resultHydrated]);
+
   // (moved declarations to top to avoid redeclare)
 
   // Convert PvP questions to practice mode format when game data changes
@@ -807,6 +836,7 @@ const StudentPvPGamePage: FC = () => {
       if (userAnswer.trim()) {
         const answer = parseFloat(userAnswer.trim());
         isCorrect = Math.abs(answer - currentQuestion.correct_answer) < 0.01; // Allow small floating point differences
+        console.log('🎮 ANSWER CHECK: User answer=', answer, 'Correct answer=', currentQuestion.correct_answer, 'Is correct=', isCorrect);
       } else {
         // Empty answer - score 0 (for all modes)
         isCorrect = false;
@@ -829,6 +859,8 @@ const StudentPvPGamePage: FC = () => {
 
       // Move to next question or end game
       console.log(`🎮 HANDLE ANSWER SUBMIT: Current question: ${currentQuestionIndex + 1}, Total questions: ${gameData?.total_questions}`);
+      console.log(`🎮 QUESTION TRACKING: Score=${score + (isCorrect ? 10 : 0)}, Correct=${correctAnswers + (isCorrect ? 1 : 0)}, TotalTime=${totalTime + timeTaken}`);
+      
       if (currentQuestionIndex < (gameData?.total_questions || 1) - 1) {
         console.log('🎮 Moving to next question');
         setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -838,6 +870,7 @@ const StudentPvPGamePage: FC = () => {
       } else {
         // Game finished, submit results
         console.log('🎮 Last question - submitting game results');
+        console.log(`🎮 FINAL STATS: Score=${score + (isCorrect ? 10 : 0)}, Correct=${correctAnswers + (isCorrect ? 1 : 0)}, TotalTime=${totalTime + timeTaken}`);
         await submitGameResults();
       }
     } catch (err) {
@@ -856,8 +889,45 @@ const StudentPvPGamePage: FC = () => {
     
     try {
       const problemTimes = getProblemTimes();
-      console.log('🎮 PVP SUBMIT DEBUG: score=', score, 'correctAnswers=', correctAnswers, 'totalTime=', totalTime, 'problemTimes=', problemTimes);
-      const response = await submitPVPGameResult(roomId, score, correctAnswers, totalTime, authToken, problemTimes);
+      
+      // Calculate total game time from start to finish
+      let finalTotalTime = totalTime; // Default to sum of individual question times
+      if (gameStartTime) {
+        const gameEndTime = Date.now();
+        const totalGameTime = (gameEndTime - gameStartTime) / 1000; // Convert to seconds
+        finalTotalTime = totalGameTime;
+        console.log('🎮 PVP TIMING: GameStartTime=', gameStartTime, 'GameEndTime=', gameEndTime, 'TotalGameTime=', totalGameTime.toFixed(2) + 's');
+      }
+      
+      console.log('🎮 PVP SUBMIT DEBUG: score=', score, 'correctAnswers=', correctAnswers, 'totalTime=', totalTime, 'finalTotalTime=', finalTotalTime, 'problemTimes=', problemTimes);
+      
+      // Update the totalTime state with the calculated game time
+      setTotalTime(finalTotalTime);
+      
+      // Add retry logic for submission reliability
+      let response;
+      let lastError;
+      
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🎮 PVP SUBMIT ATTEMPT ${attempt + 1}/${maxRetries + 1}`);
+          response = await submitPVPGameResult(roomId, score, correctAnswers, finalTotalTime, authToken, problemTimes);
+          break; // Success, exit retry loop
+        } catch (error: any) {
+          lastError = error;
+          console.error(`🎮 PVP SUBMIT ATTEMPT ${attempt + 1} FAILED:`, error);
+          
+          if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+            console.log(`🎮 PVP RETRY: Waiting ${delay}ms before retry ${attempt + 2}`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+      
+      if (!response) {
+        throw lastError || new Error('All submission attempts failed');
+      }
       
       if (response.data.success) {
         const result = response.data.data;
@@ -1154,93 +1224,110 @@ const StudentPvPGamePage: FC = () => {
   }
 
   if (gameEnded && gameResult) {
-    // Motivational quotes
-    const winnerQuotes = [
-      "Success is not the key to happiness. Happiness is the key to success.",
-      "Victory is sweetest when you've known defeat.",
-      "Great job! Every win is a step forward.",
-      "Champions keep playing until they get it right.",
-      "You did it! Keep pushing your limits."
-    ];
-    const loserQuotes = [
-      "Failure is simply the opportunity to begin again, this time more intelligently.",
-      "Don't let a loss define you. Let it motivate you.",
-      "Every defeat is a lesson. Learn and come back stronger.",
-      "Losing is not the opposite of winning, it's part of winning.",
-      "Mistakes are proof that you are trying."
-    ];
-    const drawQuotes = [
-      "A draw is a sign of equal strength. Well played!",
-      "Sometimes, the journey is the reward.",
-      "Both sides showed great skill!",
-      "A tie means both gave their best."
-    ];
-    function getRandomQuote(type: 'winner' | 'loser' | 'draw') {
-      if (type === 'winner') return winnerQuotes[Math.floor(Math.random() * winnerQuotes.length)];
-      if (type === 'loser') return loserQuotes[Math.floor(Math.random() * loserQuotes.length)];
-      return drawQuotes[Math.floor(Math.random() * drawQuotes.length)];
-    }
-
     const isWinner = !!gameResult.is_winner;
     const isDraw = !!gameResult.is_draw;
-    const isLoser = !isWinner && !isDraw;
-    const quote = getRandomQuote(isWinner ? 'winner' : isDraw ? 'draw' : 'loser');
+
+    const secondsToText = (s: number) => {
+      const sec = s || 0;
+      if (sec <= 0) return '—';
+      if (sec < 60) return `${sec.toFixed(1)}s`;
+      const m = Math.floor(sec / 60);
+      const r = (sec % 60).toFixed(1);
+      return `${m}m ${r}s`;
+    };
+
+    const players: Array<{ user_id: number; name: string; score: number; correct_answers: number; total_time: number; is_winner: boolean; }>
+      = (gameResult.players || []).map((p: any) => {
+        // Validate and fix data inconsistencies
+        const validatedScore = Math.max(0, p.score ?? 0);
+        const validatedCorrect = Math.max(0, p.correct_answers ?? 0);
+        const validatedTime = Math.max(0, p.total_time ?? 0);
+        
+        console.log(`🎮 PLAYER DATA VALIDATION: ${p.name} - Score: ${p.score} -> ${validatedScore}, Correct: ${p.correct_answers} -> ${validatedCorrect}, Time: ${p.total_time} -> ${validatedTime}`);
+        
+        return {
+          user_id: p.user_id,
+          name: p.name,
+          score: validatedScore,
+          correct_answers: validatedCorrect,
+          total_time: validatedTime,
+          is_winner: !!p.is_winner,
+        };
+      });
+
+    const leaderboard = [...players].sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.total_time - b.total_time;
+    });
+
+    const xp = (() => (isDraw ? 20 : isWinner ? 50 : 10))();
+
+    // (hydration handled by top-level effect to avoid conditional hooks)
 
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isWinner ? 'bg-gradient-to-br from-green-100 via-green-300 to-green-100' : isLoser ? 'bg-gradient-to-br from-red-900 via-red-800 to-red-900' : 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'}`}>
-        <div className="w-full max-w-2xl px-4 py-8 space-y-8">
-          <div className="flex flex-col items-center justify-center">
-            <div className={`text-8xl mb-4 ${isWinner ? 'text-green-600' : isLoser ? 'text-red-400' : 'text-yellow-400'}`}>{gameResult.is_winner ? '🏆' : gameResult.is_draw ? '🤝' : '😔'}</div>
-            <h1 className={`text-5xl font-bold mb-2 ${isWinner ? 'text-green-700' : isLoser ? 'text-red-500' : 'text-yellow-500'}`}>{gameResult.is_winner ? 'Victory!' : gameResult.is_draw ? 'Draw!' : 'Defeat'}</h1>
-            <p className="text-xl mb-4 font-semibold text-gray-900 dark:text-white">
-              {gameResult.is_winner ? 'Congratulations! You won!' : gameResult.is_draw ? 'It\'s a tie!' : 'Better luck next time!'}
-            </p>
-            <p className={`text-lg italic font-medium mb-6 ${isWinner ? 'text-green-700' : isLoser ? 'text-red-300' : 'text-yellow-700'}`}>{quote}</p>
+      <div className="min-h-screen bg-black text-white">
+        <div className="px-4 pt-6 tablet:p-10 desktop:px-12 max-w-5xl mx-auto space-y-6">
+          <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 text-center">
+            <div className="text-5xl mb-2">{isWinner ? '🏆' : isDraw ? '🤝' : '😔'}</div>
+            <h1 className="text-3xl font-extrabold mb-1">{isWinner ? 'Victory' : isDraw ? 'Draw' : 'Defeat'}</h1>
+            <p className="text-white/70">{isWinner ? 'Congratulations! You won the match.' : isDraw ? 'Neck and neck! Well played.' : 'Better luck next time.'}</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/80 shadow-md`}>
-              <div className="text-gray-700 font-bold text-lg mb-2">Your Score</div>
-              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>{score}</div>
+
+          <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
+            <div className="bg-[#161618] border border-white/10 rounded-2xl p-5 text-center">
+              <div className="text-white/60 mb-1">Your Score</div>
+              <div className="text-4xl font-black text-gold">{score}</div>
             </div>
-            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/80 shadow-md`}>
-              <div className="text-gray-700 font-bold text-lg mb-2">Correct Answers</div>
-              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>{correctAnswers}/{gameData?.total_questions}</div>
+            <div className="bg-[#161618] border border-white/10 rounded-2xl p-5 text-center">
+              <div className="text-white/60 mb-1">Correct Answers</div>
+              <div className="text-4xl font-black text-blue-300">{correctAnswers}/{gameData?.total_questions || 10}</div>
             </div>
-            <div className={`p-6 rounded-2xl border-2 ${isWinner ? 'border-green-400' : isLoser ? 'border-red-400' : 'border-yellow-400'} bg-black/20 shadow-md`}>
-              <div className="text-gray-700 font-bold text-lg mb-2">Experience Gained</div>
-              <div className={`text-4xl font-black ${isWinner ? 'text-green-700' : isLoser ? 'text-red-700' : 'text-yellow-700'}`}>+{(() => {
-                if (gameResult.is_draw) {
-                  return 20;
-                } else if (gameResult.is_winner) {
-                  return 50;
-                } else {
-                  return 10;
-                }
-              })()} XP</div>
+            <div className="bg-[#161618] border border-white/10 rounded-2xl p-5 text-center">
+              <div className="text-white/60 mb-1">Experience Gained</div>
+              <div className="text-4xl font-black text-green-300">+{xp} XP</div>
             </div>
           </div>
 
+          <div className="bg-[#121214] border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gold">Leaderboard</h2>
           {gameResult.winner_name && (
-            <div className={`p-4 rounded-2xl border-2 mb-8 ${isWinner ? 'border-green-400 bg-green-50' : isLoser ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-yellow-50'} text-center`}>
-              <div className="text-xl font-bold">
-                Winner: <span className="font-bold text-2xl">{gameResult.winner_name}</span>
+                <div className="text-white/70">Winner: <span className="text-white font-semibold">{gameResult.winner_name}</span></div>
+              )}
               </div>
+            <div className="overflow-x-auto">
+              {leaderboard.length === 0 ? (
+                <div className="text-center text-white/60 py-6">Fetching leaderboard…</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-white/60 border-b border-white/10">
+                      <th className="py-2 pr-3">#</th>
+                      <th className="py-2 pr-3">Player</th>
+                      <th className="py-2 pr-3">Score</th>
+                      <th className="py-2 pr-3">Correct</th>
+                      <th className="py-2">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((p, idx) => (
+                      <tr key={p.user_id || idx} className="border-b border-white/5 last:border-0">
+                        <td className="py-3 pr-3 text-white/80">{idx + 1}</td>
+                        <td className="py-3 pr-3"><span className={`font-semibold ${p.is_winner ? 'text-green-300' : 'text-white'}`}>{p.name}</span></td>
+                        <td className="py-3 pr-3 text-white">{p.score}</td>
+                        <td className="py-3 pr-3 text-white/90">{p.correct_answers}/{gameData?.total_questions || 10}</td>
+                        <td className="py-3 text-white/80">{secondsToText(p.total_time)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-          )}
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/student/pvp')}
-              className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300 shadow-lg border ${isWinner ? 'bg-green-500 text-white border-green-600 hover:bg-green-600' : isLoser ? 'bg-red-500 text-white border-red-600 hover:bg-red-600' : 'bg-yellow-400 text-black border-yellow-500 hover:bg-yellow-500'}`}
-            >
-              Back to PvP
-            </button>
-            <button
-              onClick={() => navigate('/student/pvp')}
-              className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300 shadow-lg border ${isWinner ? 'bg-green-100 text-green-700 border-green-400 hover:bg-green-200' : isLoser ? 'bg-red-100 text-red-700 border-red-400 hover:bg-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-400 hover:bg-yellow-200'}`}
-            >
-              Play Again
-            </button>
+          <div className="flex flex-col tablet:flex-row gap-3 justify-center">
+            <button onClick={() => navigate('/student/pvp')} className="px-6 py-3 rounded-xl font-bold bg-gold text-black hover:bg-[#ffcf3a] transition-colors">Back to PvP</button>
+            <button onClick={() => navigate('/student/pvp')} className="px-6 py-3 rounded-xl font-bold bg-[#212124] text-white hover:bg-[#2a2a2d] border border-white/10 transition-colors">Play Again</button>
           </div>
         </div>
       </div>
@@ -1251,13 +1338,13 @@ const StudentPvPGamePage: FC = () => {
   if (!gameData || !gameData.questions || gameData.questions.length === 0 || !currentQuestion) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 text-center">
-          <div className="text-6xl mb-4">🎮</div>
-          <div className="text-2xl font-bold text-gray-800 mb-4">Loading game...</div>
-          <div className="text-gray-600 mb-4">
+        <div className="bg-black rounded-3xl shadow-xl p-8 border-2 border-gray-100 text-center">
+          <div className="text-xl mb-4 text-white">🎮</div>
+          <div className="text-xl font-bold text-white">Loading game...Preparing questions...</div>
+          {/* <div className="text-gray-600 mb-4">
             {!gameData ? 'Fetching game data...' : 'Preparing questions...'}
-          </div>
-          <div className="text-sm text-gray-500">
+          </div> */}
+          {/* <div className="text-sm text-gray-500">
             Room ID: {roomId}<br/>
             User ID: {user?.id}<br/>
             Auth Token: {authToken ? 'Present' : 'Missing'}<br/>
@@ -1267,11 +1354,11 @@ const StudentPvPGamePage: FC = () => {
             Countdown: {countdown}<br/>
             Game Ended: {gameEnded ? 'Yes' : 'No'}<br/>
             Waiting: {waitingForOthers ? 'Yes' : 'No'}
-          </div>
+          </div> */}
           <div className="mt-4">
             <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full mx-auto"></div>
           </div>
-          <div className="flex gap-2 justify-center">
+          {/* <div className="flex gap-2 justify-center">
             <button
               onClick={() => {
                 console.log('Manual fetch triggered');
@@ -1305,7 +1392,7 @@ const StudentPvPGamePage: FC = () => {
                 </button>
               </>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     );
