@@ -181,11 +181,31 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       const practiceAccuracyResponse = await getPracticeAccuracyTrendRequest(authToken);
       console.log('📊 Practice accuracy trend response:', practiceAccuracyResponse.data);
       if (practiceAccuracyResponse.data) {
+        const apiData = practiceAccuracyResponse.data;
+        const fallbackAccuracy = practiceStatsCalculated?.accuracy || 0;
+        const hasApiAccuracy = (apiData.currentAccuracy ?? 0) > 0 || (Array.isArray(apiData.dailyAccuracy) && apiData.dailyAccuracy.some((v: number) => v > 0));
+
+        const mergedDaily = Array.isArray(apiData.dailyAccuracy) && apiData.dailyAccuracy.length === 7
+          ? [...apiData.dailyAccuracy]
+          : [0, 0, 0, 0, 0, 0, 0];
+
+        // If API returned zeros for today, but we have a computed accuracy, set today's value
+        if (!hasApiAccuracy && fallbackAccuracy > 0) {
+          console.log('🟡 Using fallback computed practice accuracy for today:', fallbackAccuracy);
+          mergedDaily[6] = fallbackAccuracy;
+        }
+
+        const currentAccuracy = hasApiAccuracy
+          ? (apiData.currentAccuracy || mergedDaily[6] || 0)
+          : fallbackAccuracy;
+
+        const weeklyProgress = (apiData.weeklyProgress ?? 0) || currentAccuracy || 0;
+
         setPracticeAccuracyTrend({
-          currentAccuracy: practiceAccuracyResponse.data.currentAccuracy || 0,
-          weeklyProgress: practiceAccuracyResponse.data.weeklyProgress || 0,
-          dailyAccuracy: practiceAccuracyResponse.data.dailyAccuracy || [0, 0, 0, 0, 0, 0, 0],
-          labels: practiceAccuracyResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
+          currentAccuracy,
+          weeklyProgress,
+          dailyAccuracy: mergedDaily,
+          labels: apiData.labels || ['6d ago', '', '', '', '', '', 'Today']
         });
       }
 
@@ -203,9 +223,8 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch PvP accuracy trend
-      console.log('📊 Fetching PvP accuracy trend...');
+
       const pvpAccuracyResponse = await getPvpAccuracyTrendRequest(authToken);
-      console.log('📊 PvP accuracy trend response:', pvpAccuracyResponse.data);
       if (pvpAccuracyResponse.data) {
         setPvpAccuracyTrend({
           currentAccuracy: pvpAccuracyResponse.data.currentAccuracy || 0,
@@ -216,10 +235,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch PvP speed trend
-      console.log('📊 Fetching PvP speed trend...');
       const pvpSpeedResponse = await getPvpSpeedTrendRequest(authToken);
-      console.log('📊 PvP speed trend response:', pvpSpeedResponse.data);
-      console.log('📊 PvP speed trend response status:', pvpSpeedResponse.status);
       if (pvpSpeedResponse.data) {
         const trendData = {
           currentSpeed: pvpSpeedResponse.data.currentSpeed || 0,
@@ -227,18 +243,14 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
           dailySpeed: pvpSpeedResponse.data.dailySpeed || [0, 0, 0, 0, 0, 0, 0],
           labels: pvpSpeedResponse.data.labels || ['6d ago', '', '', '', '', '', 'Today']
         };
-        console.log('📊 Setting PvP speed trend state:', trendData);
-        console.log('📊 PvP speed trend dailySpeed array:', trendData.dailySpeed);
-        console.log('📊 PvP speed trend currentSpeed:', trendData.currentSpeed);
         setPvpSpeedTrend(trendData);
       } else {
         console.warn('📊 No PvP speed trend data received');
       }
 
       // Fetch PvP questions completed trend
-      console.log('📊 Fetching PvP questions completed trend...');
+      
       const pvpQuestionsResponse = await getPvpQuestionsCompletedTrendRequest(authToken);
-      console.log('📊 PvP questions completed trend response:', pvpQuestionsResponse.data);
       if (pvpQuestionsResponse.data) {
         setPvpQuestionsCompletedTrend({
           currentQuestions: pvpQuestionsResponse.data.currentQuestions || 0,
@@ -249,9 +261,7 @@ const StudentProgressSection: FC<StudentProgressSectionProps> = ({
       }
 
       // Fetch PvP efficiency trend
-      console.log('📊 Fetching PvP efficiency trend...');
       const pvpEfficiencyResponse = await getPvpEfficiencyTrendRequest(authToken);
-      console.log('📊 PvP efficiency trend response:', pvpEfficiencyResponse.data);
       if (pvpEfficiencyResponse.data) {
         setPvpEfficiencyTrend({
           currentEfficiency: pvpEfficiencyResponse.data.currentEfficiency || 0,

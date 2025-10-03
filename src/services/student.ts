@@ -170,6 +170,23 @@ export const practiceSubmitRequest = async (
   token: string,
   problemTimes?: any[]
 ) => {
+  try {
+    console.log('🛰️ practiceSubmitRequest payload:', {
+      practiceType,
+      operation,
+      numberOfDigits,
+      numberOfQuestions,
+      numberOfRows,
+      zigZag,
+      includeSubtraction,
+      persistNumberOfDigits,
+      includeDecimals,
+      score,
+      totalTime,
+      averageTime,
+      problemTimesCount: (problemTimes || []).length,
+    });
+  } catch (_) {}
   return axios.post(
     STUDENT_PRACTICE_SUBMIT_ENDPOINT,
     {

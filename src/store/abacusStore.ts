@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export interface AbacusRod {
   rodIndex: number;
   upperBead: { isActive: boolean };
-  lowerBeads: { count: number };
+  lowerBeads: boolean[];
 }
 
 interface AbacusState {
@@ -24,7 +24,7 @@ const createInitialRods = (): AbacusRod[] => {
   return Array.from({ length: ROD_COUNT }, (_, rodIndex) => ({
     rodIndex,
     upperBead: { isActive: false },
-    lowerBeads: { count: 0 },
+    lowerBeads: [false, false, false, false],
   }));
 };
 

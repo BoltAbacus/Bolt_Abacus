@@ -14,7 +14,6 @@ export interface StudentVirtualAbacusPageProps {}
 // Virtual Abacus Component
 const VirtualAbacus: FC = () => {
   const [_, setValue] = useState(0);
-  const [displayValue, setDisplayValue] = useState('0');
   const [rodCount, setRodCount] = useState(13);
   
   // Soroban layout constants
@@ -29,7 +28,7 @@ const VirtualAbacus: FC = () => {
   const createRods = (count: number) => Array.from({ length: count }, (_, rodIndex) => ({
     rodIndex,
     upperBead: { isActive: false }, // Heaven bead (value 5)
-    lowerBeads: { count: 0 } // Earth beads (value 1 each, move as group)
+    lowerBeads: [false, false, false, false] // Earth beads (value 1 each, individual movement)
   }));
 
   const [abacusState, setAbacusState] = useState(() => createRods(ROD_COUNT));
@@ -46,7 +45,9 @@ const VirtualAbacus: FC = () => {
       }
       
       // Add lower beads values (1 each) that are active (touching beam)
-      rodValue += rod.lowerBeads.count;
+      rod.lowerBeads.forEach((isActive: boolean) => {
+        if (isActive) rodValue += 1;
+      });
       
       // Multiply by position (ones, tens, hundreds, etc.)
       total += rodValue * Math.pow(10, rodCount - 1 - rodIndex);
@@ -65,26 +66,24 @@ const VirtualAbacus: FC = () => {
       );
       const newValue = calculateValue(newState);
       setValue(newValue);
-      setDisplayValue(newValue.toLocaleString());
       return newState;
     });
   };
 
-  // Toggle lower beads (earth beads) - they move as a group
-  const toggleLowerBeads = (rodIndex: number, targetCount: number) => {
-    console.log('Lower bead clicked:', rodIndex, 'target:', targetCount);
+  // Toggle lower beads (earth beads) - individual movement
+  const toggleLowerBead = (rodIndex: number, beadIndex: number) => {
+    console.log('Lower bead clicked:', rodIndex, 'bead:', beadIndex);
     setAbacusState(prev => {
       const newState = prev.map((rod, index) => {
         if (index !== rodIndex) return rod;
         
-        // If clicking the same count, reset to 0
-        const newCount = rod.lowerBeads.count === targetCount ? 0 : targetCount;
-        return { ...rod, lowerBeads: { count: newCount } };
+        const newLowerBeads = [...rod.lowerBeads];
+        newLowerBeads[beadIndex] = !newLowerBeads[beadIndex];
+        return { ...rod, lowerBeads: newLowerBeads };
       });
       
       const newValue = calculateValue(newState);
       setValue(newValue);
-      setDisplayValue(newValue.toLocaleString());
       return newState;
     });
   };
@@ -92,7 +91,6 @@ const VirtualAbacus: FC = () => {
   const resetAbacus = () => {
     setAbacusState(createRods(rodCount));
     setValue(0);
-    setDisplayValue('0');
   };
 
 
@@ -257,22 +255,18 @@ const VirtualAbacus: FC = () => {
                  <div className="w-1/3 h-1/3 bg-white opacity-20" style={{ transform: 'rotate(-45deg)', borderRadius: '9999px' }} />
                </div>
 
-              {/* Lower beads (Earth beads) - move as a group */}
+              {/* Lower beads (Earth beads) - individual movement */}
               {Array.from({ length: 4 }, (_, beadIndex) => {
-                // In a real soroban, lower beads stack from bottom to beam when active
-                // When inactive, they rest at the bottom
-                const isActive = beadIndex < rod.lowerBeads.count;
+                // Each bead moves individually
+                const isActive = rod.lowerBeads[beadIndex];
                 let top;
                 
                 if (isActive) {
-                  // Active beads stack from the beam downward
-                  // First active bead is closest to beam, others stack below
-                  const activePosition = rod.lowerBeads.count - beadIndex - 1;
-                  top = BEAM_Y + 24 + (activePosition * BEAD_SPACING); // Increased from 12 to 24 to keep beads below beam
+                  // Active beads move towards the beam
+                  top = BEAM_Y + 24 + (beadIndex * BEAD_SPACING);
                 } else {
-                  // Inactive beads rest at the bottom, stacked from bottom up
-                  const inactivePosition = 4 - beadIndex - 1;
-                  top = FRAME_HEIGHT - BEAD_SIZE - 20 - (inactivePosition * BEAD_SPACING); // Positioned inside frame
+                  // Inactive beads rest at the bottom
+                  top = FRAME_HEIGHT - BEAD_SIZE - 20 - ((3 - beadIndex) * BEAD_SPACING);
                 }
                 
                  return (
@@ -286,8 +280,8 @@ const VirtualAbacus: FC = () => {
                      onClick={(e) => {
                        e.preventDefault();
                        e.stopPropagation();
-                       console.log('Lower bead clicked:', rodIndex, 'target:', beadIndex + 1);
-                       toggleLowerBeads(rodIndex, beadIndex + 1);
+                       console.log('Lower bead clicked:', rodIndex, 'bead:', beadIndex);
+                       toggleLowerBead(rodIndex, beadIndex);
                      }}
                      style={{
                        left: '50%',

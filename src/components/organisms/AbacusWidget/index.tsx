@@ -99,12 +99,13 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
     );
   };
 
-  const toggleLowerBeads = (rodIndex: number, targetCount: number) => {
+  const toggleLowerBeads = (rodIndex: number, beadIndex: number) => {
     setAbacusData(
       abacusData.map((rod, i) => {
         if (i !== rodIndex) return rod;
-        const newCount = rod.lowerBeads.count === targetCount ? 0 : targetCount;
-        return { ...rod, lowerBeads: { count: newCount } };
+        const newLowerBeads = [...rod.lowerBeads];
+        newLowerBeads[beadIndex] = !newLowerBeads[beadIndex];
+        return { ...rod, lowerBeads: newLowerBeads };
       })
     );
   };
@@ -215,14 +216,12 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
                 {/* Lower beads */}
                 {Array.from({ length: 4 }, (_, beadIndex) => {
-                  const isActive = beadIndex < rod.lowerBeads.count;
+                  const isActive = rod.lowerBeads[beadIndex];
                   let top;
                   if (isActive) {
-                    const activePosition = rod.lowerBeads.count - beadIndex - 1;
-                    top = BEAM_Y + 10 + activePosition * BEAD_SPACING;
+                    top = BEAM_Y + 10 + beadIndex * BEAD_SPACING;
                   } else {
-                    const inactivePosition = 4 - beadIndex - 1;
-                    top = FRAME_HEIGHT - BEAD_SIZE - 12 - inactivePosition * BEAD_SPACING;
+                    top = FRAME_HEIGHT - BEAD_SIZE - 12 - ((3 - beadIndex) * BEAD_SPACING);
                   }
                   return (
                     <div
@@ -232,7 +231,7 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
                           ? 'bg-[#FFD700]'
                           : 'bg-[#48484a] hover:bg-[#636366]'
                       }`}
-                      onClick={() => toggleLowerBeads(rodIndex, beadIndex + 1)}
+                      onClick={() => toggleLowerBeads(rodIndex, beadIndex)}
                       style={{
                         left: '50%',
                         transform: 'translateX(-50%) rotate(45deg)',
@@ -250,6 +249,38 @@ const AbacusWidget: FC<AbacusWidgetProps> = ({ onClose }) => {
 
               </div>
             ))}
+          </div>
+
+          {/* White dots for place value guidance */}
+          <div className="absolute left-0 top-0 w-full h-full flex justify-between px-10 pointer-events-none" style={{ zIndex: 30 }}>
+            {abacusData.map((_, rodIndex) => {
+              const positionFromRight = abacusData.length - 1 - rodIndex;
+              const shouldHaveDot = positionFromRight % 3 === 0;
+              
+              return (
+                <div
+                  key={`dot-${rodIndex}`}
+                  className="relative flex flex-col items-center pointer-events-none"
+                  style={{ height: FRAME_HEIGHT, width: BEAD_SIZE + 8 }}
+                >
+                  {shouldHaveDot && (
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                      style={{
+                        top: BEAM_Y,
+                        width: 6,
+                        height: 6,
+                        background: 'white',
+                        borderRadius: '50%',
+                        zIndex: 12,
+                        boxShadow: '0 0 4px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.4)',
+                        border: '1px solid rgba(255,255,255,0.9)',
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
