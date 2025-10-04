@@ -5,7 +5,6 @@ import SeoComponent from '@components/atoms/SeoComponent';
 import ErrorBox from '@components/organisms/ErrorBox';
 import LoadingBox from '@components/organisms/LoadingBox';
 import StudentProgressSection from '@components/sections/student/ProgressSection';
-// import DebugConsole from '@components/atoms/DebugConsole';
 
 import { useAuthStore } from '@store/authStore';
 import { getProgressRequest } from '@services/student';
@@ -70,7 +69,6 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
 
           // Fetch XP from simple XP API (same as dashboard uses)
           try {
-            console.log('🚀 [Progress Page] Fetching XP from getUserXPSimple API...');
             const xpRes = await axios.post('/getUserXPSimple/', {}, {
               headers: { 'AUTH-TOKEN': authToken },
             });
@@ -127,7 +125,6 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
       setFallBackAction(MESSAGES.GO_LOGIN);
     }
     setLoading(false);
-    console.log('🏁 [Progress Page] Data fetch completed');
   }, [authToken, isAuthenticated]);
 
   // Initial data fetch
@@ -135,11 +132,13 @@ const StudentProgressPage: FC<StudentProgressPageProps> = () => {
     getStudentProgressData();
   }, [getStudentProgressData]);
 
-  // Set up periodic refresh every 30 seconds to keep data updated
+  // refresh data every 60s instead of 30s
   useEffect(() => {
     const intervalId = setInterval(() => {
-      getStudentProgressData();
-    }, 30000); // Refresh every 30 seconds
+      if (document.visibilityState === 'visible') {
+        getStudentProgressData();
+      }
+    }, 60000); // refresh every 60s
 
     return () => clearInterval(intervalId);
   }, [getStudentProgressData]);

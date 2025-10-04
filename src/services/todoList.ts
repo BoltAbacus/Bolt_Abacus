@@ -57,6 +57,11 @@ export const addPersonalGoal = async (
   description?: string,
   schedulingOptions?: any
 ): Promise<unknown> => {
+  console.log('🌐 [API] Starting addPersonalGoal request...');
+  console.log('🌐 [API] Title:', title);
+  console.log('🌐 [API] Description:', description);
+  console.log('🌐 [API] Scheduling options:', schedulingOptions);
+  
   const requestData: any = {
     title,
     description: description || '',
@@ -67,12 +72,19 @@ export const addPersonalGoal = async (
     if (schedulingOptions.priority) requestData.priority = schedulingOptions.priority;
     if (schedulingOptions.goalType) requestData.goal_type = schedulingOptions.goalType;
     if (schedulingOptions.dueDate) requestData.due_date = schedulingOptions.dueDate;
-    if (schedulingOptions.scheduledDate) requestData.scheduled_date = schedulingOptions.scheduledDate;
-    if (schedulingOptions.scheduledTime) requestData.scheduled_time = schedulingOptions.scheduledTime;
+    // Handle both snake_case and camelCase for flexibility
+    if (schedulingOptions.scheduled_date || schedulingOptions.scheduledDate) {
+      requestData.scheduled_date = schedulingOptions.scheduled_date || schedulingOptions.scheduledDate;
+    }
+    if (schedulingOptions.scheduled_time || schedulingOptions.scheduledTime) {
+      requestData.scheduled_time = schedulingOptions.scheduled_time || schedulingOptions.scheduledTime;
+    }
     if (schedulingOptions.frequency) requestData.frequency = schedulingOptions.frequency;
     if (schedulingOptions.reminderEnabled !== undefined) requestData.reminder_enabled = schedulingOptions.reminderEnabled;
     if (schedulingOptions.reminderTime) requestData.reminder_time = schedulingOptions.reminderTime;
   }
+
+  console.log('🌐 [API] Final request data:', requestData);
 
   const response = await axios.post(
     ADD_PERSONAL_GOAL_ENDPOINT,
@@ -81,6 +93,8 @@ export const addPersonalGoal = async (
       headers: { 'AUTH-TOKEN': token },
     }
   );
+  
+  console.log('🌐 [API] Response received:', response.data);
   return response.data;
 };
 
@@ -97,5 +111,26 @@ export const removePersonalGoal = async (
       headers: { 'AUTH-TOKEN': token },
     }
   );
+  return response.data;
+};
+
+export const togglePersonalGoal = async (
+  token: string,
+  goalId: string
+): Promise<unknown> => {
+  console.log('🌐 [API] Starting togglePersonalGoal request...');
+  console.log('🌐 [API] Goal ID:', goalId);
+  
+  const response = await axios.post(
+    '/togglePersonalGoal/',
+    {
+      goal_id: goalId,
+    },
+    {
+      headers: { 'AUTH-TOKEN': token },
+    }
+  );
+  
+  console.log('🌐 [API] Toggle response received:', response.data);
   return response.data;
 };

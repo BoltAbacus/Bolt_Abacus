@@ -275,12 +275,12 @@ const StudentPvPGamePage: FC = () => {
               } catch (err) {
                 console.error('Error polling room status:', err);
               }
-            }, 1000);
+            }, 5000); // check every 5 seconds
             
             // Clear interval after 30 seconds to avoid infinite polling
             setTimeout(() => {
               clearInterval(pollInterval);
-            }, 30000);
+            }, 15000); // 15 second timeout instead of 30
           }
         }
       }
@@ -695,7 +695,7 @@ const StudentPvPGamePage: FC = () => {
         } catch (err) {
           console.error('🎮 AGGRESSIVE POLLING ERROR:', err);
         }
-      }, 1000); // Check every 1 second
+      }, 5000); // check every 5 seconds instead of 1 second
       
       // Cleanup after 30 seconds
       const timeout = setTimeout(() => {
@@ -995,7 +995,7 @@ const StudentPvPGamePage: FC = () => {
             setWaitingForOthers(true);
             setLoading(false);
             setSubmissionError(null);
-          }, 1000);
+          }, 2000); // reduced from 1s to 2s
           
           return; // Exit early, don't proceed to the original waiting logic
         }
@@ -1059,7 +1059,7 @@ const StudentPvPGamePage: FC = () => {
           } catch (err) {
             console.error('Error polling results:', err);
           }
-          }, 500); // Faster polling for better responsiveness
+          }, 3000); // check every 3 seconds instead of 500ms
           
           // Set timeout to prevent infinite polling
           setTimeout(() => {

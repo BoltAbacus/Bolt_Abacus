@@ -81,15 +81,22 @@ customAxios.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Retry on timeouts / network errors up to 3 times with exponential backoff
+    //  less retries.only retry network error..
     const config = error.config || {};
     config.__retryCount = config.__retryCount || 0;
-    const shouldRetry = (code === 'ECONNABORTED' || code === 'ERR_NETWORK' || typeof status === 'undefined') && config.__retryCount < 3;
+    
+    if (status >= 500) {
+      console.warn(`[Axios] Not retrying server error ${status} for`, method?.toUpperCase(), url);
+      return Promise.reject(error);
+    }
+    
+    // retry network errors..max retries from 3 to 1
+    const shouldRetry = (code === 'ECONNABORTED' || code === 'ERR_NETWORK' || typeof status === 'undefined') && config.__retryCount < 1;
 
     if (shouldRetry) {
       config.__retryCount += 1;
-      const delayMs = Math.min(15000, 1000 * Math.pow(2, config.__retryCount));
-      console.warn(`⏳ [Axios] Retry ${config.__retryCount}/3 in ${delayMs}ms →`, method?.toUpperCase(), url);
+      const delayMs = 2000; // fixed 2s delay
+      console.warn(`⏳ [Axios] Retry ${config.__retryCount}/1 in ${delayMs}ms →`, method?.toUpperCase(), url);
       await new Promise((r) => setTimeout(r, delayMs));
       return customAxios(config);
     }

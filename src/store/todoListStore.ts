@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   getUserTodoList,
-  addPersonalGoal,
-  removePersonalGoal,
+  addPersonalGoal as addPersonalGoalAPI,
+  removePersonalGoal as removePersonalGoalAPI,
+  togglePersonalGoal as togglePersonalGoalAPI,
   TodoListData,
   TodoItem,
 } from '@services/todoList';
@@ -46,7 +47,14 @@ export const useTodoListStore = create<TodoListState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await getUserTodoList(authToken);
+          // console.log('🔄 [TodoStore] fetchTodoList response:', response);
+          // console.log('🔄 [TodoStore] Response success:', response.success);
+          // console.log('🔄 [TodoStore] Response data:', response.data);
+          // console.log('🔄 [TodoStore] Todos array:', response.data?.todos);
+          // console.log('🔄 [TodoStore] Todos count:', response.data?.todos?.length);
+          
           if (response.success) {
+            // console.log('🔄 [TodoStore] Todos received:', response.data.todos);
             set({
               todos: response.data.todos,
               total_todos: response.data.total_todos,
@@ -56,23 +64,32 @@ export const useTodoListStore = create<TodoListState>()(
               error: null,
             });
           } else {
+            console.error('❌ [TodoStore] fetchTodoList failed:', response);
             set({
               isLoading: false,
               error: 'Failed to fetch todo list',
             });
           }
-        } catch (error) {
-          // If we already have some todos in memory, don't disrupt UX with an error banner
+        } catch (error: any) {
+          // stop infinite retry loops on server errors
           const { todos: existing } = get();
+          const isServerError = error?.response?.status >= 500;
+          
           set({
             isLoading: false,
-            error:
+            error: isServerError ? null : ( // silent fail on server errors
               existing && existing.length > 0
                 ? null
                 : error instanceof Error
                   ? error.message
-                  : 'Failed to fetch todo list',
+                  : 'Failed to fetch todo list'
+            ),
           });
+          
+          // log server errors but don't retry automatically
+          if (isServerError) {
+            console.warn('todo list api error, using cached data:', error.response?.status);
+          }
         }
       },
 
@@ -87,65 +104,50 @@ export const useTodoListStore = create<TodoListState>()(
       },
 
       addPersonalGoal: async (title: string, description?: string, schedulingOptions?: any) => {
+        console.log('🎯 [TodoStore] Starting addPersonalGoal...');
+        console.log('🎯 [TodoStore] Title:', title);
+        console.log('🎯 [TodoStore] Description:', description);
+        console.log('🎯 [TodoStore] Scheduling options:', schedulingOptions);
+        
         const { authToken } = useAuthStore.getState();
         if (!authToken) {
+          console.error('❌ [TodoStore] No authentication token');
           set({ error: 'No authentication token' });
           return;
         }
 
-        // Optimistic insert
-        const tempId = `temp-${Date.now()}`;
-        const previousTodos = get().todos;
-        set({
-          todos: [
-            {
-              id: tempId,
-              title,
-              description: description || '',
-              completed: false,
-              priority: schedulingOptions?.priority || 'medium',
-              type: 'personal' as const,
-              scheduled_date: schedulingOptions?.scheduledDate,
-              scheduled_time: schedulingOptions?.scheduledTime,
-              due_date: schedulingOptions?.dueDate,
-              frequency: schedulingOptions?.frequency || 'once',
-              reminder_enabled: schedulingOptions?.reminderEnabled || false,
-              reminder_time: schedulingOptions?.reminderTime,
-            },
-            ...previousTodos,
-          ],
-          total_todos: get().total_todos + 1,
-          pending_todos: get().pending_todos + 1,
-          isLoading: true,
-          error: null,
-        });
+        console.log('🎯 [TodoStore] Auth token available, proceeding...');
+
+        // No optimistic insert - wait for database response
+        console.log('🎯 [TodoStore] Calling API to add goal to database...');
+        set({ isLoading: true, error: null });
+        
         try {
-          const response = await addPersonalGoal(authToken, title, description, schedulingOptions);
-          if (response.success) {
-            // Refresh the todo list after adding
-            await get().fetchTodoList();
+          const response = await addPersonalGoalAPI(authToken, title, description, schedulingOptions) as any;
+          console.log('✅ [TodoStore] API response:', response);
+          
+          if (response?.success) {
+            console.log('✅ [TodoStore] Goal added successfully to database');
+            set({ isLoading: false, error: null });
+            return response; // Return the response for component handling
           } else {
-            // Revert optimistic insert
+            console.error('❌ [TodoStore] API returned error:', response);
             set({
-              todos: previousTodos,
-              total_todos: get().total_todos - 1,
-              pending_todos: Math.max(0, get().pending_todos - 1),
               isLoading: false,
-              error: 'Failed to add personal goal',
+              error: response?.message || 'Failed to add personal goal',
             });
+            throw new Error(response?.message || 'Failed to add personal goal');
           }
         } catch (error) {
-          // Revert optimistic insert
+          console.error('❌ [TodoStore] API call failed:', error);
           set({
-            todos: previousTodos,
-            total_todos: get().total_todos - 1,
-            pending_todos: Math.max(0, get().pending_todos - 1),
             isLoading: false,
             error:
               error instanceof Error
                 ? error.message
                 : 'Failed to add personal goal',
           });
+          throw error; // Re-throw the error for component handling
         }
       },
 
@@ -155,6 +157,7 @@ export const useTodoListStore = create<TodoListState>()(
           set({ error: 'No authentication token' });
           return;
         }
+        
         // If this is a temp goal created via optimistic add, remove locally only
         if (goalId.startsWith('temp-')) {
           const filtered = get().todos.filter((t) => t.id !== goalId);
@@ -182,30 +185,35 @@ export const useTodoListStore = create<TodoListState>()(
           isLoading: true,
           error: null,
         });
+        
         try {
           // Backend expects numeric ID; coerce when possible
           const backendId = /^(\d+)$/.test(goalId)
             ? goalId
             : String(goalId).replace(/[^0-9]/g, '');
-          const response = await removePersonalGoal(
+          const response = await removePersonalGoalAPI(
             authToken,
             backendId || goalId
-          );
-          if (response.success) {
+          ) as any;
+          
+          if (response?.success) {
+            console.log('✅ [TodoStore] Goal removed successfully, refreshing list...');
             // Try to refresh, but don't rollback if refresh fails
             try {
               await get().fetchTodoList();
             } catch (e) {
+              console.warn('⚠️ [TodoStore] Refresh failed after remove, but keeping optimistic state');
               set({ isLoading: false, error: null });
             }
           } else {
+            console.error('❌ [TodoStore] Remove API returned error:', response);
             set({
               todos: previousTodos,
               total_todos: previousTodos.length,
               completed_todos: previousTodos.filter((t) => t.completed).length,
               pending_todos: previousTodos.filter((t) => !t.completed).length,
               isLoading: false,
-              error: 'Failed to remove personal goal',
+              error: response?.message || 'Failed to remove personal goal',
             });
           }
         } catch (error) {
@@ -223,16 +231,34 @@ export const useTodoListStore = create<TodoListState>()(
         }
       },
 
-      toggleComplete: (goalId: string) => {
-        const updated = get().todos.map((t) =>
-          t.id === goalId ? { ...t, completed: !t.completed } : t
-        );
-        const completed = updated.filter((t) => t.completed).length;
-        set({
-          todos: updated,
-          completed_todos: completed,
-          pending_todos: Math.max(0, updated.length - completed),
-        });
+      toggleComplete: async (goalId: string) => {
+        const { authToken } = useAuthStore.getState();
+        if (!authToken) {
+          set({ error: 'No authentication token' });
+          return;
+        }
+
+        console.log('🎯 [TodoStore] Toggling completion for goal:', goalId);
+        set({ isLoading: true, error: null });
+
+        try {
+          // Call API to toggle completion status
+          const response = await togglePersonalGoalAPI(authToken, goalId);
+          
+          if ((response as any)?.success) {
+            console.log('✅ [TodoStore] Goal completion toggled successfully');
+            // Refresh the todo list to get updated data from database
+            await get().fetchTodoList();
+          } else {
+            throw new Error((response as any)?.message || 'Failed to toggle completion');
+          }
+        } catch (error) {
+          console.error('❌ [TodoStore] Failed to toggle completion:', error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to toggle completion',
+          });
+        }
       },
 
       clearError: () => {

@@ -192,10 +192,9 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       }
 
       try {
-        console.log('🚀 Loading dashboard...');
+        console.log('Loading dashboard...');
         
-        // 1. Fetch XP using simple API first (most reliable)
-        console.log('🔥 [NEW CODE] Fetching XP from simple API...', new Date().toISOString());
+        // simplexp api***
         try {
           const xpRes = await axios.post('/getUserXPSimple/', {}, {
             headers: { 'AUTH-TOKEN': authToken },
@@ -203,15 +202,15 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
           
           if (xpRes.status === 200 && xpRes.data.success && xpRes.data.data) {
             const xp = xpRes.data.data.experience_points;
-            console.log('🔥 [NEW CODE] XP from getUserXPSimple:', xp);
+            console.log('XP from getUserXPSimple:', xp);
             setExperiencePoints(xp);
           }
         } catch (error) {
-          console.log('🔥 [NEW CODE] Simple XP API failed, trying leaderboard...', error);
+          console.log('Simple XP API failed, trying leaderboard...', error);
         }
         
         // 2. Also fetch leaderboard for the leaderboard display
-        console.log('🔥 [NEW CODE] Fetching leaderboard data...');
+        console.log('Fetching leaderboard data...');
         const leaderboardRes = await axios.post('/getPVPLeaderboard/', {}, {
           headers: { 'AUTH-TOKEN': authToken },
         });
@@ -240,7 +239,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
             const { accuracy: calculatedAcc, timeSpent: calculatedTime } = calculateStatsFromPracticeData(practiceStats);
             setCalculatedAccuracy(calculatedAcc);
             setCalculatedTimeSpent(calculatedTime);
-            console.log('⏱️ Time Spent:', calculatedTime);
             
             setDashboardData({
               ...dashboardResponse,
@@ -270,12 +268,10 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                   userId: player.user_id
                 }));
                 setTopLeaderboard(top5);
-                console.log('🏆 Leaderboard loaded:', top5.length, 'players');
               }
             })()
           ]);
 
-          console.log('✅ Dashboard loaded successfully');
         }
       } catch (error) {
         console.error('❌ Dashboard Error:', error);
@@ -296,8 +292,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
       isMounted = false;
     };
   }, [authToken, isAuthenticated]);
-
-  console.log('🔥 [NEW CODE] Current XP:', experiencePoints, new Date().toISOString());
   
   return (
     <div className="min-h-screen">
@@ -426,7 +420,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     </div>
 
                     {/* Personal Goals */}
-                    <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
+                    {/* <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
                       <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_right,rgba(107,114,128,0.10),transparent_42%)]"></div>
                       <div className="relative z-10">
                         <TodoListSection 
@@ -434,7 +428,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                           timeSpent={time_spent_formatted || computedTimeFormatted}
                         />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Weekly Goals moved to Progress page to avoid duplication */}

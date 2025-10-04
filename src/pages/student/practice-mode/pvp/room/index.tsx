@@ -76,8 +76,8 @@ const StudentPvPRoomPage: FC = () => {
   useEffect(() => {
     if (roomId) {
       fetchRoomDetails();
-      // Poll for room updates every 2 seconds
-      pollingRef.current = setInterval(fetchRoomDetails, 2000);
+      // poll room updates every 10s to reduce server load
+      pollingRef.current = setInterval(fetchRoomDetails, 10000);
       return () => {
         if (pollingRef.current) clearInterval(pollingRef.current);
       };
@@ -123,13 +123,13 @@ const StudentPvPRoomPage: FC = () => {
         navigate(`/student/pvp/game/${roomId}`);
       } else {
         setError(response.data?.message || 'Failed to start game');
-        // Resume polling if start failed
-        pollingRef.current = setInterval(fetchRoomDetails, 2000);
+        // rwsume polling if start failed
+        pollingRef.current = setInterval(fetchRoomDetails, 10000);
       }
     } catch (err) {
       console.error('Error starting game:', err);
       setError('Failed to start game');
-      pollingRef.current = setInterval(fetchRoomDetails, 2000);
+      pollingRef.current = setInterval(fetchRoomDetails, 10000);
     } finally {
       setLoading(false);
     }
