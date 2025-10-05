@@ -57,10 +57,10 @@ export const addPersonalGoal = async (
   description?: string,
   schedulingOptions?: any
 ): Promise<unknown> => {
-  console.log('🌐 [API] Starting addPersonalGoal request...');
-  console.log('🌐 [API] Title:', title);
-  console.log('🌐 [API] Description:', description);
-  console.log('🌐 [API] Scheduling options:', schedulingOptions);
+  // console.log('[API] Starting addPersonalGoal request...');
+  // console.log(' [API] Title:', title);
+  // console.log('[API] Description:', description);
+  // console.log(' [API] Scheduling options:', schedulingOptions);
   
   const requestData: any = {
     title,

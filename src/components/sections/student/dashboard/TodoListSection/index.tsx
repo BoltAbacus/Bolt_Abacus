@@ -25,7 +25,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
   useEffect(() => {
     // Phase 1 optimization: only fetch once on mount, not on every render
     if (!dataLoaded) {
-      console.log('🔄 [TodoList] Initial data fetch...');
+        // console.log('🔄 [TodoList] Initial data fetch...');
       fetchTodoList().finally(() => setDataLoaded(true));
     }
   }, [dataLoaded, fetchTodoList]);
@@ -33,10 +33,10 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
   // No periodic refresh - only fetch on mount and after operations
 
   const handleAddGoal = async () => {
-    console.log('🎯 [TodoList] Starting to add goal...');
-    console.log('🎯 [TodoList] Goal text:', newGoal.trim());
-    console.log('🎯 [TodoList] Goal date:', goalDate);
-    console.log('🎯 [TodoList] Goal time:', goalTime);
+    // console.log('🎯 [TodoList] Starting to add goal...');
+    // console.log('🎯 [TodoList] Goal text:', newGoal.trim());
+    // console.log('🎯 [TodoList] Goal date:', goalDate);
+    // console.log('🎯 [TodoList] Goal time:', goalTime);
     
     // Reset validation error and success message
     setValidationError('');
@@ -50,30 +50,30 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
     }
     
     // Date and time are completely optional - no validation needed
-    console.log('ℹ️ [TodoList] Date/time validation: Both are optional, proceeding...');
+      console.log('ℹ️ [TodoList] Date/time validation: Both are optional, proceeding...');
     
     try {
       setAddingGoal(true);
-      console.log('🎯 [TodoList] Setting adding state to true');
+      // console.log('🎯 [TodoList] Setting adding state to true');
       
       // Prepare scheduling options
       const schedulingOptions: any = {};
       
       if (goalDate) {
         schedulingOptions.scheduled_date = goalDate; // Use snake_case for backend
-        console.log('📅 [TodoList] Added scheduled_date:', goalDate);
+        // console.log('📅 [TodoList] Added scheduled_date:', goalDate);
       }
       if (goalTime) {
         schedulingOptions.scheduled_time = goalTime; // Use snake_case for backend
-        console.log('⏰ [TodoList] Added scheduled_time:', goalTime);
+        // console.log('⏰ [TodoList] Added scheduled_time:', goalTime);
       }
       
-      console.log('🎯 [TodoList] Final scheduling options:', schedulingOptions);
+      // console.log('🎯 [TodoList] Final scheduling options:', schedulingOptions);
       
       // Add the goal with scheduling options
-      console.log('🎯 [TodoList] Calling addPersonalGoal...');
+      // console.log('🎯 [TodoList] Calling addPersonalGoal...');
       const result = await addPersonalGoal(newGoal.trim(), '', schedulingOptions);
-      console.log('✅ [TodoList] addPersonalGoal result:', result);
+      // console.log('✅ [TodoList] addPersonalGoal result:', result);
       
       // Clear form on success
       setNewGoal('');
@@ -81,16 +81,16 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
       setGoalTime('');
       setValidationError('');
       
-      console.log('✅ [TodoList] Goal added successfully, form cleared');
+      // console.log('✅ [TodoList] Goal added successfully, form cleared');
       setSuccessMessage('Goal added successfully!');
       
       // Refresh the todo list from database after successful add
-      console.log('🔄 [TodoList] Refreshing todo list from database...');
+      // console.log('🔄 [TodoList] Refreshing todo list from database...');
       await fetchTodoList();
       
       // Close form after refresh
       setTimeout(() => {
-        console.log('✅ [TodoList] Goal added successfully, closing form...');
+        // console.log('✅ [TodoList] Goal added successfully, closing form...');
         setShowAddForm(false);
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
@@ -101,7 +101,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
       setValidationError('Failed to add goal. Please try again.');
     } finally {
       setAddingGoal(false);
-      console.log('🎯 [TodoList] Setting adding state to false');
+      // console.log('🎯 [TodoList] Setting adding state to false');
     }
   };
 
@@ -110,7 +110,7 @@ const TodoListSection: FC<TodoListSectionProps> = ({ className = '' }) => {
     setDeletingGoal(goalId);
     try {
       await removePersonalGoal(goalId);
-      console.log('✅ [TodoList] Goal removed successfully');
+      // console.log('✅ [TodoList] Goal removed successfully');
       // Refresh the list after deletion
       await fetchTodoList();
     } catch (error) {

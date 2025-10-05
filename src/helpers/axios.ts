@@ -31,20 +31,13 @@ function safeStringify(value: unknown): string {
 
 customAxios.interceptors.request.use(
   (config) => {
-    try {
-      console.log('📤 [Axios] Request →', config.method?.toUpperCase(), config.url, {
-        headers: config.headers,
-        params: config.params,
-        hasData: !!config.data,
-      });
-    } catch {}
-    return config;
+    return config; // no console log anymore
   },
   (error) => {
-    console.error('❌ [Axios] Request Error →', safeStringify(error));
     return Promise.reject(error);
   }
 );
+
 
 customAxios.interceptors.response.use(
   (response) => {
@@ -63,7 +56,6 @@ customAxios.interceptors.response.use(
     const data = error?.response?.data;
     const code = error?.code;
 
-    console.error('💥 [Axios] Response Error ←', { status, method, url, data, code });
 
     // Only force logout on explicit 401 (unauthorized) with token-not-valid.
     // Avoid logging out on 403 to prevent ejecting users due to endpoint-specific permissions.

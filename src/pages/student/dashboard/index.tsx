@@ -420,7 +420,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                     </div>
 
                     {/* Personal Goals */}
-                    {/* <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
+                    <div className="bg-[#212124] hover:bg-[#2a2a2d] transition-all duration-300 px-4 tablet:px-6 py-4 rounded-2xl relative overflow-hidden hover:scale-[1.01]">
                       <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_right,rgba(107,114,128,0.10),transparent_42%)]"></div>
                       <div className="relative z-10">
                         <TodoListSection 
@@ -428,7 +428,7 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
                           timeSpent={time_spent_formatted || computedTimeFormatted}
                         />
                       </div>
-                    </div> */}
+                    </div>
                   </div>
 
                   {/* Weekly Goals moved to Progress page to avoid duplication */}
