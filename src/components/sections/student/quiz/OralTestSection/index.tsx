@@ -53,7 +53,8 @@ const OralTestSection: FC<OralTestSectionProps> = ({
 
   const getUpdatedAnswers = (ans: string | null) => {
     const { questionId } = quizQuestions[currentIndex];
-    const answer = parseInt(ans!, 10);
+    const isDivision = quizQuestions[currentIndex].question.operator === '/';
+    const answer = isDivision ? parseFloat(ans!) : parseInt(ans!, 10);
     const answers = quizAnswers.map((a) => {
       if (a.questionId === questionId) {
         return {
@@ -183,6 +184,7 @@ const OralTestSection: FC<OralTestSectionProps> = ({
                     setAnswer={setCurrentAnswer}
                     setDisabled={setIsNextDisabled}
                     submitAnswer={answerQuestion}
+                    allowDecimals={quizQuestions[currentIndex].question.operator === '/'}
                   />
                 </div>
               </div>

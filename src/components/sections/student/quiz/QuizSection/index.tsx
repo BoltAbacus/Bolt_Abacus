@@ -56,7 +56,8 @@ const QuizSection: FC<QuizSectionProps> = ({
 
   const getUpdatedAnswers = (ans: string | null) => {
     const { questionId } = quizQuestions[currentIndex];
-    const answer = parseInt(ans!, 10);
+    const isDivision = quizQuestions[currentIndex].question.operator === '/';
+    const answer = isDivision ? parseFloat(ans!) : parseInt(ans!, 10);
     const answers = quizAnswers.map((a) => {
       if (a.questionId === questionId) {
         return {
@@ -188,6 +189,8 @@ const QuizSection: FC<QuizSectionProps> = ({
                     setAnswer={setCurrentAnswer}
                     setDisabled={setIsNextDisabled}
                     submitAnswer={answerQuestion}
+                    operation={quizQuestions[currentIndex].question.operator === '/' ? 'division' : undefined}
+                    includeDecimals={quizQuestions[currentIndex].question.operator === '/'}
                   />
                 </div>
               </div>

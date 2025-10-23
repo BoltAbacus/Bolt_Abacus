@@ -58,6 +58,7 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
   const [audioMode, setAudioMode] = useState(false);
   const [audioPace, setAudioPace] = useState('normal');
   const [showQuestion, setShowQuestion] = useState(true);
+  const [includeDecimals, setIncludeDecimals] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState('');
@@ -95,7 +96,8 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
 
   const getUpdatedAnswers = (ans: string | null) => {
     const { questionId } = quizQuestions[currentIndex];
-    const answer = parseInt(ans!, 10);
+    const isDivision = operation === 'division' && includeDecimals;
+    const answer = isDivision ? parseFloat(ans!) : parseInt(ans!, 10);
     const answers = quizAnswers.map((a) => {
       if (a.questionId === questionId) {
         return {
@@ -236,7 +238,8 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
     
     // Check if answer is correct
     const correctAnswer = calculateAnswer(currentQuestion.question);
-    const userAnswer = parseInt(currentAnswer, 10);
+    const isDivision = operation === 'division' && includeDecimals;
+    const userAnswer = isDivision ? parseFloat(currentAnswer) : parseInt(currentAnswer, 10);
     const isCorrect = !isNaN(userAnswer) && userAnswer === correctAnswer;
     
     // End timing for this problem
@@ -331,6 +334,7 @@ const FlashCardsSection: FC<FlashCardsSectionProps> = ({ operation }) => {
                   audioPace={audioPace}
                   showQuestion={showQuestion}
                   setShowQuestion={setShowQuestion}
+                  allowDecimals={operation === 'division' && includeDecimals}
                 />
               </div>
               <div className="tablet:gap-12 flex justify-center items-center gap-4 pt-4">

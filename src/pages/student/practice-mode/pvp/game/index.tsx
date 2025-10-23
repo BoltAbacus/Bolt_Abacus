@@ -1458,6 +1458,7 @@ const StudentPvPGamePage: FC = () => {
                     audioMode={gameData?.room_settings?.audioMode || false}
                     showQuestion={gameData?.room_settings?.showQuestion !== false}
                     audioPace={gameData?.room_settings?.audioPace || 'normal'}
+                    allowDecimals={gameData?.operation === 'division' && (gameData?.room_settings?.includeDecimals || false)}
                   />
                 </div>
 

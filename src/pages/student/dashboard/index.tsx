@@ -53,7 +53,6 @@ const StudentDashboardPage: FC<StudentDashboardPageProps> = () => {
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const [topLeaderboard, setTopLeaderboard] = useState<any[]>([]);
 
-  // Helper function to get activity icon
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'practice': return '📚';

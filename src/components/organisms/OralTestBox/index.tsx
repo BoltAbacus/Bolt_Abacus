@@ -14,6 +14,7 @@ export interface OralTestBoxProps {
   setAnswer: Dispatch<SetStateAction<string>>;
   setDisabled: Dispatch<SetStateAction<boolean>>;
   submitAnswer: () => void;
+  allowDecimals?: boolean;
 }
 
 const OralTestBox: FC<OralTestBoxProps> = ({
@@ -22,14 +23,29 @@ const OralTestBox: FC<OralTestBoxProps> = ({
   setAnswer,
   setDisabled,
   submitAnswer,
+  allowDecimals = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const result = event.target.value.replace(/[^0-9-]/gi, '');
+    let result = event.target.value;
+    
+    if (allowDecimals) {
+      // Allow numbers, minus sign, and decimal point
+      result = result.replace(/[^0-9.-]/gi, '');
+      // Ensure only one decimal point
+      const parts = result.split('.');
+      if (parts.length > 2) {
+        result = parts[0] + '.' + parts.slice(1).join('');
+      }
+    } else {
+      // For other operations, only allow integers
+      result = result.replace(/[^0-9-]/gi, '');
+    }
+    
     setAnswer(result);
 
-    const num = parseInt(result, 10);
+    const num = allowDecimals ? parseFloat(result) : parseInt(result, 10);
     if (Number.isNaN(num)) setDisabled(true);
     else setDisabled(false);
   };
